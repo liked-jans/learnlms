@@ -38,7 +38,7 @@ $announcements = $conn->query("SELECT * FROM announcements WHERE target_role IN 
 <div class="page-content">
 
 <div style="margin-bottom:20px">
-    <h2 style="font-size:22px;font-weight:800">Welcome back, <?= htmlspecialchars(explode(' ',$_SESSION['full_name'])[0]) ?>! 👋</h2>
+    <h2 style="font-size:22px;font-weight:800">Welcome back, <?= htmlspecialchars(preg_split('/[\s,]+/', trim($_SESSION['full_name'] ?? 'Teacher'))[0]) ?>! 👋</h2>
     <p style="color:var(--text3)">Here's an overview of your teaching activity and syllabus mapping progress at I-Tech College.</p>
 </div>
 
