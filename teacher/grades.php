@@ -10,9 +10,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect($_SERVER['HTTP_REFERER'] ?? BASE_URL.'teacher/grades.php');
     }
     $subId=(int)$_POST['submission_id']; $score=(float)$_POST['score']; $feedback=sanitize($_POST['feedback']);
-    $stmt=$conn->prepare("UPDATE submissions SET score=?,feedback=?,status='graded',graded_at=NOW() WHERE id=?");
+    $stmt=$conn->prepare("UPDATE submissions SET score=?,feedback=?,status='graded',is_auto_graded=0,graded_at=NOW() WHERE id=?");
     $stmt->bind_param('dsi',$score,$feedback,$subId); $stmt->execute();
-    setFlash('success','Grade saved.');
+    setFlash('success','Grade updated successfully.');
     redirect($_SERVER['HTTP_REFERER'] ?? BASE_URL.'teacher/grades.php');
 }
 
@@ -78,11 +78,20 @@ $myAssessments = $stmtMy->get_result();
 
 <?php if (!$isAll && $assFilterInt && isset($assessment)): ?>
 <div class="card" style="margin-bottom:20px"><div class="card-body">
-    <h3 style="font-size:16px;font-weight:700"><?= htmlspecialchars($assessment['title']) ?></h3>
-    <p style="font-size:13px;color:var(--text3)"><?= $assessment['course_code'] ?> &bull; Max Score: <?= $assessment['max_score'] ?> &bull; <?= ucfirst($assessment['type']) ?></p>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+            <h3 style="font-size:16px;font-weight:700"><?= htmlspecialchars($assessment['title']) ?></h3>
+            <p style="font-size:13px;color:var(--text3);margin-top:2px"><?= $assessment['course_code'] ?> &bull; Max Score: <?= $assessment['max_score'] ?> &bull; <?= ucfirst($assessment['type']) ?></p>
+        </div>
+        <?php if(!empty($assessment['google_template_url'])): ?>
+            <a href="<?= htmlspecialchars($assessment['google_template_url']) ?>" target="_blank" class="btn btn-secondary btn-sm" style="color:#0f9d58;display:inline-flex;align-items:center;gap:6px">
+                <i class="fab fa-google-drive"></i> Teacher Template ↗
+            </a>
+        <?php endif; ?>
+    </div>
 </div></div>
 <div class="card"><div class="table-wrap"><table>
-<thead><tr><th>Student</th><th>Submitted</th><th>Answer/File</th><th>Score</th><th>Status</th><th>Action</th></tr></thead>
+<thead><tr><th>Student</th><th>Submitted</th><th>Submission / Link</th><th>Score</th><th>Status</th><th>Action</th></tr></thead>
 <tbody>
 <?php
 $submissions->data_seek(0);
@@ -90,10 +99,34 @@ while($s=$submissions->fetch_assoc()): ?>
 <tr>
     <td><?= htmlspecialchars($s['full_name']) ?><br><small class="text-muted"><?= $s['email'] ?></small></td>
     <td><?= date('M d, Y g:i A', strtotime($s['submitted_at'])) ?></td>
-    <td><?php if($s['file_path']): ?><button type="button" class="btn btn-secondary btn-sm" onclick="openViewSubModal('<?= htmlspecialchars(BASE_URL.'uploads/materials/'.$s['file_path'], ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($s['full_name']), ENT_QUOTES) ?>')"><i class="fas fa-eye"></i> View</button><?php elseif($s['text_answer']): ?><span style="font-size:12px"><?= htmlspecialchars(substr($s['text_answer'],0,80)) ?>...</span><?php else: ?><span class="text-muted">-</span><?php endif; ?></td>
+    <td>
+        <?php if(!empty($s['google_doc_url'])): ?>
+            <a href="<?= htmlspecialchars($s['google_doc_url']) ?>" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:5px;color:#0f9d58;font-weight:600">
+                <i class="fab fa-google-drive"></i> Open Doc/Sheet ↗
+            </a>
+            <?php if($s['text_answer']): ?><br><small class="text-muted"><?= htmlspecialchars(substr($s['text_answer'],0,50)) ?></small><?php endif; ?>
+        <?php elseif($s['file_path']): ?>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openViewSubModal('<?= htmlspecialchars(BASE_URL.'uploads/materials/'.$s['file_path'], ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($s['full_name']), ENT_QUOTES) ?>')"><i class="fas fa-eye"></i> View File</button>
+        <?php elseif($s['text_answer']): ?>
+            <span style="font-size:12px"><?= htmlspecialchars(substr($s['text_answer'],0,80)) ?>...</span>
+        <?php else: ?>
+            <span class="text-muted">-</span>
+        <?php endif; ?>
+    </td>
     <td><?= $s['score'] !== null ? '<strong>'.$s['score'].'</strong>/'.$assessment['max_score'] : '<span class="text-muted">Not graded</span>' ?></td>
-    <td><span class="badge <?= $s['status']==='graded'?'badge-green':($s['status']==='late'?'badge-red':'badge-orange') ?>"><?= $s['status'] ?></span></td>
-    <td><button class="btn btn-primary btn-sm" onclick='gradeSubmission(<?= json_encode($s) ?>, <?= (float)$assessment['max_score'] ?>)'><i class="fas fa-star"></i> Grade</button></td>
+    <td>
+        <span class="badge <?= $s['status']==='graded'?'badge-green':($s['status']==='late'?'badge-red':'badge-orange') ?>"><?= $s['status'] ?></span>
+        <?php if(!empty($s['is_auto_graded'])): ?>
+            <br><span class="badge badge-gray" style="font-size:10px;margin-top:3px;display:inline-flex;align-items:center;gap:3px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0">
+                <i class="fas fa-robot"></i> Auto-Graded
+            </span>
+        <?php endif; ?>
+    </td>
+    <td>
+        <button class="btn <?= $s['status']==='graded' ? 'btn-secondary' : 'btn-primary' ?> btn-sm" onclick='gradeSubmission(<?= json_encode($s) ?>, <?= (float)$assessment['max_score'] ?>)'>
+            <i class="fas <?= $s['status']==='graded' ? 'fa-edit' : 'fa-star' ?>"></i> <?= $s['status']==='graded' ? 'Change Grade' : 'Grade' ?>
+        </button>
+    </td>
 </tr>
 <?php endwhile; ?>
 </tbody>
@@ -101,18 +134,27 @@ while($s=$submissions->fetch_assoc()): ?>
 
 <?php elseif ($isAll): ?>
 <div class="card"><div class="card-body">
-    <p style="font-size:13px;color:var(--text3)">Showing all your assessments.</p>
+    <p style="font-size:13px;color:var(--text3)">Showing all your assessments and student submissions.</p>
 </div></div>
 <?php foreach ($allData as $block):
     $a = $block['assessment'];
     $rows = $block['submissions'];
 ?>
 <div class="card" style="margin-bottom:20px"><div class="card-body">
-    <h3 style="font-size:16px;font-weight:700"><?= htmlspecialchars($a['title']) ?></h3>
-    <p style="font-size:13px;color:var(--text3)"><?= htmlspecialchars($a['course_code']) ?> &bull; Max Score: <?= $a['max_score'] ?> &bull; <?= ucfirst($a['type']) ?></p>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+            <h3 style="font-size:16px;font-weight:700"><?= htmlspecialchars($a['title']) ?></h3>
+            <p style="font-size:13px;color:var(--text3);margin-top:2px"><?= htmlspecialchars($a['course_code']) ?> &bull; Max Score: <?= $a['max_score'] ?> &bull; <?= ucfirst($a['type']) ?></p>
+        </div>
+        <?php if(!empty($a['google_template_url'])): ?>
+            <a href="<?= htmlspecialchars($a['google_template_url']) ?>" target="_blank" class="btn btn-secondary btn-sm" style="color:#0f9d58;display:inline-flex;align-items:center;gap:6px">
+                <i class="fab fa-google-drive"></i> Teacher Template ↗
+            </a>
+        <?php endif; ?>
+    </div>
 </div></div>
 <div class="card" style="margin-bottom:24px"><div class="table-wrap"><table>
-<thead><tr><th>Student</th><th>Submitted</th><th>Answer/File</th><th>Score</th><th>Status</th><th>Action</th></tr></thead>
+<thead><tr><th>Student</th><th>Submitted</th><th>Submission / Link</th><th>Score</th><th>Status</th><th>Action</th></tr></thead>
 <tbody>
 <?php if (empty($rows)): ?>
 <tr><td colspan="6" class="text-muted" style="text-align:center">No submissions yet.</td></tr>
@@ -120,10 +162,34 @@ while($s=$submissions->fetch_assoc()): ?>
 <tr>
     <td><?= htmlspecialchars($s['full_name']) ?><br><small class="text-muted"><?= $s['email'] ?></small></td>
     <td><?= date('M d, Y g:i A', strtotime($s['submitted_at'])) ?></td>
-    <td><?php if($s['file_path']): ?><button type="button" class="btn btn-secondary btn-sm" onclick="openViewSubModal('<?= htmlspecialchars(BASE_URL.'uploads/materials/'.$s['file_path'], ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($s['full_name']), ENT_QUOTES) ?>')"><i class="fas fa-eye"></i> View</button><?php elseif($s['text_answer']): ?><span style="font-size:12px"><?= htmlspecialchars(substr($s['text_answer'],0,80)) ?>...</span><?php else: ?><span class="text-muted">-</span><?php endif; ?></td>
+    <td>
+        <?php if(!empty($s['google_doc_url'])): ?>
+            <a href="<?= htmlspecialchars($s['google_doc_url']) ?>" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:5px;color:#0f9d58;font-weight:600">
+                <i class="fab fa-google-drive"></i> Open Doc/Sheet ↗
+            </a>
+            <?php if($s['text_answer']): ?><br><small class="text-muted"><?= htmlspecialchars(substr($s['text_answer'],0,50)) ?></small><?php endif; ?>
+        <?php elseif($s['file_path']): ?>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openViewSubModal('<?= htmlspecialchars(BASE_URL.'uploads/materials/'.$s['file_path'], ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($s['full_name']), ENT_QUOTES) ?>')"><i class="fas fa-eye"></i> View File</button>
+        <?php elseif($s['text_answer']): ?>
+            <span style="font-size:12px"><?= htmlspecialchars(substr($s['text_answer'],0,80)) ?>...</span>
+        <?php else: ?>
+            <span class="text-muted">-</span>
+        <?php endif; ?>
+    </td>
     <td><?= $s['score'] !== null ? '<strong>'.$s['score'].'</strong>/'.$a['max_score'] : '<span class="text-muted">Not graded</span>' ?></td>
-    <td><span class="badge <?= $s['status']==='graded'?'badge-green':($s['status']==='late'?'badge-red':'badge-orange') ?>"><?= $s['status'] ?></span></td>
-    <td><button class="btn btn-primary btn-sm" onclick='gradeSubmission(<?= json_encode($s) ?>, <?= (float)$a['max_score'] ?>)'><i class="fas fa-star"></i> Grade</button></td>
+    <td>
+        <span class="badge <?= $s['status']==='graded'?'badge-green':($s['status']==='late'?'badge-red':'badge-orange') ?>"><?= $s['status'] ?></span>
+        <?php if(!empty($s['is_auto_graded'])): ?>
+            <br><span class="badge badge-gray" style="font-size:10px;margin-top:3px;display:inline-flex;align-items:center;gap:3px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0">
+                <i class="fas fa-robot"></i> Auto-Graded
+            </span>
+        <?php endif; ?>
+    </td>
+    <td>
+        <button class="btn <?= $s['status']==='graded' ? 'btn-secondary' : 'btn-primary' ?> btn-sm" onclick='gradeSubmission(<?= json_encode($s) ?>, <?= (float)$a['max_score'] ?>)'>
+            <i class="fas <?= $s['status']==='graded' ? 'fa-edit' : 'fa-star' ?>"></i> <?= $s['status']==='graded' ? 'Change Grade' : 'Grade' ?>
+        </button>
+    </td>
 </tr>
 <?php endforeach; endif; ?>
 </tbody>
@@ -135,20 +201,20 @@ while($s=$submissions->fetch_assoc()): ?>
 <?php endif; ?>
 
 <div class="modal-overlay" id="gradeModal">
-<div class="modal">
-<div class="modal-header"><span class="modal-title">Grade Submission</span><button class="modal-close" onclick="closeModal('gradeModal')">&times;</button></div>
+<div class="modal" style="max-width:560px">
+<div class="modal-header"><span class="modal-title" id="gradeModalHeader">Grade / Override Submission</span><button class="modal-close" onclick="closeModal('gradeModal')">&times;</button></div>
 <form method="POST">
 <?= csrfField() ?>
 <input type="hidden" name="submission_id" id="gradeSubId">
 <div class="modal-body">
-    <div id="gradeStudentInfo" style="margin-bottom:16px;padding:12px;background:var(--bg);border-radius:8px"></div>
+    <div id="gradeStudentInfo" style="margin-bottom:16px;padding:14px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"></div>
     <div class="form-group"><label>Score (max: <span id="gradeMaxScore"><?= $assessment['max_score'] ?? 100 ?></span>)</label>
     <input type="number" name="score" id="gradeScore" class="form-control" min="0" max="<?= $assessment['max_score'] ?? 100 ?>" step="0.5" required></div>
-    <div class="form-group"><label>Feedback</label><textarea name="feedback" id="gradeFeedback" class="form-control" rows="3" placeholder="Optional feedback..."></textarea></div>
+    <div class="form-group"><label>Teacher Feedback & Comments</label><textarea name="feedback" id="gradeFeedback" class="form-control" rows="3" placeholder="Leave remarks for the student..."></textarea></div>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" onclick="closeModal('gradeModal')">Cancel</button>
-    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Grade</button>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save / Override Grade</button>
 </div>
 </form></div></div>
 
@@ -233,11 +299,32 @@ function gradeSubmission(s, maxScore){
     document.getElementById('gradeSubId').value=s.id;
     document.getElementById('gradeScore').value=s.score||'';
     document.getElementById('gradeFeedback').value=s.feedback||'';
-    document.getElementById('gradeStudentInfo').innerHTML=`<strong>${s.full_name}</strong><br><small style="color:var(--text3)">${s.email}</small>`;
+
+    let infoHtml = `<strong>${s.full_name}</strong><br><small style="color:var(--text3)">${s.email}</small>`;
+    if (s.google_doc_url) {
+        infoHtml += `
+            <div style="margin-top:10px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px">
+                <span style="font-size:12px;color:#166534;font-weight:600"><i class="fab fa-google-drive"></i> Student Google Doc / Sheet:</span><br>
+                <a href="${s.google_doc_url}" target="_blank" class="btn btn-secondary btn-sm" style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;color:#0f9d58;font-weight:600">
+                    <i class="fab fa-google-drive"></i> Open Live Document ↗
+                </a>
+            </div>
+        `;
+    }
+    if (s.is_auto_graded && s.is_auto_graded != 0) {
+        infoHtml += `
+            <div style="margin-top:6px;font-size:11px;color:#059669">
+                <i class="fas fa-robot"></i> <em>Currently Auto-Graded. You can change or override the score and remarks below.</em>
+            </div>
+        `;
+    }
+    document.getElementById('gradeStudentInfo').innerHTML = infoHtml;
 
     var max = (typeof maxScore !== 'undefined' && maxScore !== null) ? maxScore : 100;
     document.getElementById('gradeMaxScore').textContent = max;
     document.getElementById('gradeScore').max = max;
+
+    document.getElementById('gradeModalHeader').textContent = (s.status === 'graded') ? 'Override / Edit Grade' : 'Grade Submission';
 
     openModal('gradeModal');
 }

@@ -69,12 +69,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $stmt = $conn->prepare("INSERT INTO assessments (syllabus_id,topic_id,teacher_id,title,description,type,max_score,due_date,delivery_mode,attachment_path) VALUES (?,?,?,?,?,?,?,?,?,?)");
-        $stmt->bind_param('iiisssdsss', $sylId, $topicId, $tid, $title, $desc, $type, $max, $due, $dm, $attachmentPath);
+        $subType = sanitize($_POST['submission_type'] ?? 'google_docs_sheets');
+        if (!in_array($subType, ['google_docs_sheets', 'file', 'text'])) {
+            $subType = 'google_docs_sheets';
+        }
+        $templateUrl = filter_var(trim($_POST['google_template_url'] ?? ''), FILTER_VALIDATE_URL) ? trim($_POST['google_template_url']) : null;
+        $autoGradePercent = isset($_POST['auto_grade_percent']) ? (float)$_POST['auto_grade_percent'] : 100.00;
+        if ($autoGradePercent < 0) $autoGradePercent = 0;
+        if ($autoGradePercent > 100) $autoGradePercent = 100;
+
+        $stmt = $conn->prepare("INSERT INTO assessments (syllabus_id,topic_id,teacher_id,title,description,type,max_score,due_date,delivery_mode,attachment_path,submission_type,google_template_url,auto_grade_percent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
+        $stmt->bind_param('iiisssdsssssd', $sylId, $topicId, $tid, $title, $desc, $type, $max, $due, $dm, $attachmentPath, $subType, $templateUrl, $autoGradePercent);
 
         try {
             if ($stmt->execute()) {
-                setFlash('success', 'Assessment created.');
+                setFlash('success', 'Assessment created successfully with ' . ($subType === 'google_docs_sheets' ? 'Google Docs/Sheets auto-grading' : 'standard submission') . '.');
             } else {
                 setFlash('error', 'Could not save the assessment: ' . $stmt->error);
             }
@@ -84,9 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     } elseif ($action === 'grade') {
         $subId=(int)$_POST['submission_id']; $score=(float)$_POST['score']; $feedback=sanitize($_POST['feedback']);
-        $stmt=$conn->prepare("UPDATE submissions SET score=?,feedback=?,status='graded',graded_at=NOW() WHERE id=?");
+        $stmt=$conn->prepare("UPDATE submissions SET score=?,feedback=?,status='graded',is_auto_graded=0,graded_at=NOW() WHERE id=?");
         $stmt->bind_param('dsi',$score,$feedback,$subId); $stmt->execute();
-        setFlash('success','Graded.');
+        setFlash('success','Grade updated successfully.');
     } elseif ($action === 'delete') {
         $id=(int)$_POST['id'];
         $conn->query("DELETE FROM assessments WHERE id=$id AND teacher_id=$tid");
@@ -137,7 +146,7 @@ $assessments=$conn->query("SELECT a.*,c.course_code, s.syllabus_file, (SELECT CO
 </form></div></div>
 
 <div class="card"><div class="table-wrap"><table>
-<thead><tr><th>Title</th><th>Course</th><th>Type</th><th>Max Score</th><th>Due Date</th><th>Mode</th><th>Attachment</th><th>Submissions</th><th>Actions</th></tr></thead>
+<thead><tr><th>Title</th><th>Course</th><th>Type</th><th>Submission Format</th><th>Max Score</th><th>Due Date</th><th>Mode</th><th>Attachment / Template</th><th>Submissions</th><th>Actions</th></tr></thead>
 <tbody>
 <?php while($a=$assessments->fetch_assoc()): 
 $tc=['quiz'=>'badge-green','assignment'=>'badge-blue','exam'=>'badge-red','project'=>'badge-orange','activity'=>'badge-purple']; ?>
@@ -150,13 +159,31 @@ $tc=['quiz'=>'badge-green','assignment'=>'badge-blue','exam'=>'badge-red','proje
         <?php endif; ?>
     </td>
     <td><span class="badge <?= $tc[$a['type']] ?? 'badge-gray' ?>"><?= $a['type'] ?></span></td>
+    <td>
+        <?php if (($a['submission_type'] ?? 'google_docs_sheets') === 'google_docs_sheets'): ?>
+            <span class="badge badge-green" style="display:inline-flex;align-items:center;gap:4px">
+                <i class="fab fa-google-drive"></i> Google Docs/Sheets
+            </span>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px"><i class="fas fa-robot"></i> Auto-grades <?= (int)($a['auto_grade_percent'] ?? 100) ?>%</div>
+        <?php elseif ($a['submission_type'] === 'file'): ?>
+            <span class="badge badge-blue"><i class="fas fa-file-upload"></i> File Upload</span>
+        <?php else: ?>
+            <span class="badge badge-gray"><i class="fas fa-font"></i> Text Response</span>
+        <?php endif; ?>
+    </td>
     <td><?= $a['max_score'] ?></td>
     <td><?= $a['due_date'] ? date('M d, Y g:i A', strtotime($a['due_date'])) : '<span class="text-muted">No deadline</span>' ?></td>
     <td><span class="mode-pill mode-<?= $a['delivery_mode']==='online'?'online':($a['delivery_mode']==='offline'?'face':'blended') ?>"><?= $a['delivery_mode'] ?></span></td>
     <td>
+        <?php if (!empty($a['google_template_url'])): ?>
+            <a href="<?= htmlspecialchars($a['google_template_url']) ?>" target="_blank" class="btn btn-secondary btn-sm" title="Open Google Template" style="color:#0f9d58;margin-bottom:3px;display:inline-flex;align-items:center;gap:4px">
+                <i class="fab fa-google-drive"></i> Template ↗
+            </a><br>
+        <?php endif; ?>
         <?php if (!empty($a['attachment_path'] ?? null)): ?>
-            <a href="<?= BASE_URL ?>uploads/assessments/<?= htmlspecialchars($a['attachment_path']) ?>" target="_blank" class="btn btn-secondary btn-sm" title="View attachment"><i class="fas fa-paperclip"></i></a>
-        <?php else: ?>
+            <a href="<?= BASE_URL ?>uploads/assessments/<?= htmlspecialchars($a['attachment_path']) ?>" target="_blank" class="btn btn-secondary btn-sm" title="View attachment"><i class="fas fa-paperclip"></i> File</a>
+        <?php endif; ?>
+        <?php if (empty($a['google_template_url']) && empty($a['attachment_path'])): ?>
             <span class="text-muted"><small>None</small></span>
         <?php endif; ?>
     </td>
@@ -171,7 +198,7 @@ $tc=['quiz'=>'badge-green','assignment'=>'badge-blue','exam'=>'badge-red','proje
 
 <!-- Add Assessment Modal -->
 <div class="modal-overlay" id="addAssModal">
-<div class="modal" style="max-width:640px">
+<div class="modal" style="max-width:680px">
 <div class="modal-header"><span class="modal-title">Create Assessment</span><button class="modal-close" onclick="closeModal('addAssModal')">&times;</button></div>
 <form method="POST" enctype="multipart/form-data" id="addAssForm" onsubmit="return validateAssForm()"><input type="hidden" name="action" value="add">
 <div class="modal-body">
@@ -183,25 +210,52 @@ $tc=['quiz'=>'badge-green','assignment'=>'badge-blue','exam'=>'badge-red','proje
         </select></div>
         <div class="form-group"><label>Link to Topic</label><select name="topic_id" id="assTopic" class="form-control"><option value="">Not linked</option></select></div>
     </div>
-    <div class="form-group"><label>Title</label><input type="text" name="title" class="form-control" required></div>
-    <div class="form-group"><label>Description / Instructions</label><textarea name="description" class="form-control" rows="3"></textarea></div>
+    <div class="form-group"><label>Title</label><input type="text" name="title" class="form-control" placeholder="e.g. Activity 1: Software Requirements Specification" required></div>
+    <div class="form-group"><label>Description / Instructions</label><textarea name="description" class="form-control" rows="3" placeholder="Explain the assignment guidelines or prompt..."></textarea></div>
+
+    <!-- Submission & Auto-Grading Configuration -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:13px;color:#166534;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <i class="fab fa-google-drive"></i> Submission Format & Automated Grading
+        </div>
+        <div class="form-row">
+            <div class="form-group" style="margin-bottom:8px">
+                <label style="font-size:12px;font-weight:600">Student Submission Method</label>
+                <select name="submission_type" class="form-control" id="submissionTypeSelect" onchange="toggleTemplateFields(this.value)">
+                    <option value="google_docs_sheets" selected>Google Docs / Sheets Link (Automated Instant Grading)</option>
+                    <option value="file">File Upload (PDF, Word, Excel, etc.)</option>
+                    <option value="text">Text Response</option>
+                </select>
+            </div>
+            <div class="form-group" id="autoGradePercentGroup" style="margin-bottom:8px">
+                <label style="font-size:12px;font-weight:600">Auto-Grade Benchmark Score (%)</label>
+                <input type="number" name="auto_grade_percent" class="form-control" value="100" min="0" max="100" step="1">
+            </div>
+        </div>
+        <div class="form-group" id="templateUrlGroup" style="margin-bottom:0">
+            <label style="font-size:12px;font-weight:600">Google Docs / Sheets Template Link <span style="color:var(--text3);font-weight:400">(optional)</span></label>
+            <input type="url" name="google_template_url" class="form-control" placeholder="https://docs.google.com/document/d/... or /spreadsheets/d/...">
+            <small style="color:#166534;font-size:11px">Optional: Provide a template document for students to "Make a copy". When submitted, the system immediately awards the benchmark score so students have no waiting time. You can override or change the grade in the Gradebook anytime.</small>
+        </div>
+    </div>
+
     <div class="form-row">
-        <div class="form-group"><label>Type</label><select name="type" class="form-control"><option>quiz</option><option>assignment</option><option>exam</option><option>project</option><option>activity</option></select></div>
+        <div class="form-group"><label>Type</label><select name="type" class="form-control"><option>quiz</option><option selected>assignment</option><option>exam</option><option>project</option><option>activity</option></select></div>
         <div class="form-group"><label>Max Score</label><input type="number" name="max_score" class="form-control" value="100" min="1"></div>
     </div>
     <div class="form-row">
         <div class="form-group"><label>Due Date (optional)</label><input type="datetime-local" name="due_date" class="form-control"></div>
-        <div class="form-group"><label>Delivery Mode</label><select name="delivery_mode" class="form-control"><option>both</option><option>online</option><option>offline</option></select></div>
+        <div class="form-group"><label>Delivery Mode</label><select name="delivery_mode" class="form-control"><option>both</option><option selected>online</option><option>offline</option></select></div>
     </div>
     <div class="form-group">
-        <label>Attachment <span style="color:var(--text3);font-weight:400">(optional - instructions, materials, etc. Max 8MB)</span></label>
+        <label>Attachment <span style="color:var(--text3);font-weight:400">(optional supplementary material, max 8MB)</span></label>
         <input type="file" name="attachment" id="assAttachment" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.jpg,.jpeg,.png" onchange="checkAssFileSize(this)">
         <div id="assFileSizeWarning" style="color:var(--danger);font-size:12px;margin-top:6px;display:none">This file is bigger than 8MB and may fail to upload on this server. Try a smaller file.</div>
     </div>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-secondary" onclick="closeModal('addAssModal')">Cancel</button>
-    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create</button>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create Assessment</button>
 </div>
 </form></div></div>
 
@@ -209,6 +263,11 @@ $tc=['quiz'=>'badge-green','assignment'=>'badge-blue','exam'=>'badge-red','proje
 <script>
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+function toggleTemplateFields(val){
+    var isGoogle = (val === 'google_docs_sheets');
+    document.getElementById('templateUrlGroup').style.display = isGoogle ? 'block' : 'none';
+    document.getElementById('autoGradePercentGroup').style.display = isGoogle ? 'block' : 'none';
+}
 function loadTopics2(sylId){
     if(!sylId)return;
     fetch('get_topics.php?syl='+sylId).then(r=>r.json()).then(data=>{
