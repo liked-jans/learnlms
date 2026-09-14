@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $pts = 0.00;
 
         if ($q['question_type'] === 'multiple_choice') {
-            if ($studentAns !== '' && $studentAns === (string)$q['correct_answer']) {
+            if (isAssessmentAnswerCorrect($studentAns, $q['correct_answer'], $q['options'])) {
                 $isCorrect = 1;
                 $pts = (float)$q['points'];
                 $totalEarned += $pts;
@@ -287,9 +287,8 @@ if ($submission) {
                 <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;margin-bottom:4px">Your Response:</div>
                 <div style="font-size:13px;color:var(--text);font-weight:600">
                     <?php if ($qType === 'multiple_choice'): 
-                        $opts = json_decode($sa['options'], true) ?: [];
-                        $ansIdx = (int)$sa['student_answer'];
-                        echo isset($opts[$ansIdx]) ? htmlspecialchars($opts[$ansIdx]) : '<em class="text-muted">No answer selected</em>';
+                        $ansText = getAssessmentOptionDisplay($sa['options'], $sa['student_answer']);
+                        echo $ansText ? htmlspecialchars($ansText) : '<em class="text-muted">No answer selected</em>';
                     elseif ($qType === 'true_false'):
                         echo htmlspecialchars($sa['student_answer'] ?: 'No answer selected');
                     else:
@@ -303,9 +302,7 @@ if ($submission) {
                 <div style="padding:8px 12px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;font-size:12px;color:#065f46">
                     <strong><i class="fas fa-check-circle"></i> Correct Answer:</strong>
                     <?php if ($qType === 'multiple_choice'): 
-                        $opts = json_decode($sa['options'], true) ?: [];
-                        $cIdx = (int)$sa['correct_answer'];
-                        echo htmlspecialchars($opts[$cIdx] ?? 'N/A');
+                        echo htmlspecialchars(getAssessmentOptionDisplay($sa['options'], $sa['correct_answer']));
                     else:
                         echo htmlspecialchars($sa['correct_answer']);
                     endif; ?>
@@ -371,15 +368,18 @@ if ($submission) {
                 <!-- Multiple Choice Options -->
                 <?php if ($q['question_type'] === 'multiple_choice'): 
                     $opts = json_decode($q['options'], true) ?: [];
-                    $letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+                    $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+                    $optIdx = 0;
                 ?>
                 <div style="display:flex;flex-direction:column;gap:10px">
-                    <?php foreach ($opts as $oIdx => $optText): 
-                        $letter = $letters[$oIdx] ?? ($oIdx + 1);
-                        $choiceId = "q_{$qId}_opt_{$oIdx}";
+                    <?php foreach ($opts as $oKey => $optText): 
+                        $letter = (is_string($oKey) && preg_match('/^[A-Z]$/i', $oKey)) ? strtoupper($oKey) : ($letters[$optIdx] ?? chr(65 + $optIdx));
+                        $choiceId = "q_{$qId}_opt_{$optIdx}";
+                        $choiceVal = (string)$oKey;
+                        $optIdx++;
                     ?>
                     <label for="<?= $choiceId ?>" style="padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:#fff;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s ease">
-                        <input type="radio" name="answers[<?= $qId ?>]" id="<?= $choiceId ?>" value="<?= $oIdx ?>" style="transform:scale(1.2);cursor:pointer">
+                        <input type="radio" name="answers[<?= $qId ?>]" id="<?= $choiceId ?>" value="<?= htmlspecialchars($choiceVal) ?>" style="transform:scale(1.2);cursor:pointer">
                         <strong style="color:var(--primary);width:18px"><?= $letter ?>.</strong>
                         <span style="font-size:13.5px;color:var(--text)"><?= htmlspecialchars($optText) ?></span>
                     </label>

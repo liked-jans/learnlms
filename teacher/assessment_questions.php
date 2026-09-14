@@ -279,13 +279,19 @@ foreach ($questions as $q) {
             <!-- Options Display -->
             <?php if ($q['question_type'] === 'multiple_choice'): 
                 $opts = json_decode($q['options'], true) ?: [];
-                $correctIdx = (int)($q['correct_answer'] ?? 0);
+                $rawCorrect = (string)($q['correct_answer'] ?? '');
+                $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+                $optIdx = 0;
             ?>
             <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:8px">
-                <?php foreach ($opts as $oIdx => $optText): 
-                    $isCorrect = ($oIdx === $correctIdx);
-                    $letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-                    $letter = $letters[$oIdx] ?? ($oIdx + 1);
+                <?php foreach ($opts as $oKey => $optText): 
+                    $letter = (is_string($oKey) && preg_match('/^[A-Z]$/i', $oKey)) ? strtoupper($oKey) : ($letters[$optIdx] ?? chr(65 + $optIdx));
+                    $isCorrect = (
+                        strcasecmp((string)$oKey, $rawCorrect) === 0 ||
+                        strcasecmp($letter, $rawCorrect) === 0 ||
+                        (is_numeric($rawCorrect) && (int)$rawCorrect === $optIdx)
+                    );
+                    $optIdx++;
                 ?>
                 <div style="padding:10px 14px;border-radius:6px;border:1px solid <?= $isCorrect ? '#10b981' : 'var(--border)' ?>;background:<?= $isCorrect ? '#ecfdf5' : '#fff' ?>;display:flex;align-items:center;justify-content:space-between;gap:8px">
                     <div style="display:flex;align-items:center;gap:10px">

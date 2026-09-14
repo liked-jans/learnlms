@@ -222,3 +222,58 @@ if (isMaintenanceMode()) {
         redirect(BASE_URL . 'maintenance.php');
     }
 }
+
+// ---------------------------------------------------------------------
+// Assessment & Questionnaire Helpers
+// ---------------------------------------------------------------------
+function getAssessmentOptionDisplay($optionsJson, $val) {
+    if ($val === null || $val === '') return '';
+    if (empty($optionsJson)) return (string)$val;
+    $opts = is_array($optionsJson) ? $optionsJson : (json_decode($optionsJson, true) ?: []);
+    if (empty($opts)) return (string)$val;
+
+    if (isset($opts[$val])) {
+        return $opts[$val];
+    }
+
+    $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    $keys = array_keys($opts);
+    foreach ($keys as $idx => $k) {
+        $letter = (is_string($k) && preg_match('/^[A-Z]$/i', $k)) ? strtoupper($k) : ($letters[$idx] ?? chr(65 + $idx));
+        if (strcasecmp((string)$val, (string)$k) === 0 || 
+            strcasecmp((string)$val, $letter) === 0 || 
+            (is_numeric($val) && (int)$val === $idx)) {
+            return $opts[$k];
+        }
+    }
+    return (string)$val;
+}
+
+function isAssessmentAnswerCorrect($studentAns, $correctAns, $optionsJson = null) {
+    if ($studentAns === null || $studentAns === '' || $correctAns === null || $correctAns === '') {
+        return false;
+    }
+    $studentAns = trim((string)$studentAns);
+    $correctAns = trim((string)$correctAns);
+
+    if (strcasecmp($studentAns, $correctAns) === 0) {
+        return true;
+    }
+
+    if (!empty($optionsJson)) {
+        $opts = is_array($optionsJson) ? $optionsJson : (json_decode($optionsJson, true) ?: []);
+        $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        $keys = array_keys($opts);
+        foreach ($keys as $idx => $k) {
+            $letter = (is_string($k) && preg_match('/^[A-Z]$/i', $k)) ? strtoupper($k) : ($letters[$idx] ?? chr(65 + $idx));
+            $isStudent = (strcasecmp($studentAns, (string)$k) === 0 || strcasecmp($studentAns, $letter) === 0 || (is_numeric($studentAns) && (int)$studentAns === $idx));
+            $isCorrect = (strcasecmp($correctAns, (string)$k) === 0 || strcasecmp($correctAns, $letter) === 0 || (is_numeric($correctAns) && (int)$correctAns === $idx));
+            if ($isStudent && $isCorrect) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+

@@ -197,9 +197,8 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
                     </div>
                     <div style="font-size:13.5px;color:var(--text);font-weight:<?= $isEssay ? '400' : '600' ?>;line-height:1.6">
                         <?php if ($qType === 'multiple_choice'): 
-                            $opts = json_decode($sa['options'], true) ?: [];
-                            $ansIdx = (int)$sa['student_answer'];
-                            echo isset($opts[$ansIdx]) ? htmlspecialchars($opts[$ansIdx]) : '<em class="text-muted">No choice selected</em>';
+                            $ansText = getAssessmentOptionDisplay($sa['options'], $sa['student_answer']);
+                            echo $ansText ? htmlspecialchars($ansText) : '<em class="text-muted">No choice selected</em>';
                         elseif ($qType === 'true_false'):
                             echo htmlspecialchars($sa['student_answer'] ?: 'No choice selected');
                         else:
@@ -213,9 +212,7 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
                     <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;padding:8px 12px;font-size:12px;color:#065f46;margin-bottom:14px">
                         <strong><i class="fas fa-check-circle"></i> Correct Answer Reference:</strong>
                         <?php if ($qType === 'multiple_choice'): 
-                            $opts = json_decode($sa['options'], true) ?: [];
-                            $cIdx = (int)$sa['correct_answer'];
-                            echo htmlspecialchars($opts[$cIdx] ?? 'N/A');
+                            echo htmlspecialchars(getAssessmentOptionDisplay($sa['options'], $sa['correct_answer']));
                         else:
                             echo htmlspecialchars($sa['correct_answer']);
                         endif; ?>
