@@ -1,0 +1,3 @@
+# These files are only meant to be require()'d by other PHP
+# scripts — never requested directly by a browser.
+Require all denied

@@ -1,0 +1,43 @@
+# ==========================================================
+# BlendEd LMS — root security hardening
+# ==========================================================
+
+# Never list directory contents
+Options -Indexes
+ServerSignature Off
+
+# ==========================================================
+# Hide the .php extension
+# ==========================================================
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # If someone requests /page.php directly, send them to the
+    # extension-less /page URL instead (keeps the address bar clean).
+    RewriteCond %{THE_REQUEST} \s/+(.+?)\.php[\s?] [NC]
+    RewriteRule ^ /%1 [R=301,L]
+
+    # Internally serve /page as /page.php, without changing the URL.
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteRule ^(.*)$ $1.php [L]
+</IfModule>
+
+# Block direct access to raw SQL dumps / backups / config-ish files
+# wherever they appear in the site.
+<FilesMatch "\.(sql|sqlite|bak|backup|old|orig|save|swp|log|env|ini|config|conf)$">
+    Require all denied
+</FilesMatch>
+
+# Block dotfiles (.git, .htaccess itself, .env, editor swap files, etc.)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Basic security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
