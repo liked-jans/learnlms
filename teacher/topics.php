@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (!empty($assTitle)) {
         $assType = sanitize($_POST['assessment_type'] ?? 'assignment');
         $assMax = (float)($_POST['assessment_max'] ?? 100);
-        $stmtAss = $conn->prepare("INSERT INTO assessments (syllabus_id, topic_id, teacher_id, title, type, max_score, submission_type) VALUES (?, ?, ?, ?, ?, ?, 'google_docs_sheets')");
+        $stmtAss = $conn->prepare("INSERT INTO assessments (syllabus_id, topic_id, teacher_id, title, type, max_score, submission_type) VALUES (?, ?, ?, ?, ?, ?, 'quiz_builder')");
         $stmtAss->bind_param('iiissd', $sylId, $newTopicId, $tid, $assTitle, $assType, $assMax);
         $stmtAss->execute();
     }

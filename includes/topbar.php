@@ -1,9 +1,20 @@
 <?php
 $roleBadge = ['admin'=>'badge-red','teacher'=>'badge-blue','student'=>'badge-green'];
 $roleLabel = ['admin'=>'Administrator','teacher'=>'Teacher','student'=>'Student'];
-$r = $_SESSION['role'];
-$initials = implode('', array_map(fn($w) => strtoupper($w[0]), explode(' ', $_SESSION['full_name'])));
+$r = $_SESSION['role'] ?? 'student';
+$rawName = trim($_SESSION['full_name'] ?? '');
+$nameWords = preg_split('/[\s,]+/', $rawName, -1, PREG_SPLIT_NO_EMPTY);
+$initials = '';
+foreach ($nameWords as $w) {
+    if (!empty($w)) {
+        $initials .= strtoupper($w[0]);
+    }
+}
 $initials = substr($initials, 0, 2);
+if ($initials === '') {
+    $initials = strtoupper(substr($_SESSION['username'] ?? 'U', 0, 2));
+}
+
 ?>
 <header class="topbar">
     <div class="topbar-left">
