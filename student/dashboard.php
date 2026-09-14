@@ -8,6 +8,9 @@ $enrollCount = $conn->query("SELECT COUNT(*) c FROM enrollments WHERE student_id
 $completedTopics = $conn->query("SELECT COUNT(*) c FROM topic_progress WHERE student_id=$stid AND status='completed'")->fetch_assoc()['c'];
 $pendingAssessments = $conn->query("SELECT COUNT(*) c FROM assessments a JOIN enrollments e ON e.syllabus_id=a.syllabus_id WHERE e.student_id=$stid AND a.id NOT IN (SELECT assessment_id FROM submissions WHERE student_id=$stid)")->fetch_assoc()['c'];
 
+require_once '../includes/notifications.php';
+$notifs = getStudentNotifications($stid);
+
 $enrolledCourses = $conn->query("SELECT e.*,s.id as syllabus_id,s.academic_year,s.semester,c.course_name,c.course_code,u.full_name as teacher_name,
     (SELECT COUNT(*) FROM syllabus_topics st WHERE st.syllabus_id=e.syllabus_id) total_topics,
     (SELECT COUNT(*) FROM topic_progress tp WHERE tp.student_id=e.student_id AND tp.syllabus_topic_id IN (SELECT id FROM syllabus_topics WHERE syllabus_id=e.syllabus_id) AND tp.status='completed') done_topics
@@ -24,8 +27,36 @@ $announcements = $conn->query("SELECT * FROM announcements WHERE target_role IN 
 
 <div style="margin-bottom:20px">
     <h2 style="font-size:22px;font-weight:800">Hello, <?= htmlspecialchars(explode(' ',$_SESSION['full_name'])[0]) ?>! 🎓</h2>
-    <p style="color:var(--text3)">Continue your learning journey</p>
+    <p style="color:var(--text3)">Continue your learning journey at I-Tech College</p>
 </div>
+
+<?php if (!empty($notifs['due_soon'])): ?>
+<div class="card" style="margin-bottom:20px;border-left:4px solid var(--accent);background:linear-gradient(to right, rgba(228,133,71,0.06), transparent)">
+    <div class="card-body" style="padding:16px 20px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+            <span style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px">
+                <i class="fas fa-bell"></i>
+            </span>
+            <strong style="font-size:14px;color:var(--text)">Action Required: Upcoming Assessment Deadlines</strong>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px">
+            <?php foreach ($notifs['due_soon'] as $d): ?>
+            <div style="background:var(--card-bg);padding:12px 14px;border-radius:8px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <span style="font-size:11px;font-weight:700;color:var(--primary)"><?= htmlspecialchars($d['course_code']) ?></span>
+                    <div style="font-weight:600;font-size:13px"><?= htmlspecialchars($d['title']) ?></div>
+                    <small style="color:<?= $d['urgency']==='danger'?'var(--danger)':'var(--warning)' ?>;font-weight:600">
+                        <i class="fas fa-clock"></i> Due in <?= $d['hours_left'] ?> hours (<?= date('M d, g:i A', strtotime($d['due_date'])) ?>)
+                    </small>
+                </div>
+                <a href="assessments.php?syl=<?= $d['id'] ?>" class="btn btn-primary btn-sm" style="flex-shrink:0">Submit</a>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
     <div class="stat-card green"><div class="stat-icon green"><i class="fas fa-book-open"></i></div>
     <div class="stat-info"><div class="stat-num"><?= $enrollCount ?></div><div class="stat-label">Enrolled Courses</div></div></div>

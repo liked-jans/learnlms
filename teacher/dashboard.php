@@ -9,6 +9,9 @@ $myStudents = $conn->query("SELECT COUNT(DISTINCT e.student_id) c FROM enrollmen
 $myTopics = $conn->query("SELECT COUNT(*) c FROM syllabus_topics st JOIN syllabi s ON st.syllabus_id=s.id WHERE s.teacher_id=$tid")->fetch_assoc()['c'];
 $myMaterials = $conn->query("SELECT COUNT(*) c FROM learning_materials WHERE teacher_id=$tid")->fetch_assoc()['c'];
 
+require_once '../includes/notifications.php';
+$tNotifs = getTeacherNotifications($tid);
+
 $syllabi = $conn->query("SELECT s.*, c.course_name,c.course_code,
     (SELECT COUNT(*) FROM syllabus_topics st WHERE st.syllabus_id=s.id) topics,
     (SELECT COUNT(*) FROM enrollments e WHERE e.syllabus_id=s.id) students
@@ -24,8 +27,27 @@ $announcements = $conn->query("SELECT * FROM announcements WHERE target_role IN 
 
 <div style="margin-bottom:20px">
     <h2 style="font-size:22px;font-weight:800">Welcome back, <?= htmlspecialchars(explode(' ',$_SESSION['full_name'])[0]) ?>! 👋</h2>
-    <p style="color:var(--text3)">Here's an overview of your teaching activity.</p>
+    <p style="color:var(--text3)">Here's an overview of your teaching activity at I-Tech College.</p>
 </div>
+
+<?php if ($tNotifs['ungraded_count'] > 0): ?>
+<div class="card" style="margin-bottom:20px;border-left:4px solid var(--info);background:linear-gradient(to right, rgba(53,140,212,0.06), transparent)">
+    <div class="card-body" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+            <span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--info);color:#fff;font-size:14px">
+                <i class="fas fa-inbox"></i>
+            </span>
+            <div>
+                <strong style="font-size:14px;color:var(--text)">Action Required: <?= $tNotifs['ungraded_count'] ?> Student Submissions Pending Review</strong>
+                <div style="font-size:12px;color:var(--text3);margin-top:2px">Review student submissions and assign grades and qualitative feedback.</div>
+            </div>
+        </div>
+        <a href="grades.php?assessment=all" class="btn btn-primary btn-sm">
+            <i class="fas fa-star" style="margin-right:4px"></i> Open Gradebook
+        </a>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="stats-grid">
     <div class="stat-card green"><div class="stat-icon green"><i class="fas fa-file-alt"></i></div>

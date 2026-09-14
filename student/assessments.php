@@ -6,9 +6,14 @@ $stid = $_SESSION['user_id'];
 ensureColumnExists('assessments', 'attachment_path', "varchar(255) DEFAULT NULL AFTER delivery_mode");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyCsrfToken()) {
+        setFlash('error', 'Security token expired or invalid. Please try again.');
+        redirect(BASE_URL.'student/assessments.php');
+    }
+
     // Guard: if the uploaded file exceeded post_max_size, PHP wipes $_POST/$_FILES entirely.
     if (empty($_POST) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
-        setFlash('error', 'The file you tried to submit is too large for this server to accept. Please use a smaller file (try under 8MB) or paste your answer as text instead.');
+        setFlash('error', 'The file you tried to submit is too large for this server to accept. Please use a smaller file (under 25MB) or paste your answer as text instead.');
         redirect(BASE_URL.'student/assessments.php');
     }
 
@@ -22,24 +27,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $filePath = null;
     if (!empty($_FILES['submission_file']['name'])) {
-        $fileErr = $_FILES['submission_file']['error'];
-
-        if ($fileErr !== UPLOAD_ERR_OK) {
-            $uploadErrors = [
-                UPLOAD_ERR_INI_SIZE   => 'Your file is larger than this server allows (upload_max_filesize). Please choose a smaller file.',
-                UPLOAD_ERR_FORM_SIZE  => 'Your file is larger than the form allows. Please choose a smaller file.',
-                UPLOAD_ERR_PARTIAL    => 'Your file was only partially uploaded. Please try again.',
-                UPLOAD_ERR_NO_TMP_DIR => 'Server is missing a temporary folder for uploads. Please contact your teacher/admin.',
-                UPLOAD_ERR_CANT_WRITE => 'Server failed to write your file to disk. Please contact your teacher/admin.',
-                UPLOAD_ERR_EXTENSION  => 'A server extension blocked the file upload.',
-            ];
-            setFlash('error', ($uploadErrors[$fileErr] ?? 'Your file failed to upload (error code '.$fileErr.').') . ' Nothing was submitted yet — please try again, or submit a text answer instead.');
+        $validation = validateUploadedFile($_FILES['submission_file'], ['pdf','doc','docx','ppt','pptx','jpg','jpeg','png','zip'], 26214400);
+        if (!$validation['valid']) {
+            setFlash('error', $validation['error'] . ' Please upload a valid document or image.');
             redirect(BASE_URL.'student/assessments.php');
         }
 
         $destDir = '../uploads/materials/';
         if (!is_dir($destDir)) mkdir($destDir, 0755, true);
-        $ext = pathinfo($_FILES['submission_file']['name'], PATHINFO_EXTENSION);
+        $ext = $validation['extension'];
         $fname = uniqid('sub_') . '.' . $ext;
 
         if (move_uploaded_file($_FILES['submission_file']['tmp_name'], $destDir . $fname)) {
@@ -131,7 +127,9 @@ $tc=['quiz'=>'badge-green','assignment'=>'badge-blue','exam'=>'badge-red','proje
 <div class="modal-overlay" id="submitModal">
 <div class="modal" style="max-width:580px">
 <div class="modal-header"><span class="modal-title" id="submitModalTitle">Submit Assessment</span><button class="modal-close" onclick="closeModal('submitModal')">&times;</button></div>
-<form method="POST" enctype="multipart/form-data" id="submitForm" onsubmit="return validateSubmitForm()"><input type="hidden" name="assessment_id" id="submitAssId">
+<form method="POST" enctype="multipart/form-data" id="submitForm" onsubmit="return validateSubmitForm()">
+<?= csrfField() ?>
+<input type="hidden" name="assessment_id" id="submitAssId">
 <div class="modal-body">
     <div id="submitDesc" style="padding:12px;background:var(--bg);border-radius:8px;margin-bottom:16px"></div>
     <div class="form-group"><label>Your Answer / Response</label><textarea name="text_answer" class="form-control" rows="5" placeholder="Type your answer here..."></textarea></div>

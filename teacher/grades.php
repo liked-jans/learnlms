@@ -5,6 +5,10 @@ $pageTitle = 'Grades';
 $tid = $_SESSION['user_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyCsrfToken()) {
+        setFlash('error', 'Security token expired or invalid. Please try again.');
+        redirect($_SERVER['HTTP_REFERER'] ?? BASE_URL.'teacher/grades.php');
+    }
     $subId=(int)$_POST['submission_id']; $score=(float)$_POST['score']; $feedback=sanitize($_POST['feedback']);
     $stmt=$conn->prepare("UPDATE submissions SET score=?,feedback=?,status='graded',graded_at=NOW() WHERE id=?");
     $stmt->bind_param('dsi',$score,$feedback,$subId); $stmt->execute();
@@ -133,7 +137,9 @@ while($s=$submissions->fetch_assoc()): ?>
 <div class="modal-overlay" id="gradeModal">
 <div class="modal">
 <div class="modal-header"><span class="modal-title">Grade Submission</span><button class="modal-close" onclick="closeModal('gradeModal')">&times;</button></div>
-<form method="POST"><input type="hidden" name="submission_id" id="gradeSubId">
+<form method="POST">
+<?= csrfField() ?>
+<input type="hidden" name="submission_id" id="gradeSubId">
 <div class="modal-body">
     <div id="gradeStudentInfo" style="margin-bottom:16px;padding:12px;background:var(--bg);border-radius:8px"></div>
     <div class="form-group"><label>Score (max: <span id="gradeMaxScore"><?= $assessment['max_score'] ?? 100 ?></span>)</label>
