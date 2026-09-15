@@ -12,10 +12,29 @@ ServerSignature Off
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Determine scheme behind reverse proxy (HTTPS on Railway)
+    RewriteCond %{HTTP:X-Forwarded-Proto} =https [OR]
+    RewriteCond %{HTTPS} =on
+    RewriteRule ^ - [E=MY_SCHEME:https]
+
+    RewriteCond %{HTTP:X-Forwarded-Proto} !^https$ [NC]
+    RewriteCond %{HTTPS} !=on
+    RewriteRule ^ - [E=MY_SCHEME:http]
+
+    # Extract host: strip port if on reverse proxy or Railway
+    RewriteCond %{HTTP:X-Forwarded-Proto} !="" [OR]
+    RewriteCond %{HTTP_HOST} \.railway\.app [NC]
+    RewriteCond %{HTTP_HOST} ^([^:]+)
+    RewriteRule ^ - [E=MY_HOST:%1]
+
+    # Fallback for local development: keep HTTP_HOST as-is
+    RewriteCond %{ENV:MY_HOST} ^$
+    RewriteRule ^ - [E=MY_HOST:%{HTTP_HOST}]
+
     # If someone requests /page.php directly, send them to the
-    # extension-less /page URL instead (keeps the address bar clean).
+    # extension-less /page URL cleanly without internal container port
     RewriteCond %{THE_REQUEST} \s/+(.+?)\.php[\s?] [NC]
-    RewriteRule ^ /%1 [R=301,L]
+    RewriteRule ^ %{ENV:MY_SCHEME}://%{ENV:MY_HOST}/%1 [R=301,L]
 
     # Internally serve /page as /page.php, without changing the URL.
     RewriteCond %{REQUEST_FILENAME} !-d

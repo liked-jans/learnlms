@@ -21,7 +21,7 @@ require_once 'includes/config.php';
                 <span class="text-2xl font-bold font-serif tracking-tight">BlendEd LMS</span>
                 <div class="flex items-center gap-6">
                     <a href="#about" class="font-semibold text-slate-600 hover:text-emerald-900 transition">About System</a>
-                    <a href="login.php" class="bg-emerald-900 text-white px-6 py-2.5 rounded-full font-semibold hover:bg-emerald-800 transition shadow-sm hover:shadow-md transition-all">Login</a>
+                    <a href="login" class="bg-emerald-900 text-white px-6 py-2.5 rounded-full font-semibold hover:bg-emerald-800 transition shadow-sm hover:shadow-md transition-all">Login</a>
                 </div>
             </nav>
 
