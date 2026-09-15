@@ -1,0 +1,11 @@
+﻿{
+  "name": "liked-jans/learnlms",
+  "description": "Blended LMS",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "ext-mysqli": "*",
+    "ext-pdo_mysql": "*",
+    "ext-mbstring": "*"
+  }
+}
