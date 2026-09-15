@@ -50,7 +50,7 @@ if ($conn->connect_error) {
 }
 $conn->set_charset("utf8mb4");
 
-if (session_status() === PHP_SESSION_NONE) {
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
     session_start();
 }
 
