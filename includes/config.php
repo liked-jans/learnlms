@@ -8,11 +8,18 @@
 // define('DB_NAME', 'if0_42325974_learnlms');
 // define('SITE_NAME', 'BlendEd LMS');
 
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'learnlms');
-define('SITE_NAME', 'BlendEd LMS');
+// define('DB_HOST', 'localhost');
+// define('DB_USER', 'root');
+// define('DB_PASS', '');
+// define('DB_NAME', 'learnlms');
+// define('SITE_NAME', 'BlendEd LMS');
+
+define('DB_HOST', getenv('MYSQLHOST') ?: (getenv('DB_HOST') ?: 'localhost'));
+define('DB_USER', getenv('MYSQLUSER') ?: (getenv('DB_USER') ?: 'root'));
+define('DB_PASS', getenv('MYSQLPASSWORD') !== false ? getenv('MYSQLPASSWORD') : (getenv('DB_PASS') !== false ? getenv('DB_PASS') : ''));
+define('DB_NAME', getenv('MYSQLDATABASE') ?: (getenv('DB_NAME') ?: 'learnlms'));
+define('DB_PORT', (int)(getenv('MYSQLPORT') ?: (getenv('DB_PORT') ?: 3306)));
+define('SITE_NAME', getenv('SITE_NAME') ?: 'BlendEd LMS');
 
 // Figure out the site's URL root by comparing the filesystem path of the
 // script that's actually running (SCRIPT_FILENAME) against the filesystem
@@ -37,7 +44,7 @@ $_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERV
 define('BASE_URL', $_scheme . '://' . $_SERVER['HTTP_HOST'] . rtrim($_relPath, '/') . '/');
 define('UPLOAD_PATH', __DIR__ . '/../uploads/');
 
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
