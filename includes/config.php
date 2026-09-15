@@ -75,6 +75,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 $conn->set_charset("utf8mb4");
+$conn->query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
 
 if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
     session_start();
