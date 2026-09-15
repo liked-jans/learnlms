@@ -98,6 +98,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             setFlash('success', 'Assessment linked to topic successfully!');
         }
         redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+
+    } elseif ($action === 'attach_material') {
+        $topicId = (int)$_POST['topic_id'];
+        $sylId = (int)$_POST['syllabus_id'];
+        $title = sanitize($_POST['title']);
+        $type = sanitize($_POST['material_type'] ?? 'module');
+        $desc = sanitize($_POST['description'] ?? '');
+        if ($type !== 'module') {
+            $content = null;
+            $estTime = 5;
+        } else {
+            $estTime = max(1, (int)($_POST['estimated_read_time'] ?? 5));
+            $content = $_POST['content'] ?? '';
+        }
+        $extUrl = sanitize($_POST['external_url'] ?? '');
+        $filePath = null;
+
+        if (isset($_FILES['material_file']) && $_FILES['material_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = '../uploads/materials/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+            $fileInfo = pathinfo($_FILES['material_file']['name']);
+            $ext = strtolower($fileInfo['extension'] ?? '');
+            $allowed = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'zip', 'png', 'jpg'];
+            if (in_array($ext, $allowed) && $_FILES['material_file']['size'] <= 25 * 1024 * 1024) {
+                $fname = 'mat_' . $tid . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                if (move_uploaded_file($_FILES['material_file']['tmp_name'], $uploadDir . $fname)) {
+                    $filePath = $fname;
+                }
+            }
+        }
+
+        $stmtMat = $conn->prepare("
+            INSERT INTO learning_materials (syllabus_id, syllabus_topic_id, teacher_id, title, description, content, estimated_read_time, type, file_path, external_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmtMat->bind_param('iiisssisss', $sylId, $topicId, $tid, $title, $desc, $content, $estTime, $type, $filePath, $extUrl);
+        if ($stmtMat->execute()) {
+            logActivity($tid, "Attached learning material ($title) to topic ID $topicId", 'Curriculum');
+            setFlash('success', 'Learning material attached successfully!');
+        } else {
+            setFlash('error', 'Failed to attach material. Please check inputs and try again.');
+        }
+        redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
     }
 }
 
@@ -113,13 +157,18 @@ $cilosWithAssessments = [];
 if ($activeSyl) {
     $mapSql = "
         SELECT st.*, 
-               GROUP_CONCAT(DISTINCT CONCAT(lm.id, '::', lm.title) SEPARATOR '||') as materials_list,
-               GROUP_CONCAT(DISTINCT CONCAT(a.id, '::', a.title, '::', a.type, '::', a.max_score) SEPARATOR '||') as assessments_data
+               (SELECT GROUP_CONCAT(CONCAT(lm.id, '::', REPLACE(lm.title, '::', ' '), '::', lm.type, '::', COALESCE(lm.estimated_read_time, 5)) SEPARATOR '||') 
+                FROM learning_materials lm WHERE lm.syllabus_topic_id = st.id) as materials_list,
+               (SELECT GROUP_CONCAT(CONCAT(a.id, '::', REPLACE(a.title, '::', ' '), '::', a.type, '::', a.max_score) SEPARATOR '||') 
+                FROM assessments a WHERE a.topic_id = st.id) as assessments_data,
+               (SELECT ROUND(AVG(tp.read_percentage), 1) 
+                FROM topic_progress tp WHERE tp.syllabus_topic_id = st.id) as avg_read_pct,
+               (SELECT COUNT(DISTINCT tp.student_id) 
+                FROM topic_progress tp WHERE tp.syllabus_topic_id = st.id AND tp.read_percentage >= 90) as completed_readers_count,
+               (SELECT COUNT(DISTINCT tp.student_id) 
+                FROM topic_progress tp WHERE tp.syllabus_topic_id = st.id) as total_readers_count
         FROM syllabus_topics st
-        LEFT JOIN learning_materials lm ON lm.syllabus_topic_id = st.id
-        LEFT JOIN assessments a ON a.topic_id = st.id
         WHERE st.syllabus_id = ?
-        GROUP BY st.id
         ORDER BY st.week_number ASC, st.sort_order ASC
     ";
     $stmtMap = $conn->prepare($mapSql);
@@ -191,7 +240,7 @@ if ($activeSyl) {
 }
 
 // Compute Mapping & Gap Progress
-$totalExpectedWeeks = 16;
+$totalExpectedWeeks = !empty($activeSyl['total_weeks']) ? (int)$activeSyl['total_weeks'] : max(count($mappingRows), 16);
 $mappedWeeksCount = count($mappingRows);
 $mappingPercent = $totalExpectedWeeks > 0 ? min(100, round(($mappedWeeksCount / $totalExpectedWeeks) * 100)) : 0;
 
@@ -530,15 +579,6 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
             </a>
         </div>
     </div>
-
-    <!-- Navigation Tabs -->
-    <div class="course-tabs">
-        <a href="syllabi.php" class="course-tab-item">Overview</a>
-        <a href="syllabus_edit.php?id=<?= $activeSyl['id'] ?>" class="course-tab-item">Syllabus</a>
-        <a href="topics.php?syl_id=<?= $activeSyl['id'] ?>" class="course-tab-item active">Syllabus Mapping</a>
-        <a href="students.php" class="course-tab-item">Students</a>
-        <a href="syllabus_edit.php?id=<?= $activeSyl['id'] ?>" class="course-tab-item">Settings</a>
-    </div>
 </div>
 
 <!-- 2. Four Core Metric Cards -->
@@ -584,9 +624,9 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
         </button>
     </div>
     <div>
-        <button type="button" class="btn btn-primary btn-sm" onclick="openModal('addMappingModal')" style="background:#2563eb;border-color:#2563eb">
-            <i class="fas fa-plus" style="margin-right:6px"></i> Add Mapping
-        </button>
+        <a href="syllabus_edit.php?id=<?= $activeSyl['id'] ?>" class="btn btn-primary btn-sm" style="background:#2563eb;border-color:#2563eb">
+            <i class="fas fa-plus"></i> Add Mapping
+        </a>
     </div>
 </div>
 
@@ -648,21 +688,44 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                 </td>
                                 <td>
                                     <?php if (!empty($materials)): ?>
-                                        <ul style="padding-left:14px;margin:0;color:var(--text2);font-size:12px">
-                                        <?php foreach(array_slice($materials, 0, 3) as $m): 
+                                        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px">
+                                        <?php foreach($materials as $m): 
                                             $mParts = explode('::', $m);
+                                            $mId = (int)($mParts[0] ?? 0);
+                                            $mTitle = $mParts[1] ?? 'Material';
+                                            $mType = $mParts[2] ?? 'module';
+                                            $mTime = (int)($mParts[3] ?? 5);
+                                            $icon = ($mType === 'module') ? 'fa-book-reader' : (($mType === 'presentation') ? 'fa-file-powerpoint' : (($mType === 'link') ? 'fa-link' : 'fa-file-alt'));
+                                            $mColor = ($mType === 'module') ? '#2563eb' : '#475569';
                                         ?>
-                                            <li style="margin-bottom:3px">
-                                                <a href="materials.php" style="color:var(--primary);text-decoration:none">
-                                                    <?= htmlspecialchars($mParts[1] ?? 'Document') ?>
+                                            <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+                                                <i class="fas <?= $icon ?>" style="color:<?= $mColor ?>;font-size:11px"></i>
+                                                <a href="<?= BASE_URL ?>student/read_material.php?id=<?= $mId ?>" target="_blank" style="color:var(--text);font-weight:600;text-decoration:none" title="Preview Material">
+                                                    <?= htmlspecialchars($mTitle) ?>
                                                 </a>
-                                            </li>
+                                                <?php if ($mType === 'module'): ?>
+                                                    <span style="font-size:10px;color:var(--text3)">(<?= $mTime ?>m)</span>
+                                                <?php endif; ?>
+                                            </div>
                                         <?php endforeach; ?>
-                                        </ul>
+                                        </div>
+
+                                        <?php if ($row['avg_read_pct'] !== null && (float)$row['avg_read_pct'] > 0): ?>
+                                            <div style="display:inline-flex;align-items:center;gap:5px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-bottom:6px" title="Average student scroll depth across this topic's reading material">
+                                                <i class="fas fa-chart-line"></i> <?= round((float)$row['avg_read_pct']) ?>% Read Rate
+                                                <span style="font-size:10px;font-weight:500;opacity:0.8">(<?= (int)$row['completed_readers_count'] ?> completed)</span>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <div>
+                                            <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="openAttachMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
+                                                <i class="fas fa-plus"></i> Add More
+                                            </button>
+                                        </div>
                                     <?php else: ?>
-                                        <a href="materials.php" class="text-muted" style="font-size:12px;text-decoration:none">
-                                            <i class="fas fa-plus-circle"></i> Attach Material
-                                        </a>
+                                        <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 8px" onclick="openAttachMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
+                                            <i class="fas fa-paperclip"></i> Attach Material
+                                        </button>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -707,7 +770,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                     <?php endif; ?>
                                 </td>
                                 <td style="text-align:center">
-                                    <a href="javascript:void(0)" onclick="viewTopicModal(<?= htmlspecialchars(json_encode($row), ENT_QUOTES) ?>)" class="btn btn-secondary btn-sm" style="padding:4px 8px" title="Quick View">
+                                    <a href="syllabus_edit.php?id=<?= $selectedSylId ?>#topic-<?= $row['id'] ?>" class="btn btn-secondary btn-sm" style="padding:4px 8px" title="View Full Topic Details, Materials & Assessments in Syllabus Editor">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                 </td>
@@ -876,13 +939,23 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                     </div>
 
                     <?php if (!empty($unassessedCilos)): ?>
-                        <div style="margin-top:12px;padding:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;color:#92400e">
-                            <strong style="display:block;margin-bottom:2px"><i class="fas fa-exclamation-triangle"></i> Gaps to Resolve:</strong>
-                            <?= implode(', ', $unassessedCilos) ?> have no assessment task mapped yet.
+                        <div style="margin-top:12px;padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;color:#92400e">
+                            <strong style="display:block;margin-bottom:4px"><i class="fas fa-exclamation-triangle"></i> Gaps to Resolve:</strong>
+                            <div style="margin-bottom:8px">
+                                <?= implode(', ', $unassessedCilos) ?> have no assessment task mapped yet.
+                            </div>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                                <a href="assessments.php?syl=<?= $activeSyl['id'] ?>" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;background:#fff;border-color:#fde68a;color:#92400e">
+                                    <i class="fas fa-plus"></i> Create Quiz for <?= reset($unassessedCilos) ?>
+                                </a>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="switchMappingView('outcome')" style="font-size:11px;padding:3px 8px;background:#fff;border-color:#fde68a;color:#92400e">
+                                    <i class="fas fa-eye"></i> View Outcome Matrix
+                                </button>
+                            </div>
                         </div>
                     <?php else: ?>
-                        <div style="margin-top:12px;padding:10px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;color:#065f46">
-                            <i class="fas fa-check-double"></i> 100% of defined learning outcomes have aligned assessment tasks!
+                        <div style="margin-top:12px;padding:12px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;color:#065f46">
+                            <i class="fas fa-check-double" style="margin-right:4px"></i> 100% of defined learning outcomes have aligned assessment tasks!
                         </div>
                     <?php endif; ?>
                 </div>
@@ -896,14 +969,17 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                 <a href="export_syllabus.php?id=<?= $activeSyl['id'] ?>" target="_blank" class="btn btn-primary" style="background:#0f172a;border-color:#0f172a;justify-content:flex-start;padding:10px 16px">
                     <i class="fas fa-file-pdf" style="width:20px"></i> Print Official Syllabus
                 </a>
-                <button type="button" class="btn btn-primary" onclick="openModal('addMappingModal')" style="background:#2563eb;border-color:#2563eb;justify-content:flex-start;padding:10px 16px">
+                <a href="syllabus_edit.php?id=<?= $activeSyl['id'] ?>" class="btn btn-primary" style="background:#2563eb;border-color:#2563eb;justify-content:flex-start;padding:10px 16px">
                     <i class="fas fa-plus-circle" style="width:20px"></i> Add Topic Mapping
-                </button>
-                <a href="materials.php" class="btn btn-primary" style="background:#059669;border-color:#059669;justify-content:flex-start;padding:10px 16px">
+                </a>
+                <a href="materials.php?syl=<?= $activeSyl['id'] ?>" class="btn btn-primary" style="background:#059669;border-color:#059669;justify-content:flex-start;padding:10px 16px">
                     <i class="fas fa-cloud-upload-alt" style="width:20px"></i> Upload Material
                 </a>
-                <a href="assessments.php" class="btn btn-primary" style="background:#7c3aed;border-color:#7c3aed;justify-content:flex-start;padding:10px 16px">
+                <a href="assessments.php?syl=<?= $activeSyl['id'] ?>" class="btn btn-primary" style="background:#7c3aed;border-color:#7c3aed;justify-content:flex-start;padding:10px 16px">
                     <i class="fas fa-tasks" style="width:20px"></i> Manage Questionnaires
+                </a>
+                <a href="students.php?syl=<?= $activeSyl['id'] ?>" class="btn btn-secondary" style="justify-content:flex-start;padding:10px 16px;border-color:var(--border)">
+                    <i class="fas fa-users" style="width:20px;color:var(--text2)"></i> View Enrolled Students
                 </a>
             </div>
         </div>
@@ -1067,7 +1143,309 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
     </div>
 </div>
 
+<!-- Modal: Attach Learning Material -->
+<div class="modal-overlay" id="attachMatModal">
+    <div class="modal" style="max-width:820px;width:95%">
+        <div class="modal-header">
+            <span class="modal-title" id="attachModalTitle"><i class="fas fa-paperclip"></i> Attach Learning Material</span>
+            <button class="modal-close" onclick="closeModal('attachMatModal')">&times;</button>
+        </div>
+        <form method="POST" enctype="multipart/form-data">
+            <?= csrfField() ?>
+            <input type="hidden" name="action" value="attach_material">
+            <input type="hidden" name="syllabus_id" value="<?= $selectedSylId ?>">
+            <input type="hidden" name="topic_id" id="attachTopicId" value="">
+
+            <div class="modal-body" style="font-size:13px;line-height:1.6">
+                <div id="attachTopicBadge" style="margin-bottom:14px;padding:8px 12px;background:#f1f5f9;border-radius:6px;font-weight:600;color:var(--text2)"></div>
+
+                <div class="form-group">
+                    <label>Material Type *</label>
+                    <select name="material_type" id="matTypeSelect" class="form-control" onchange="toggleMatFields(this.value)">
+                        <option value="module">Full-Context Article / Reading Module (Track Reading %)</option>
+                        <option value="document">File Document (PDF, PPTX, DOCX)</option>
+                        <option value="link">External Web Link / Video Resource</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Material Title *</label>
+                    <input type="text" name="title" id="matTitleInput" class="form-control" required placeholder="e.g., Deep-Dive Lecture Notes: Week 1 Principles">
+                </div>
+
+                <div class="form-group" id="readTimeGroup">
+                    <label>Estimated Read Time (Minutes)</label>
+                    <input type="number" name="estimated_read_time" class="form-control" value="5" min="1" max="120">
+                    <small style="color:var(--text3)">Used to set expectations for student reading sessions.</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Short Description / Overview</label>
+                    <textarea name="description" class="form-control" rows="2" placeholder="Brief context on what this material covers..."></textarea>
+                </div>
+
+                <!-- Full Context Article Body -->
+                <div class="form-group" id="matContentGroup">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <label style="margin:0;font-weight:600">Full-Context Lesson Body (Docs / Rich Text) *</label>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="loadModuleTemplateIntoEditor('attachContentEditor', 'matContentInput')" style="font-size:11px;padding:3px 10px">
+                            <i class="fas fa-magic"></i> Load Example Template
+                        </button>
+                    </div>
+                    <!-- Docs Rich Text Editor -->
+                    <div class="docs-editor-wrap">
+                        <div class="docs-toolbar">
+                            <select class="docs-toolbar-select" onchange="applyBlock(this, 'attachContentEditor', 'matContentInput')">
+                                <option value="p">Normal Text</option>
+                                <option value="h2">Heading 1</option>
+                                <option value="h3">Heading 2</option>
+                                <option value="h4">Heading 3</option>
+                            </select>
+                            <div class="docs-toolbar-sep"></div>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="execCmd('bold', 'attachContentEditor', null, 'matContentInput')" title="Bold (Ctrl+B)"><i class="fas fa-bold"></i></button>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="execCmd('italic', 'attachContentEditor', null, 'matContentInput')" title="Italic (Ctrl+I)"><i class="fas fa-italic"></i></button>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="execCmd('underline', 'attachContentEditor', null, 'matContentInput')" title="Underline (Ctrl+U)"><i class="fas fa-underline"></i></button>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="execCmd('strikeThrough', 'attachContentEditor', null, 'matContentInput')" title="Strikethrough"><i class="fas fa-strikethrough"></i></button>
+                            <div class="docs-toolbar-sep"></div>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="execCmd('insertUnorderedList', 'attachContentEditor', null, 'matContentInput')" title="Bulleted List"><i class="fas fa-list-ul"></i></button>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="execCmd('insertOrderedList', 'attachContentEditor', null, 'matContentInput')" title="Numbered List"><i class="fas fa-list-ol"></i></button>
+                            <div class="docs-toolbar-sep"></div>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="insertCallout('attachContentEditor', 'matContentInput')" title="Insert Callout Note Box"><i class="fas fa-lightbulb" style="color:#d97706;margin-right:4px"></i> Note Box</button>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="insertTable('attachContentEditor', 'matContentInput')" title="Insert Table"><i class="fas fa-table" style="color:#2563eb;margin-right:4px"></i> Table</button>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="insertLink('attachContentEditor', 'matContentInput')" title="Insert Link"><i class="fas fa-link"></i></button>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="execCmd('removeFormat', 'attachContentEditor', null, 'matContentInput')" title="Clear Formatting"><i class="fas fa-eraser"></i></button>
+                            <div class="docs-toolbar-sep"></div>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="execCmd('undo', 'attachContentEditor', null, 'matContentInput')" title="Undo"><i class="fas fa-undo"></i></button>
+                            <button type="button" class="docs-toolbar-btn" onmousedown="event.preventDefault()" onclick="execCmd('redo', 'attachContentEditor', null, 'matContentInput')" title="Redo"><i class="fas fa-redo"></i></button>
+                        </div>
+                        <div class="docs-editor-body" id="attachContentEditor" contenteditable="true" data-placeholder="Type your lesson notes, concepts, and instructions here, or click 'Load Example Template'..."></div>
+                    </div>
+                    <textarea name="content" id="matContentInput" style="display:none"></textarea>
+                    <small style="color:var(--text3)">Format your lesson just like a document. Students read this in the distraction-free reader (scroll depth tracks reading completion 0% ➔ 100%).</small>
+                </div>
+
+                <!-- File Upload -->
+                <div class="form-group" id="matFileGroup" style="display:none">
+                    <label>Attach Companion File (PDF, PPTX, DOCX, ZIP - Max 25MB)</label>
+                    <input type="file" name="material_file" class="form-control" accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.zip,.png,.jpg">
+                </div>
+
+                <!-- External URL -->
+                <div class="form-group" id="matUrlGroup" style="display:none">
+                    <label>External URL / Web Link</label>
+                    <input type="url" name="external_url" class="form-control" placeholder="https://example.com/resource">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('attachMatModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="background:#2563eb;border-color:#2563eb">
+                    <i class="fas fa-check" style="margin-right:6px"></i> Attach Material
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+const LEARNING_MODULE_TEMPLATE = `<h3>1. Overview & Core Purpose</h3>
+<p>Provide a comprehensive executive overview of this week's lesson, introducing the foundational problem statement, key industry applications, and learning objectives.</p>
+
+<div style="background:#f8fafc;border-left:4px solid #3b82f6;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0">
+    <h4 style="margin-top:0;color:#1e40af"><i class="fas fa-lightbulb"></i> Key Concept / Guiding Principle</h4>
+    <p style="margin-bottom:0">Highlight the central architectural or academic takeaway that every student must understand before proceeding.</p>
+</div>
+
+<h3>2. Theoretical Principles & Deep-Dive</h3>
+<p>Break down the core theory and methodology step-by-step:</p>
+<ul>
+    <li><strong>Core Component 1:</strong> Detailed explanation of the first foundational mechanism.</li>
+    <li><strong>Core Component 2:</strong> Detailed explanation of the second foundational mechanism.</li>
+    <li><strong>Core Component 3:</strong> Detailed explanation of the third foundational mechanism.</li>
+</ul>
+
+<h3>3. Comparison Matrix / Practical Framework</h3>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px">
+    <thead>
+        <tr style="background:#f1f5f9;text-align:left">
+            <th style="padding:10px;border:1px solid #cbd5e1">Approach / Technique</th>
+            <th style="padding:10px;border:1px solid #cbd5e1">Key Attributes</th>
+            <th style="padding:10px;border:1px solid #cbd5e1">Best Use Cases</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td style="padding:10px;border:1px solid #cbd5e1;font-weight:bold">Methodology Alpha</td>
+            <td style="padding:10px;border:1px solid #cbd5e1">Lightweight, rapid execution, low overhead.</td>
+            <td style="padding:10px;border:1px solid #cbd5e1">Early discovery and proof-of-concept sprints.</td>
+        </tr>
+        <tr>
+            <td style="padding:10px;border:1px solid #cbd5e1;font-weight:bold">Methodology Beta</td>
+            <td style="padding:10px;border:1px solid #cbd5e1">Rigorous, contract-driven, exhaustive validation.</td>
+            <td style="padding:10px;border:1px solid #cbd5e1">Production compliance and mission-critical systems.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>4. Critical Best Practices & Takeaways</h3>
+<p>Summarize practical rules of thumb, common pitfalls to avoid, and reflection questions for the upcoming assessment.</p>`;
+
+function syncDocsEditor(editorId, textareaId) {
+    const editor = document.getElementById(editorId);
+    const textarea = document.getElementById(textareaId);
+    if (editor && textarea) {
+        textarea.value = editor.innerHTML;
+    }
+}
+
+function execCmd(cmd, editorId, val = null, textareaId = null) {
+    const editor = document.getElementById(editorId);
+    if (!editor) return;
+    editor.focus();
+    document.execCommand(cmd, false, val);
+    if (textareaId) syncDocsEditor(editorId, textareaId);
+}
+
+function applyBlock(selectEl, editorId, textareaId = null) {
+    const tag = selectEl.value;
+    const editor = document.getElementById(editorId);
+    if (!editor) return;
+    editor.focus();
+    try {
+        document.execCommand('formatBlock', false, '<' + tag + '>');
+    } catch (e) {
+        document.execCommand('formatBlock', false, tag);
+    }
+    if (textareaId) syncDocsEditor(editorId, textareaId);
+}
+
+function insertCallout(editorId, textareaId = null) {
+    const editor = document.getElementById(editorId);
+    if (!editor) return;
+    editor.focus();
+    const html = `<div style="background:#f8fafc;border-left:4px solid #2563eb;padding:14px 18px;margin:16px 0;border-radius:0 6px 6px 0"><strong style="color:#1d4ed8"><i class="fas fa-lightbulb"></i> Key Concept / Note:</strong><p style="margin:6px 0 0 0">Enter your key takeaway or important concept here...</p></div><p><br></p>`;
+    document.execCommand('insertHTML', false, html);
+    if (textareaId) syncDocsEditor(editorId, textareaId);
+}
+
+function insertTable(editorId, textareaId = null) {
+    const editor = document.getElementById(editorId);
+    if (!editor) return;
+    editor.focus();
+    const html = `<table style="width:100%;border-collapse:collapse;margin:14px 0">
+        <thead>
+            <tr style="background:#f1f5f9">
+                <th style="border:1px solid #cbd5e1;padding:8px 12px;text-align:left">Approach / Technique</th>
+                <th style="border:1px solid #cbd5e1;padding:8px 12px;text-align:left">Key Attributes</th>
+                <th style="border:1px solid #cbd5e1;padding:8px 12px;text-align:left">Best Use Cases</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border:1px solid #cbd5e1;padding:8px 12px;font-weight:600">Alpha Option</td>
+                <td style="border:1px solid #cbd5e1;padding:8px 12px">Lightweight, rapid execution, low overhead.</td>
+                <td style="border:1px solid #cbd5e1;padding:8px 12px">Initial prototype & discovery phase.</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #cbd5e1;padding:8px 12px;font-weight:600">Beta Option</td>
+                <td style="border:1px solid #cbd5e1;padding:8px 12px">Rigorous, contract-driven, exhaustive validation.</td>
+                <td style="border:1px solid #cbd5e1;padding:8px 12px">Production compliance & mission-critical systems.</td>
+            </tr>
+        </tbody>
+    </table><p><br></p>`;
+    document.execCommand('insertHTML', false, html);
+    if (textareaId) syncDocsEditor(editorId, textareaId);
+}
+
+function insertLink(editorId, textareaId = null) {
+    const editor = document.getElementById(editorId);
+    if (!editor) return;
+    const url = prompt('Enter the link URL (e.g. https://...):', 'https://');
+    if (url && url.trim() !== '' && url !== 'https://') {
+        editor.focus();
+        document.execCommand('createLink', false, url.trim());
+        if (textareaId) syncDocsEditor(editorId, textareaId);
+    }
+}
+
+function loadModuleTemplateIntoEditor(editorId, textareaId) {
+    const editor = document.getElementById(editorId);
+    const textarea = document.getElementById(textareaId);
+    if (!editor) return;
+    const text = editor.innerText.trim();
+    if (text !== '' && !confirm('Replace current editor text with the standard Learning Module example template?')) {
+        return;
+    }
+    editor.innerHTML = LEARNING_MODULE_TEMPLATE;
+    if (textarea) textarea.value = LEARNING_MODULE_TEMPLATE;
+}
+
+function loadModuleTemplate(targetId) {
+    if (targetId === 'matContentInput') {
+        loadModuleTemplateIntoEditor('attachContentEditor', 'matContentInput');
+    } else {
+        const el = document.getElementById(targetId);
+        if (el) {
+            if (el.value.trim() !== '' && !confirm('Replace current text with the standard Learning Module example template?')) return;
+            el.value = LEARNING_MODULE_TEMPLATE;
+        }
+    }
+}
+
+function setupEditorSync(editorId, textareaId) {
+    const editor = document.getElementById(editorId);
+    const textarea = document.getElementById(textareaId);
+    if (!editor || !textarea) return;
+    const sync = () => { textarea.value = editor.innerHTML; };
+    editor.addEventListener('input', sync);
+    editor.addEventListener('blur', sync);
+    editor.addEventListener('keyup', sync);
+    editor.addEventListener('paste', () => { setTimeout(sync, 10); });
+}
+
+function openAttachMaterialModal(topicId, weekNum, topicTitle) {
+    document.getElementById('attachTopicId').value = topicId;
+    document.getElementById('attachTopicBadge').innerHTML = '<i class="fas fa-bookmark" style="color:var(--primary);margin-right:6px"></i> Week ' + weekNum + ': ' + topicTitle;
+    document.getElementById('attachModalTitle').innerHTML = '<i class="fas fa-paperclip"></i> Attach Material &bull; Week ' + weekNum;
+    document.getElementById('matTitleInput').value = 'Week ' + weekNum + ' Module: ' + topicTitle;
+    document.getElementById('matTypeSelect').value = 'module';
+    toggleMatFields('module');
+    
+    const contentInput = document.getElementById('matContentInput');
+    const contentEditor = document.getElementById('attachContentEditor');
+    if (contentEditor) {
+        if (!contentEditor.innerHTML || contentEditor.innerText.trim() === '') {
+            contentEditor.innerHTML = LEARNING_MODULE_TEMPLATE;
+            if (contentInput) contentInput.value = LEARNING_MODULE_TEMPLATE;
+        }
+    }
+    
+    openModal('attachMatModal');
+}
+
+function toggleMatFields(type) {
+    const contentGrp = document.getElementById('matContentGroup');
+    const readTimeGrp = document.getElementById('readTimeGroup');
+    const fileGrp = document.getElementById('matFileGroup');
+    const urlGrp = document.getElementById('matUrlGroup');
+
+    if (type === 'module') {
+        contentGrp.style.display = 'block';
+        readTimeGrp.style.display = 'block';
+        fileGrp.style.display = 'block';
+        urlGrp.style.display = 'none';
+    } else if (type === 'document') {
+        contentGrp.style.display = 'none';
+        readTimeGrp.style.display = 'none';
+        fileGrp.style.display = 'block';
+        urlGrp.style.display = 'none';
+    } else if (type === 'link') {
+        contentGrp.style.display = 'none';
+        readTimeGrp.style.display = 'none';
+        fileGrp.style.display = 'none';
+        urlGrp.style.display = 'block';
+    }
+}
 function switchMappingView(mode) {
     var timelineCont = document.getElementById('timelineViewContainer');
     var outcomeCont = document.getElementById('outcomeViewContainer');
@@ -1114,6 +1492,17 @@ if (new URLSearchParams(window.location.search).get('add') === '1') {
         openModal('addMappingModal');
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupEditorSync('attachContentEditor', 'matContentInput');
+
+    const attachForm = document.querySelector('#attachMatModal form');
+    if (attachForm) {
+        attachForm.addEventListener('submit', function() {
+            syncDocsEditor('attachContentEditor', 'matContentInput');
+        });
+    }
+});
 </script>
 
 <?php endif; ?>

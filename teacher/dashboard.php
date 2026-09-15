@@ -29,6 +29,161 @@ while ($row = $mappingSyllabi->fetch_assoc()) {
 }
 
 $announcements = $conn->query("SELECT * FROM announcements WHERE target_role IN ('all','teacher') ORDER BY created_at DESC LIMIT 5");
+
+// 1. Completed Read Materials
+$recentReadings = $conn->query("
+    SELECT tp.id, tp.student_id, tp.syllabus_topic_id, tp.read_percentage, tp.last_read_at, tp.completed_at,
+           u.full_name, u.email,
+           st.topic_title, st.week_number,
+           s.id as syllabus_id, c.course_code, c.course_name
+    FROM topic_progress tp
+    JOIN users u ON tp.student_id = u.id
+    JOIN syllabus_topics st ON tp.syllabus_topic_id = st.id
+    JOIN syllabi s ON st.syllabus_id = s.id
+    JOIN courses c ON s.course_id = c.id
+    WHERE s.teacher_id = $tid AND (tp.status = 'completed' OR tp.read_percentage >= 90)
+    ORDER BY COALESCE(tp.completed_at, tp.last_read_at) DESC
+    LIMIT 50
+")->fetch_all(MYSQLI_ASSOC);
+
+// 2. Passed / Graded Assessments
+$recentAssessments = $conn->query("
+    SELECT sub.id, sub.student_id, sub.score, sub.feedback, sub.submitted_at, sub.graded_at, sub.status,
+           u.full_name, u.email,
+           a.id as assessment_id, a.title as assessment_title, a.max_score, a.type as assessment_type,
+           s.id as syllabus_id, c.course_code, c.course_name
+    FROM submissions sub
+    JOIN users u ON sub.student_id = u.id
+    JOIN assessments a ON sub.assessment_id = a.id
+    JOIN syllabi s ON a.syllabus_id = s.id
+    JOIN courses c ON s.course_id = c.id
+    WHERE s.teacher_id = $tid AND sub.status = 'graded'
+    ORDER BY COALESCE(sub.graded_at, sub.submitted_at) DESC
+    LIMIT 50
+")->fetch_all(MYSQLI_ASSOC);
+
+// 3. New Enrolled Students
+$recentEnrollments = $conn->query("
+    SELECT e.id, e.student_id, e.enrolled_at, e.status,
+           u.full_name, u.email,
+           s.id as syllabus_id, c.course_code, c.course_name
+    FROM enrollments e
+    JOIN users u ON e.student_id = u.id
+    JOIN syllabi s ON e.syllabus_id = s.id
+    JOIN courses c ON s.course_id = c.id
+    WHERE s.teacher_id = $tid AND e.status = 'enrolled'
+    ORDER BY e.enrolled_at DESC
+    LIMIT 50
+")->fetch_all(MYSQLI_ASSOC);
+
+// 4. Students who completed all topics in a syllabus
+$recentCompletions = $conn->query("
+    SELECT e.student_id, e.syllabus_id, u.full_name, u.email, c.course_code, c.course_name,
+           COUNT(DISTINCT st.id) as total_topics,
+           COUNT(DISTINCT CASE WHEN tp.status = 'completed' OR tp.read_percentage >= 90 THEN st.id END) as completed_topics,
+           MAX(tp.last_read_at) as completed_time
+    FROM enrollments e
+    JOIN syllabi s ON e.syllabus_id = s.id
+    JOIN courses c ON s.course_id = c.id
+    JOIN users u ON e.student_id = u.id
+    JOIN syllabus_topics st ON st.syllabus_id = s.id
+    LEFT JOIN topic_progress tp ON tp.syllabus_topic_id = st.id AND tp.student_id = e.student_id
+    WHERE s.teacher_id = $tid AND e.status = 'enrolled'
+    GROUP BY e.student_id, e.syllabus_id
+    HAVING total_topics > 0 AND completed_topics = total_topics
+    ORDER BY completed_time DESC
+    LIMIT 30
+")->fetch_all(MYSQLI_ASSOC);
+
+// Merge all activity logs
+$activityLogs = [];
+
+foreach ($recentReadings as $r) {
+    $time = !empty($r['completed_at']) ? $r['completed_at'] : $r['last_read_at'];
+    $activityLogs[] = [
+        'type' => 'reading',
+        'badge' => 'badge-green',
+        'badge_text' => 'Read Material Completed',
+        'icon' => 'fa-book-reader',
+        'icon_color' => '#10b981',
+        'bg_tint' => '#ecfdf5',
+        'student_name' => $r['full_name'],
+        'student_email' => $r['email'],
+        'title' => htmlspecialchars($r['full_name']) . ' completed reading material',
+        'description' => '<strong style="color:var(--text);font-size:13px">' . htmlspecialchars($r['full_name']) . '</strong> finished reading <strong>' . htmlspecialchars($r['topic_title']) . '</strong> (Week ' . $r['week_number'] . ') in <span class="badge badge-blue">' . htmlspecialchars($r['course_code']) . '</span> (' . (int)$r['read_percentage'] . '% completed).',
+        'url' => 'students.php?syl=' . $r['syllabus_id'] . '&student_id=' . $r['student_id'] . '#student-' . $r['student_id'],
+        'url_label' => 'View Student Progress',
+        'timestamp' => strtotime($time),
+        'time_str' => date('M d, Y g:i A', strtotime($time)),
+    ];
+}
+
+foreach ($recentAssessments as $a) {
+    $time = !empty($a['graded_at']) ? $a['graded_at'] : $a['submitted_at'];
+    $scoreStr = number_format($a['score'], 1) . ' / ' . number_format($a['max_score'], 1);
+    $pct = $a['max_score'] > 0 ? round(($a['score'] / $a['max_score']) * 100) : 0;
+    $activityLogs[] = [
+        'type' => 'assessment',
+        'badge' => 'badge-blue',
+        'badge_text' => 'Assessment Passed / Graded',
+        'icon' => 'fa-award',
+        'icon_color' => '#3b82f6',
+        'bg_tint' => '#eff6ff',
+        'student_name' => $a['full_name'],
+        'student_email' => $a['email'],
+        'title' => htmlspecialchars($a['full_name']) . ' achieved score in assessment',
+        'description' => '<strong style="color:var(--text);font-size:13px">' . htmlspecialchars($a['full_name']) . '</strong> scored <strong>' . $scoreStr . ' (' . $pct . '%)</strong> in <strong>' . htmlspecialchars($a['assessment_title']) . '</strong> in <span class="badge badge-blue">' . htmlspecialchars($a['course_code']) . '</span>.',
+        'url' => 'grade_submission.php?id=' . $a['id'],
+        'url_label' => 'View Submission & Grades',
+        'timestamp' => strtotime($time),
+        'time_str' => date('M d, Y g:i A', strtotime($time)),
+    ];
+}
+
+foreach ($recentCompletions as $c) {
+    $time = !empty($c['completed_time']) ? $c['completed_time'] : date('Y-m-d H:i:s');
+    $activityLogs[] = [
+        'type' => 'syllabus',
+        'badge' => 'badge-purple',
+        'badge_text' => 'Syllabus Completed (100%)',
+        'icon' => 'fa-graduation-cap',
+        'icon_color' => '#8b5cf6',
+        'bg_tint' => '#f5f3ff',
+        'student_name' => $c['full_name'],
+        'student_email' => $c['email'],
+        'title' => htmlspecialchars($c['full_name']) . ' completed entire syllabus',
+        'description' => '<strong style="color:var(--text);font-size:13px">' . htmlspecialchars($c['full_name']) . '</strong> completed all <strong>' . $c['completed_topics'] . ' / ' . $c['total_topics'] . ' weekly topics</strong> (100% finished) in <span class="badge badge-purple">' . htmlspecialchars($c['course_code']) . ' ' . htmlspecialchars($c['course_name']) . '</span>.',
+        'url' => 'students.php?syl=' . $c['syllabus_id'] . '&student_id=' . $c['student_id'] . '#student-' . $c['student_id'],
+        'url_label' => 'View Student Progress',
+        'timestamp' => strtotime($time),
+        'time_str' => date('M d, Y g:i A', strtotime($time)),
+    ];
+}
+
+foreach ($recentEnrollments as $e) {
+    $time = $e['enrolled_at'];
+    $activityLogs[] = [
+        'type' => 'student',
+        'badge' => 'badge-orange',
+        'badge_text' => 'New Student Enrolled',
+        'icon' => 'fa-user-plus',
+        'icon_color' => '#f59e0b',
+        'bg_tint' => '#fffbeb',
+        'student_name' => $e['full_name'],
+        'student_email' => $e['email'],
+        'title' => htmlspecialchars($e['full_name']) . ' enrolled in course',
+        'description' => '<strong style="color:var(--text);font-size:13px">' . htmlspecialchars($e['full_name']) . '</strong> (' . htmlspecialchars($e['email']) . ') newly enrolled in <span class="badge badge-blue">' . htmlspecialchars($e['course_code']) . '</span> <strong>' . htmlspecialchars($e['course_name']) . '</strong>.',
+        'url' => 'students.php?syl=' . $e['syllabus_id'] . '&student_id=' . $e['student_id'] . '#student-' . $e['student_id'],
+        'url_label' => 'View Student Progress',
+        'timestamp' => strtotime($time),
+        'time_str' => date('M d, Y g:i A', strtotime($time)),
+    ];
+}
+
+// Sort newest first
+usort($activityLogs, function($a, $b) {
+    return $b['timestamp'] <=> $a['timestamp'];
+});
 ?>
 <?php require_once '../includes/header.php'; ?>
 <div class="app-layout">
@@ -175,8 +330,8 @@ $announcements = $conn->query("SELECT * FROM announcements WHERE target_role IN 
                         <a href="topics.php?syl_id=<?= $ms['id'] ?>" class="btn btn-primary btn-sm" style="flex:1;text-align:center;justify-content:center">
                             <i class="fas fa-sitemap" style="margin-right:4px"></i> Manage Mapping
                         </a>
-                        <a href="topics.php?syl_id=<?= $ms['id'] ?>&add=1" class="btn btn-secondary btn-sm" title="Add Mapping Entry">
-                            <i class="fas fa-plus"></i> Add
+                        <a href="syllabus_edit.php?id=<?= $ms['id'] ?>" class="btn btn-secondary btn-sm" title="Add Mapping Entry / Edit Syllabus">
+                            <i class="fas fa-plus"></i> Add Mapping
                         </a>
                     </div>
                 </div>
@@ -230,5 +385,146 @@ $announcements = $conn->query("SELECT * FROM announcements WHERE target_role IN 
     </div>
 </div></div>
 </div>
+
+<!-- REAL-TIME COURSE ACTIVITY & AUDIT LOGS (PLACED AT THE VERY BOTTOM) -->
+<div class="card" style="margin-top:24px;border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,0.03)">
+    <div class="card-header" style="background:#fff;border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+            <span class="card-title" style="font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:rgba(16,185,129,0.12);color:var(--success);font-size:14px">
+                    <i class="fas fa-history"></i>
+                </span>
+                Live Course Activity & Audit Logs
+            </span>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px">
+                Real-time tracking of reading material completions, passed assessments, syllabus completions, and student enrollments.
+            </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button type="button" class="btn btn-secondary btn-sm act-filter-btn active" data-filter="all" onclick="filterActivityLogs('all', this)">All (<?= count($activityLogs) ?>)</button>
+            <button type="button" class="btn btn-secondary btn-sm act-filter-btn" data-filter="reading" onclick="filterActivityLogs('reading', this)"><i class="fas fa-book-reader" style="color:var(--success);margin-right:3px"></i> Readings (<?= count($recentReadings) ?>)</button>
+            <button type="button" class="btn btn-secondary btn-sm act-filter-btn" data-filter="assessment" onclick="filterActivityLogs('assessment', this)"><i class="fas fa-award" style="color:var(--primary);margin-right:3px"></i> Passed (<?= count($recentAssessments) ?>)</button>
+            <button type="button" class="btn btn-secondary btn-sm act-filter-btn" data-filter="syllabus" onclick="filterActivityLogs('syllabus', this)"><i class="fas fa-graduation-cap" style="color:#8b5cf6;margin-right:3px"></i> Syllabi Done (<?= count($recentCompletions) ?>)</button>
+            <button type="button" class="btn btn-secondary btn-sm act-filter-btn" data-filter="student" onclick="filterActivityLogs('student', this)"><i class="fas fa-user-plus" style="color:var(--warning);margin-right:3px"></i> New Students (<?= count($recentEnrollments) ?>)</button>
+        </div>
+    </div>
+    <div class="card-body" style="padding:0">
+        <?php if (empty($activityLogs)): ?>
+            <div style="padding:36px;text-align:center;color:var(--text3)">
+                <i class="fas fa-inbox" style="font-size:36px;margin-bottom:10px;display:block;opacity:0.4"></i>
+                No course activities recorded yet. When students complete reading modules, pass assessments, or enroll, they will appear here.
+            </div>
+        <?php else: ?>
+            <div id="activityLogsList">
+                <?php foreach ($activityLogs as $idx => $log): ?>
+                <div class="activity-log-row" data-type="<?= $log['type'] ?>" data-index="<?= $idx ?>" style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;transition:background 0.15s ease">
+                    <div style="display:flex;align-items:center;gap:14px;min-width:0">
+                        <div style="width:40px;height:40px;border-radius:10px;background:<?= $log['bg_tint'] ?>;color:<?= $log['icon_color'] ?>;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">
+                            <i class="fas <?= $log['icon'] ?>"></i>
+                        </div>
+                        <div style="min-width:0">
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                                <span class="badge <?= $log['badge'] ?>" style="font-size:10px;padding:2px 8px;font-weight:700">
+                                    <?= $log['badge_text'] ?>
+                                </span>
+                                <span style="font-size:11px;color:var(--text3)">
+                                    <i class="far fa-clock" style="margin-right:3px"></i> <?= $log['time_str'] ?>
+                                </span>
+                            </div>
+                            <div style="font-size:13px;color:var(--text);margin-top:4px;line-height:1.4">
+                                <?= $log['description'] ?>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="flex-shrink:0">
+                        <a href="<?= $log['url'] ?>" class="btn btn-secondary btn-sm" style="font-size:12px;display:inline-flex;align-items:center;gap:5px" title="<?= htmlspecialchars($log['url_label']) ?>">
+                            <span><?= htmlspecialchars($log['url_label']) ?></span>
+                            <i class="fas fa-arrow-right" style="font-size:10px"></i>
+                        </a>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Load More Controls (Limits initial display to 10) -->
+            <div id="loadMoreLogsContainer" style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);background:#fafbfc;flex-wrap:wrap;gap:10px">
+                <span id="logCounterText" style="font-size:12px;color:var(--text3);font-weight:600">Showing 10 of <?= count($activityLogs) ?> activities</span>
+                <button type="button" class="btn btn-secondary btn-sm" id="loadMoreLogsBtn" onclick="loadMoreLogs()" style="font-weight:600;display:inline-flex;align-items:center;gap:6px">
+                    <span>Load More Activities</span> <i class="fas fa-chevron-down" style="font-size:10px"></i>
+                </button>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<script>
+var visibleLogsCount = 10;
+
+function updateLogVisibility() {
+    var activeFilterBtn = document.querySelector('.act-filter-btn.active');
+    var activeTab = activeFilterBtn ? activeFilterBtn.getAttribute('data-filter') : 'all';
+    var rows = document.querySelectorAll('.activity-log-row');
+    
+    var matchedCount = 0;
+    var visibleCount = 0;
+    
+    rows.forEach(function(row) {
+        var rowType = row.getAttribute('data-type');
+        var matches = (activeTab === 'all' || rowType === activeTab);
+        if (matches) {
+            matchedCount++;
+            if (matchedCount <= visibleLogsCount) {
+                row.style.display = 'flex';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    var counter = document.getElementById('logCounterText');
+    var loadBtn = document.getElementById('loadMoreLogsBtn');
+    var container = document.getElementById('loadMoreLogsContainer');
+    
+    if (counter) {
+        counter.textContent = 'Showing ' + visibleCount + ' of ' + matchedCount + ' activities';
+    }
+    if (container) {
+        if (matchedCount > visibleLogsCount) {
+            container.style.display = 'flex';
+            if (loadBtn) loadBtn.style.display = 'inline-flex';
+        } else if (matchedCount > 0) {
+            container.style.display = 'flex';
+            if (loadBtn) loadBtn.style.display = 'none';
+        } else {
+            container.style.display = 'none';
+        }
+    }
+}
+
+function loadMoreLogs() {
+    visibleLogsCount += 10;
+    updateLogVisibility();
+}
+
+function filterActivityLogs(type, btn) {
+    document.querySelectorAll('.act-filter-btn').forEach(function(b) {
+        b.classList.remove('active');
+        b.style.background = '';
+        b.style.color = '';
+    });
+    btn.classList.add('active');
+    btn.style.background = 'var(--primary, #2563eb)';
+    btn.style.color = '#fff';
+    
+    visibleLogsCount = 10;
+    updateLogVisibility();
+}
+
+document.addEventListener('DOMContentLoaded', updateLogVisibility);
+updateLogVisibility();
+</script>
 </div></div></div>
 </body></html>

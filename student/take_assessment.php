@@ -119,11 +119,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // 4. Update topic progress if linked
     if (!empty($assessment['topic_id'])) {
         $topId = (int)$assessment['topic_id'];
-        $conn->query("
-            INSERT INTO topic_progress (student_id, topic_id, is_completed, completed_at)
-            VALUES ($stid, $topId, 1, NOW())
-            ON DUPLICATE KEY UPDATE is_completed = 1, completed_at = NOW()
+        $stmtProg = $conn->prepare("
+            INSERT INTO topic_progress (student_id, syllabus_topic_id, status, completed_at, last_read_at)
+            VALUES (?, ?, 'completed', NOW(), NOW())
+            ON DUPLICATE KEY UPDATE
+                status = IF(read_percentage >= 90 OR status = 'completed', 'completed', 'in_progress'),
+                completed_at = COALESCE(completed_at, NOW()),
+                last_read_at = NOW()
         ");
+        $stmtProg->bind_param('ii', $stid, $topId);
+        $stmtProg->execute();
+        $stmtProg->close();
     }
 
     if ($hasEssay) {
@@ -228,9 +234,6 @@ if ($submission) {
                     </h3>
                     <div style="font-size:13px;color:var(--text2)">
                         Submitted on <?= date('M d, Y g:i A', strtotime($submission['submitted_at'])) ?>
-                        <?php if ($submission['is_auto_graded']): ?>
-                            &bull; <span style="color:#059669;font-weight:600"><i class="fas fa-robot"></i> Instant Auto-Graded</span>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>

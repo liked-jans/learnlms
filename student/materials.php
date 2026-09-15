@@ -124,7 +124,8 @@ if ($sylFilter) {
 
 $sql = "SELECT m.*, c.course_code, st.topic_title, a.id as assessment_id,
                a.due_date as assessment_due_date, a.is_closed as assessment_is_closed,
-               sub.id as submission_id
+               sub.id as submission_id,
+               (SELECT COALESCE(tp.read_percentage, 0.00) FROM topic_progress tp WHERE tp.syllabus_topic_id = m.syllabus_topic_id AND tp.student_id = $stid LIMIT 1) as read_percentage
         FROM learning_materials m
         LEFT JOIN syllabi s ON m.syllabus_id = s.id
         LEFT JOIN courses c ON s.course_id = c.id
@@ -145,8 +146,8 @@ $materialsStmt->bind_param($types, ...$params);
 $materialsStmt->execute();
 $materials = $materialsStmt->get_result();
 
-$icons = ['document'=>'fa-file-pdf','video'=>'fa-video','link'=>'fa-link','presentation'=>'fa-file-powerpoint','quiz'=>'fa-question-circle','activity'=>'fa-pencil-alt'];
-$colors = ['document'=>'badge-red','video'=>'badge-blue','link'=>'badge-gray','presentation'=>'badge-orange','quiz'=>'badge-green','activity'=>'badge-purple'];
+$icons = ['document'=>'fa-file-pdf','video'=>'fa-video','link'=>'fa-link','presentation'=>'fa-file-powerpoint','quiz'=>'fa-question-circle','activity'=>'fa-pencil-alt','module'=>'fa-book-reader'];
+$colors = ['document'=>'badge-red','video'=>'badge-blue','link'=>'badge-gray','presentation'=>'badge-orange','quiz'=>'badge-green','activity'=>'badge-purple','module'=>'badge-blue'];
 ?>
 <?php require_once '../includes/header.php'; ?>
 <div class="app-layout">
@@ -175,19 +176,28 @@ $colors = ['document'=>'badge-red','video'=>'badge-blue','link'=>'badge-gray','p
     $fileUrl = $m['file_path'] ? BASE_URL . 'uploads/materials/' . $m['file_path'] : '';
 ?>
 <div class="card"><div class="card-body">
-    <span class="badge <?= $colors[$m['type']] ?? 'badge-gray' ?>"><i class="fas <?= $icons[$m['type']] ?? 'fa-file' ?>"></i> <?= ucfirst($m['type']) ?></span>
-    <h4 style="margin:10px 0"><?= htmlspecialchars($m['title']) ?></h4>
-    <p style="font-size:12px; color:var(--text3); margin-bottom: 12px;"><?= htmlspecialchars($m['course_code'] ?? '') ?></p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <span class="badge <?= $colors[$m['type']] ?? 'badge-gray' ?>"><i class="fas <?= $icons[$m['type']] ?? 'fa-file' ?>"></i> <?= ucfirst($m['type']) ?></span>
+        <?php if ($m['type'] !== 'activity'): ?>
+            <span class="badge <?= (float)$m['read_percentage'] >= 90 ? 'badge-green' : ((float)$m['read_percentage'] > 0 ? 'badge-blue' : 'badge-gray') ?>" style="font-size:11px">
+                <i class="fas <?= (float)$m['read_percentage'] >= 90 ? 'fa-check-circle' : 'fa-book-reader' ?>"></i> <?= (float)$m['read_percentage'] > 0 ? round((float)$m['read_percentage']).'% Read' : 'Not Started' ?>
+            </span>
+        <?php endif; ?>
+    </div>
+    <h4 style="margin:8px 0"><?= htmlspecialchars($m['title']) ?></h4>
+    <p style="font-size:12px; color:var(--text3); margin-bottom: 12px;"><?= htmlspecialchars($m['course_code'] ?? '') ?><?= !empty($m['topic_title']) ? ' &bull; '.htmlspecialchars($m['topic_title']) : '' ?></p>
 
     <div style="display:flex; flex-wrap: wrap; gap:6px">
-        <?php if($m['file_path']): ?>
-        <button type="button" class="btn btn-primary btn-sm"
-            onclick="openViewModal('<?= htmlspecialchars($fileUrl, ENT_QUOTES) ?>', '<?= $ext ?>', '<?= htmlspecialchars(addslashes($m['title']), ENT_QUOTES) ?>')">
-            <i class="fas fa-eye"></i> View
-        </button>
+        <?php if($m['type'] !== 'activity'): ?>
+        <a href="<?= BASE_URL ?>student/read_material.php?id=<?= $m['id'] ?>" class="btn btn-primary btn-sm">
+            <i class="fas <?= $m['type']==='video' ? 'fa-play-circle' : ($m['type']==='module' ? 'fa-book-reader' : ($m['type']==='link' ? 'fa-external-link-alt' : 'fa-book-open')) ?>"></i>
+            <?= $m['type']==='video' ? 'Watch Lesson' : ($m['type']==='module' ? 'Read Module' : ($m['type']==='link' ? 'Open Resource' : 'Study Material')) ?>
+        </a>
         <?php endif; ?>
-        <?php if($m['external_url']): ?>
-        <a href="<?= htmlspecialchars($m['external_url']) ?>" target="_blank" class="btn btn-secondary btn-sm"><i class="fas fa-external-link-alt"></i> Open Link</a>
+        <?php if($m['file_path']): ?>
+        <a href="<?= htmlspecialchars($fileUrl) ?>" download class="btn btn-secondary btn-sm" title="Download File">
+            <i class="fas fa-download"></i>
+        </a>
         <?php endif; ?>
         <?php if($m['type'] === 'activity'):
             $manuallyClosed = (int)($m['assessment_is_closed'] ?? 0) === 1;

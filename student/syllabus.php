@@ -34,19 +34,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['success'=>false, 'error'=>'Not allowed.']); exit;
     }
 
-    $stmt = $conn->prepare("INSERT INTO topic_progress (student_id,syllabus_topic_id,status,completed_at,notes)
-                             VALUES (?,?,?, IF(?='completed',NOW(),NULL), ?)
+    $isCompleted = ($status === 'completed');
+    $readPct = $isCompleted ? 100.00 : 0.00;
+
+    $stmt = $conn->prepare("INSERT INTO topic_progress (student_id, syllabus_topic_id, status, read_percentage, completed_at, notes, last_read_at)
+                             VALUES (?, ?, ?, ?, IF(? = 'completed', NOW(), NULL), ?, NOW())
                              ON DUPLICATE KEY UPDATE
-                                status=VALUES(status),
-                                completed_at=IF(VALUES(status)='completed',NOW(),NULL),
-                                notes=VALUES(notes)");
-    $stmt->bind_param('iisss', $stid, $topicId, $status, $status, $notes);
+                                status = VALUES(status),
+                                read_percentage = VALUES(read_percentage),
+                                completed_at = IF(VALUES(status) = 'completed', NOW(), NULL),
+                                notes = VALUES(notes),
+                                last_read_at = NOW()");
+    $stmt->bind_param('iisdss', $stid, $topicId, $status, $readPct, $status, $notes);
     $stmt->execute();
     echo json_encode(['success'=>true]); exit;
 }
 
 if ($sylId) {
-    $topics=$conn->query("SELECT st.*,COALESCE(tp.status,'not_started') as progress_status, tp.notes as progress_notes FROM syllabus_topics st LEFT JOIN topic_progress tp ON tp.syllabus_topic_id=st.id AND tp.student_id=$stid WHERE st.syllabus_id=$sylId ORDER BY st.week_number,st.sort_order");
+    $topics=$conn->query("SELECT st.*,COALESCE(tp.status,'not_started') as progress_status, tp.notes as progress_notes, COALESCE(tp.read_percentage, 0) as read_percentage FROM syllabus_topics st LEFT JOIN topic_progress tp ON tp.syllabus_topic_id=st.id AND tp.student_id=$stid WHERE st.syllabus_id=$sylId ORDER BY st.week_number,st.sort_order");
     $topicsArr=[]; while($t=$topics->fetch_assoc()) $topicsArr[]=$t;
     $materials=$conn->query("SELECT * FROM learning_materials WHERE syllabus_id=$sylId ORDER BY created_at DESC");
     $materialsByTopic=[];
@@ -120,6 +125,11 @@ $isInProgress = $t['progress_status'] === 'in_progress';
             <span class="week-num">Week <?= $t['week_number'] ?></span>
             <div style="display:flex;align-items:center;gap:8px">
                 <span class="mode-pill mode-<?= $modeClass ?>"><?= ucfirst($t['delivery_mode']) ?></span>
+                <?php if((float)$t['read_percentage'] > 0): ?>
+                <span class="badge <?= (float)$t['read_percentage'] >= 90 ? 'badge-green' : 'badge-blue' ?>" title="Lesson Reading Depth">
+                    <i class="fas fa-book-reader"></i> <?= round((float)$t['read_percentage']) ?>% Read
+                </span>
+                <?php endif; ?>
                 <?php if($isDone): ?>
                 <span class="badge badge-green"><i class="fas fa-check"></i> Done</span>
                 <?php elseif($isInProgress): ?>
@@ -159,15 +169,33 @@ $isInProgress = $t['progress_status'] === 'in_progress';
         </div>
         <?php if(!empty($materialsByTopic[(int)$t['id']])): ?>
         <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.5);border-radius:8px">
-            <strong style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)"><i class="fas fa-paperclip"></i> Lesson Files</strong>
+            <strong style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)"><i class="fas fa-book-open"></i> Learning Materials & Modules</strong>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
                 <?php foreach($materialsByTopic[(int)$t['id']] as $m):
-                    $fileUrl = $m['file_path'] ? BASE_URL.'uploads/materials/'.rawurlencode($m['file_path']) : $m['external_url'];
+                    $mType = $m['type'] ?? 'module';
+                    $icon = 'fa-book-reader';
+                    $prefix = 'Read';
+                    if ($mType === 'video') {
+                        $icon = 'fa-play-circle';
+                        $prefix = 'Watch';
+                    } elseif ($mType === 'document') {
+                        $ext = strtolower(pathinfo($m['file_path'] ?? '', PATHINFO_EXTENSION));
+                        $icon = ($ext === 'pdf') ? 'fa-file-pdf' : (($ext === 'docx' || $ext === 'doc') ? 'fa-file-word' : 'fa-file-alt');
+                        $prefix = 'Study';
+                    } elseif ($mType === 'presentation') {
+                        $icon = 'fa-file-powerpoint';
+                        $prefix = 'Slides';
+                    } elseif ($mType === 'link') {
+                        $icon = 'fa-external-link-alt';
+                        $prefix = 'Resource';
+                    }
                 ?>
-                <a class="btn btn-secondary btn-sm" href="<?= htmlspecialchars($fileUrl) ?>" target="_blank">
-                    <i class="fas <?= $m['type']==='presentation'?'fa-file-powerpoint':($m['type']==='link'?'fa-link':'fa-file-alt') ?>"></i>
-                    <?= htmlspecialchars($m['title']) ?>
-                </a>
+                    <a class="btn btn-primary btn-sm" href="<?= BASE_URL ?>student/read_material.php?id=<?= $m['id'] ?>" style="display:inline-flex;align-items:center;gap:6px">
+                        <i class="fas <?= $icon ?>"></i> <?= $prefix ?>: <?= htmlspecialchars($m['title']) ?>
+                        <?php if (!empty($m['estimated_read_time']) && $mType === 'module'): ?>
+                            <small style="opacity:0.85">(<?= (int)$m['estimated_read_time'] ?> min)</small>
+                        <?php endif; ?>
+                    </a>
                 <?php endforeach; ?>
             </div>
         </div>

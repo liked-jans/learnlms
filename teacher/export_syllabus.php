@@ -1,27 +1,42 @@
 <?php
 require_once '../includes/config.php';
-requireRole('teacher');
+requireRole(['teacher', 'admin']);
+$userRole = $_SESSION['role'] ?? '';
 $tid = $_SESSION['user_id'];
 $sylId = (int)($_GET['id'] ?? ($_GET['syl_id'] ?? 0));
 
 // Fetch syllabus, course, and teacher
-$stmt = $conn->prepare("
-    SELECT s.*, c.course_code, c.course_name, c.units, c.description as course_desc, c.prerequisite, c.year_level,
-           u.full_name as teacher_name, u.email as teacher_email,
-           d.name as department_name
-    FROM syllabi s
-    JOIN courses c ON s.course_id = c.id
-    JOIN users u ON s.teacher_id = u.id
-    LEFT JOIN departments d ON c.department_id = d.id
-    WHERE s.id = ? AND s.teacher_id = ?
-");
-$stmt->bind_param('ii', $sylId, $tid);
+if ($userRole === 'admin') {
+    $stmt = $conn->prepare("
+        SELECT s.*, c.course_code, c.course_name, c.units, c.description as course_desc, c.prerequisite, c.year_level,
+               u.full_name as teacher_name, u.email as teacher_email,
+               d.name as department_name
+        FROM syllabi s
+        JOIN courses c ON s.course_id = c.id
+        JOIN users u ON s.teacher_id = u.id
+        LEFT JOIN departments d ON c.department_id = d.id
+        WHERE s.id = ?
+    ");
+    $stmt->bind_param('i', $sylId);
+} else {
+    $stmt = $conn->prepare("
+        SELECT s.*, c.course_code, c.course_name, c.units, c.description as course_desc, c.prerequisite, c.year_level,
+               u.full_name as teacher_name, u.email as teacher_email,
+               d.name as department_name
+        FROM syllabi s
+        JOIN courses c ON s.course_id = c.id
+        JOIN users u ON s.teacher_id = u.id
+        LEFT JOIN departments d ON c.department_id = d.id
+        WHERE s.id = ? AND s.teacher_id = ?
+    ");
+    $stmt->bind_param('ii', $sylId, $tid);
+}
 $stmt->execute();
 $syllabus = $stmt->get_result()->fetch_assoc();
 
 if (!$syllabus) {
     setFlash('error', 'Syllabus not found or access denied.');
-    redirect(BASE_URL . 'teacher/topics.php');
+    redirect($userRole === 'admin' ? BASE_URL . 'admin/syllabi.php' : BASE_URL . 'teacher/topics.php');
 }
 
 // Fetch topics with materials and assessments
@@ -293,9 +308,18 @@ $pageTitle = 'Official OBE Syllabus - ' . $syllabus['course_code'];
 <!-- Screen Top Control Bar -->
 <div class="screen-actions-bar">
     <div style="display:flex;align-items:center;gap:12px">
-        <a href="topics.php?syl_id=<?= $syllabus['id'] ?>" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Back to Syllabus Mapping
-        </a>
+        <?php if ($userRole === 'admin'): ?>
+            <a href="<?= BASE_URL ?>admin/syllabi.php" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to All Syllabi
+            </a>
+            <a href="<?= BASE_URL ?>admin/syllabi_view.php?id=<?= $syllabus['id'] ?>" class="btn-back" style="background:#475569">
+                <i class="fas fa-eye"></i> View Details
+            </a>
+        <?php else: ?>
+            <a href="topics.php?syl_id=<?= $syllabus['id'] ?>" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Syllabus Mapping
+            </a>
+        <?php endif; ?>
         <span style="font-size:13px;opacity:0.8">CHED CMO 25, s. 2015 Compliant OBE Syllabus</span>
     </div>
     <div style="display:flex;align-items:center;gap:12px">

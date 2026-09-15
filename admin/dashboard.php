@@ -100,6 +100,28 @@ $recentUsers = $conn->query("SELECT * FROM users WHERE role != 'admin' ORDER BY 
     </div>
 </div>
 
+<!-- Progress Monitoring Hub Banner -->
+<div class="card" style="margin-bottom:20px;background:linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(16,185,129,0.05) 100%);border:1px solid rgba(37,99,235,0.2)">
+    <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+        <div style="display:flex;align-items:center;gap:16px">
+            <div style="width:48px;height:48px;border-radius:12px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div>
+                <h3 style="margin:0;font-size:16px;font-weight:700">Academic Progress & Syllabus Command Center</h3>
+                <p style="margin:4px 0 0;font-size:13px;color:var(--text3)">
+                    Monitor teachers' syllabi alignment, weekly OBE topics, learning resources, and real-time student cohort completion rates.
+                </p>
+            </div>
+        </div>
+        <div style="display:flex;gap:10px">
+            <a href="monitoring.php" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px">
+                <i class="fas fa-desktop"></i> Open Progress Monitor
+            </a>
+        </div>
+    </div>
+</div>
+
 <div class="dash-grid">
 <div>
 <div class="card">
@@ -120,7 +142,12 @@ $recentUsers = $conn->query("SELECT * FROM users WHERE role != 'admin' ORDER BY 
                 $sc = ['draft'=>'badge-gray','published'=>'badge-green','archived'=>'badge-orange'];
                 echo '<span class="badge '.$sc[$row['status']].'">'.ucfirst($row['status']).'</span>';
             ?></td>
-            <td><a href="syllabi_view.php?id=<?= $row['id'] ?>" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i></a></td>
+            <td>
+                <div style="display:flex;gap:4px">
+                    <a href="syllabi_view.php?id=<?= $row['id'] ?>" class="btn btn-secondary btn-sm" title="View Syllabus"><i class="fas fa-eye"></i></a>
+                    <a href="monitoring.php?syl=<?= $row['id'] ?>" class="btn btn-secondary btn-sm" title="Monitor Student Cohort"><i class="fas fa-chart-line"></i></a>
+                </div>
+            </td>
         </tr>
         <?php endwhile; ?>
         </tbody>

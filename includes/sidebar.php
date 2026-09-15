@@ -67,6 +67,8 @@ $baseUrl = BASE_URL;
             <i class="fas fa-book"></i><span>Courses</span></a>
         <a href="<?= $baseUrl ?>admin/syllabi.php" class="nav-item <?= strpos($_SERVER['PHP_SELF'],'admin/syllabi') !== false ? 'active' : '' ?>">
             <i class="fas fa-file-alt"></i><span>Syllabi</span></a>
+        <a href="<?= $baseUrl ?>admin/monitoring.php" class="nav-item <?= strpos($_SERVER['PHP_SELF'],'monitoring') !== false ? 'active' : '' ?>">
+            <i class="fas fa-chart-line"></i><span>Progress Monitor</span></a>
         <a href="<?= $baseUrl ?>admin/announcements.php" class="nav-item <?= strpos($_SERVER['PHP_SELF'],'announcements') !== false ? 'active' : '' ?>">
             <i class="fas fa-bullhorn"></i><span>Announcements</span></a>
         <a href="<?= $baseUrl ?>admin/reports.php" class="nav-item <?= strpos($_SERVER['PHP_SELF'],'reports') !== false ? 'active' : '' ?>">

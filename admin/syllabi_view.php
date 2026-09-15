@@ -12,7 +12,28 @@ $topicsArr = []; while($t=$topics->fetch_assoc()) $topicsArr[] = $t;
 $completedCount = count(array_filter($topicsArr, fn($t) => !empty($t['is_completed'])));
 $totalTopics = count($topicsArr);
 $topicsPct = $totalTopics > 0 ? round($completedCount / $totalTopics * 100) : 0;
-$students = $conn->query("SELECT u.full_name,u.email,e.enrolled_at,e.status FROM enrollments e JOIN users u ON e.student_id=u.id WHERE e.syllabus_id=$id");
+$totalAssessments = (int)$conn->query("SELECT COUNT(*) FROM assessments WHERE syllabus_id=$id")->fetch_row()[0];
+
+$studentsQuery = $conn->query("
+    SELECT u.id as student_id, u.full_name, u.email, e.enrolled_at, e.status,
+           COALESCE(COUNT(DISTINCT CASE WHEN tp.read_percentage >= 90 OR tp.status = 'completed' THEN tp.syllabus_topic_id END), 0) as completed_topics,
+           COALESCE(SUM(tp.read_percentage), 0) as total_read_pct_sum,
+           COALESCE(COUNT(DISTINCT sub.assessment_id), 0) as submitted_assessments,
+           COALESCE(AVG(sub.score), 0) as avg_score
+    FROM enrollments e
+    JOIN users u ON e.student_id=u.id
+    LEFT JOIN topic_progress tp ON tp.student_id=u.id AND tp.syllabus_topic_id IN (SELECT id FROM syllabus_topics WHERE syllabus_id=$id)
+    LEFT JOIN submissions sub ON sub.student_id=u.id AND sub.assessment_id IN (SELECT id FROM assessments WHERE syllabus_id=$id)
+    WHERE e.syllabus_id=$id
+    GROUP BY u.id, u.full_name, u.email, e.enrolled_at, e.status
+    ORDER BY u.full_name ASC
+");
+$studentsList = [];
+while ($st = $studentsQuery->fetch_assoc()) {
+    $denom = ($totalTopics + $totalAssessments);
+    $st['overall_pct'] = $denom > 0 ? min(100, max(0, round(($st['total_read_pct_sum'] + ($st['submitted_assessments'] * 100)) / $denom, 1))) : 0;
+    $studentsList[] = $st;
+}
 ?>
 <?php require_once '../includes/header.php'; ?>
 <div class="app-layout">
@@ -26,14 +47,22 @@ $students = $conn->query("SELECT u.full_name,u.email,e.enrolled_at,e.status FROM
         <h2><?= htmlspecialchars($syl['course_code']) ?>: <?= htmlspecialchars($syl['course_name']) ?></h2>
         <p><?= htmlspecialchars($syl['dept_name']) ?> | <?= $syl['academic_year'] ?> - <?= $syl['semester'] ?> Semester</p>
     </div>
-    <?php $sc=['draft'=>'badge-gray','published'=>'badge-green','archived'=>'badge-orange']; ?>
-    <span class="badge <?= $sc[$syl['status']] ?>" style="font-size:14px;padding:8px 16px"><?= ucfirst($syl['status']) ?></span>
+    <div style="display:flex;align-items:center;gap:10px">
+        <a href="<?= BASE_URL ?>teacher/export_syllabus.php?id=<?= $id ?>" target="_blank" class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px">
+            <i class="fas fa-print"></i> Print / Export Syllabus
+        </a>
+        <a href="monitoring.php?syl=<?= $id ?>" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px">
+            <i class="fas fa-chart-line"></i> Monitor Cohort
+        </a>
+        <?php $sc=['draft'=>'badge-gray','published'=>'badge-green','archived'=>'badge-orange']; ?>
+        <span class="badge <?= $sc[$syl['status']] ?>" style="font-size:14px;padding:8px 16px"><?= ucfirst($syl['status']) ?></span>
+    </div>
 </div>
 
 <div class="tab-nav">
     <button class="tab-btn active" onclick="showTab('overview',this)">Overview</button>
     <button class="tab-btn" onclick="showTab('topics',this)">Topics & Mapping (<?= $totalTopics ?> topics<?= $totalTopics ? ', '.$completedCount.'/'.$totalTopics.' done' : '' ?>)</button>
-    <button class="tab-btn" onclick="showTab('students',this)">Enrolled Students</button>
+    <button class="tab-btn" onclick="showTab('students',this)">Enrolled Students & Progress (<?= count($studentsList) ?>)</button>
 </div>
 
 <div class="tab-pane active" id="overview">
@@ -120,19 +149,81 @@ $isDone = !empty($t['is_completed']);
 </div>
 
 <div class="tab-pane" id="students">
-<div class="card"><div class="table-wrap"><table>
-<thead><tr><th>Student Name</th><th>Email</th><th>Enrolled Date</th><th>Status</th></tr></thead>
-<tbody>
-<?php while($s=$students->fetch_assoc()): ?>
-<tr>
-    <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar-sm"><?= strtoupper(substr($s['full_name'],0,2)) ?></div><?= htmlspecialchars($s['full_name']) ?></div></td>
-    <td><?= htmlspecialchars($s['email']) ?></td>
-    <td><?= date('M d, Y', strtotime($s['enrolled_at'])) ?></td>
-    <td><span class="badge <?= $s['status']==='enrolled'?'badge-green':'badge-gray' ?>"><?= $s['status'] ?></span></td>
-</tr>
-<?php endwhile; ?>
-</tbody>
-</table></div></div>
+<div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+            <span class="card-title"><i class="fas fa-user-graduate" style="color:var(--primary);margin-right:8px"></i>Enrolled Students & Progress</span>
+            <span class="text-muted" style="font-size:12px;margin-left:8px">(Total: <?= count($studentsList) ?>)</span>
+        </div>
+        <a href="monitoring.php?tab=students&syl=<?= $id ?>" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:6px">
+            <i class="fas fa-chart-line"></i> Full Progress Monitor
+        </a>
+    </div>
+    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Enrolled Date</th>
+                <th>Reading Depth</th>
+                <th>Assessments</th>
+                <th>Overall Progress</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php if (empty($studentsList)): ?>
+            <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">No students enrolled in this syllabus yet.</td></tr>
+        <?php else: ?>
+            <?php foreach($studentsList as $s): ?>
+            <tr>
+                <td>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div class="avatar-sm"><?= strtoupper(substr($s['full_name'],0,2)) ?></div>
+                        <div>
+                            <div style="font-weight:600;font-size:14px"><?= htmlspecialchars($s['full_name']) ?></div>
+                            <div style="font-size:12px;color:var(--text3)"><?= htmlspecialchars($s['email']) ?></div>
+                        </div>
+                    </div>
+                </td>
+                <td><?= date('M d, Y', strtotime($s['enrolled_at'])) ?></td>
+                <td>
+                    <span class="badge <?= $s['completed_topics'] >= $totalTopics && $totalTopics > 0 ? 'badge-green' : ($s['completed_topics'] > 0 ? 'badge-blue' : 'badge-gray') ?>">
+                        <?= $s['completed_topics'] ?> / <?= $totalTopics ?> topics
+                    </span>
+                </td>
+                <td>
+                    <span class="badge <?= $s['submitted_assessments'] >= $totalAssessments && $totalAssessments > 0 ? 'badge-green' : ($s['submitted_assessments'] > 0 ? 'badge-orange' : 'badge-gray') ?>">
+                        <?= $s['submitted_assessments'] ?> / <?= $totalAssessments ?> submitted
+                    </span>
+                    <?php if ($s['submitted_assessments'] > 0 && $s['avg_score'] > 0): ?>
+                        <small class="text-muted" style="display:block;margin-top:2px">Avg: <?= round($s['avg_score'], 1) ?> pts</small>
+                    <?php endif; ?>
+                </td>
+                <td style="min-width:140px">
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <div class="progress-bar" style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+                            <div style="height:100%;width:<?= $s['overall_pct'] ?>%;background:<?= $s['overall_pct'] >= 100 ? '#10b981' : ($s['overall_pct'] >= 50 ? 'var(--primary)' : '#f59e0b') ?>;border-radius:4px"></div>
+                        </div>
+                        <span style="font-weight:700;font-size:12px;width:38px;text-align:right"><?= $s['overall_pct'] ?>%</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge <?= $s['status']==='enrolled'?'badge-green':'badge-gray' ?>"><?= ucfirst($s['status']) ?></span>
+                </td>
+                <td>
+                    <a href="monitoring.php?tab=students&syl=<?= $id ?>&search=<?= urlencode($s['full_name']) ?>" class="btn btn-secondary btn-sm" title="Inspect Student Progress">
+                        <i class="fas fa-search-plus"></i>
+                    </a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        <?php endif; ?>
+        </tbody>
+    </table>
+    </div>
+</div>
 </div>
 
 </div></div></div>

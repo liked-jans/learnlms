@@ -175,11 +175,11 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
                             </span>
                         <?php elseif ($sa['is_correct']): ?>
                             <span class="badge badge-green" style="font-size:11px;font-weight:700">
-                                <i class="fas fa-check"></i> Auto-Graded Correct (+<?= number_format($sa['points_awarded'], 1) ?> pts)
+                                <i class="fas fa-check"></i> Correct (+<?= number_format($sa['points_awarded'], 1) ?> pts)
                             </span>
                         <?php else: ?>
                             <span class="badge badge-red" style="font-size:11px;font-weight:700">
-                                <i class="fas fa-times"></i> Auto-Graded Incorrect (0 pts)
+                                <i class="fas fa-times"></i> Incorrect (0 pts)
                             </span>
                         <?php endif; ?>
                     </div>

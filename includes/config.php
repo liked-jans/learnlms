@@ -77,7 +77,7 @@ function requireLogin() {
 function requireRole($roles) {
     requireLogin();
     if (!in_array($_SESSION['role'] ?? '', (array)$roles)) {
-        header("Location: " . BASE_URL . "dashboard.php");
+        header("Location: " . getRoleDashboard($_SESSION['role'] ?? ''));
         exit();
     }
 }

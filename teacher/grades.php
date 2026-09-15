@@ -28,14 +28,18 @@ if ($isAll) {
 
     while ($a = $assessmentsList->fetch_assoc()) {
         $stmt2 = $conn->prepare("
-            SELECT sub.*, u.full_name, u.email,
-                   (SELECT COUNT(*) FROM submission_answers sa JOIN assessment_questions aq ON sa.question_id=aq.id WHERE sa.submission_id=sub.id AND aq.question_type='essay' AND sa.is_correct IS NULL) as pending_essays
-            FROM submissions sub 
-            JOIN users u ON sub.student_id = u.id 
-            WHERE sub.assessment_id = ? 
-            ORDER BY u.full_name ASC
+            SELECT e.student_id, u.full_name, u.email,
+                   sub.id as submission_id, sub.score, sub.status as sub_status,
+                   sub.submitted_at, sub.is_auto_graded,
+                   (SELECT COUNT(*) FROM submission_answers sa JOIN assessment_questions aq ON sa.question_id=aq.id 
+                    WHERE sa.submission_id=sub.id AND aq.question_type='essay' AND sa.is_correct IS NULL) as pending_essays
+            FROM enrollments e
+            JOIN users u ON e.student_id = u.id
+            LEFT JOIN submissions sub ON sub.assessment_id = ? AND sub.student_id = e.student_id
+            WHERE e.syllabus_id = ? AND e.status = 'enrolled'
+            ORDER BY (sub.id IS NULL) ASC, u.full_name ASC
         ");
-        $stmt2->bind_param('i', $a['id']);
+        $stmt2->bind_param('ii', $a['id'], $a['syllabus_id']);
         $stmt2->execute();
         $res = $stmt2->get_result();
         $rows = [];
@@ -57,16 +61,22 @@ if ($isAll) {
     if (!$assessment) redirect(BASE_URL . 'teacher/grades.php');
 
     $stmt2 = $conn->prepare("
-        SELECT sub.*, u.full_name, u.email,
-               (SELECT COUNT(*) FROM submission_answers sa JOIN assessment_questions aq ON sa.question_id=aq.id WHERE sa.submission_id=sub.id AND aq.question_type='essay' AND sa.is_correct IS NULL) as pending_essays
-        FROM submissions sub 
-        JOIN users u ON sub.student_id = u.id 
-        WHERE sub.assessment_id = ? 
-        ORDER BY u.full_name ASC
+        SELECT e.student_id, u.full_name, u.email,
+               sub.id as submission_id, sub.score, sub.status as sub_status,
+               sub.submitted_at, sub.is_auto_graded,
+               (SELECT COUNT(*) FROM submission_answers sa JOIN assessment_questions aq ON sa.question_id=aq.id 
+                WHERE sa.submission_id=sub.id AND aq.question_type='essay' AND sa.is_correct IS NULL) as pending_essays
+        FROM enrollments e
+        JOIN users u ON e.student_id = u.id
+        LEFT JOIN submissions sub ON sub.assessment_id = ? AND sub.student_id = e.student_id
+        WHERE e.syllabus_id = ? AND e.status = 'enrolled'
+        ORDER BY (sub.id IS NULL) ASC, u.full_name ASC
     ");
-    $stmt2->bind_param('i', $assFilterInt);
+    $stmt2->bind_param('ii', $assFilterInt, $assessment['syllabus_id']);
     $stmt2->execute();
-    $submissions = $stmt2->get_result();
+    $res = $stmt2->get_result();
+    $submissions = [];
+    while ($r = $res->fetch_assoc()) { $submissions[] = $r; }
 }
 
 $stmtMy = $conn->prepare("
@@ -91,7 +101,7 @@ $myAssessments = $stmtMy->get_result();
 <div class="page-header">
     <div class="page-header-left">
         <h2>Grades & Evaluations</h2>
-        <p style="color:var(--text3);font-size:13px;margin:2px 0 0">Review auto-graded objective scores, evaluate essay responses, and publish student grades.</p>
+        <p style="color:var(--text3);font-size:13px;margin:2px 0 0">Review objective scores, evaluate essay responses, and publish student grades.</p>
     </div>
 </div>
 
@@ -111,17 +121,40 @@ $myAssessments = $stmtMy->get_result();
     </div>
 </div>
 
-<?php if (!$isAll && $assFilterInt && isset($assessment)): ?>
+<?php if (!$isAll && $assFilterInt && isset($assessment)): 
+    $subCount = count(array_filter($submissions, fn($s) => !empty($s['submission_id'])));
+    $notTakenCount = count($submissions) - $subCount;
+    $isPastDue = !empty($assessment['due_date']) && (strtotime($assessment['due_date']) < time());
+?>
 <div class="card" style="margin-bottom:20px">
     <div class="card-body">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
             <div>
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
                     <span class="badge badge-blue"><?= htmlspecialchars($assessment['course_code']) ?></span>
                     <span class="badge badge-purple" style="text-transform:capitalize"><?= $assessment['type'] ?></span>
                     <span class="badge badge-gray"><?= $assessment['q_count'] ?> Questions</span>
+                    <span class="badge badge-gray" style="background:#f1f5f9;color:#334155;font-weight:600">
+                        <i class="fas fa-users" style="margin-right:4px"></i> <?= count($submissions) ?> Enrolled
+                    </span>
+                    <span class="badge badge-green" style="font-weight:600">
+                        <i class="fas fa-check-circle" style="margin-right:4px"></i> <?= $subCount ?> Submitted
+                    </span>
+                    <?php if ($notTakenCount > 0): ?>
+                        <span class="badge badge-gray" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-weight:600">
+                            <i class="fas fa-clock" style="margin-right:4px"></i> <?= $notTakenCount ?> Not Taken
+                        </span>
+                    <?php endif; ?>
                 </div>
                 <h3 style="font-size:18px;font-weight:700;color:var(--text);margin:0"><?= htmlspecialchars($assessment['title']) ?></h3>
+                <?php if (!empty($assessment['due_date'])): ?>
+                    <div style="font-size:12px;color:var(--text3);margin-top:4px">
+                        <i class="far fa-calendar-alt"></i> Due: <?= date('M d, Y g:i A', strtotime($assessment['due_date'])) ?>
+                        <?php if ($isPastDue): ?>
+                            <span class="badge badge-orange" style="font-size:10px;margin-left:6px">Deadline Passed</span>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
             <div style="display:flex;gap:10px">
                 <a href="assessment_questions.php?id=<?= $assessment['id'] ?>" class="btn btn-secondary btn-sm">
@@ -143,60 +176,113 @@ $myAssessments = $stmtMy->get_result();
     </tr>
 </thead>
 <tbody>
-<?php if ($submissions->num_rows === 0): ?>
-    <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">No submissions received for this assessment yet.</td></tr>
-<?php else: while($s = $submissions->fetch_assoc()): ?>
+<?php if (empty($submissions)): ?>
+    <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text3)">No students enrolled in this syllabus yet.</td></tr>
+<?php else: foreach ($submissions as $s): ?>
 <tr>
     <td>
         <strong><?= htmlspecialchars($s['full_name']) ?></strong><br>
         <small class="text-muted"><?= htmlspecialchars($s['email']) ?></small>
     </td>
-    <td><?= date('M d, Y g:i A', strtotime($s['submitted_at'])) ?></td>
     <td>
-        <strong style="color:var(--primary);font-size:15px"><?= number_format($s['score'] ?? 0, 1) ?></strong>
-        <span style="color:var(--text3);font-size:12px">/ <?= number_format($assessment['max_score'], 1) ?> pts</span>
-    </td>
-    <td>
-        <span class="badge <?= $s['status']==='graded' ? 'badge-green' : 'badge-orange' ?>" style="text-transform:capitalize">
-            <?= $s['status'] ?>
-        </span>
-        <?php if (!empty($s['is_auto_graded'])): ?>
-            <br><span class="badge badge-gray" style="font-size:10px;margin-top:3px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0">
-                <i class="fas fa-robot"></i> Auto-Graded
-            </span>
-        <?php endif; ?>
-        <?php if (!empty($s['pending_essays'])): ?>
-            <br><span class="badge badge-orange" style="font-size:10px;margin-top:3px">
-                <i class="fas fa-pencil-alt"></i> <?= $s['pending_essays'] ?> Essay<?= $s['pending_essays'] > 1 ? 's' : '' ?> to Grade
-            </span>
+        <?php if (!empty($s['submission_id'])): ?>
+            <?= date('M d, Y g:i A', strtotime($s['submitted_at'])) ?>
+        <?php else: ?>
+            <span class="text-muted" style="font-size:13px;font-style:italic">Not submitted yet</span>
         <?php endif; ?>
     </td>
     <td>
-        <a href="grade_submission.php?id=<?= $s['id'] ?>" class="btn <?= !empty($s['pending_essays']) ? 'btn-primary' : 'btn-secondary' ?> btn-sm" style="display:inline-flex;align-items:center;gap:6px">
-            <i class="fas <?= !empty($s['pending_essays']) ? 'fa-pencil-alt' : 'fa-edit' ?>"></i> 
-            <?= !empty($s['pending_essays']) ? 'Grade Essays' : ($s['status']==='graded' ? 'Review / Override' : 'Grade') ?>
-        </a>
+        <?php if (!empty($s['submission_id'])): ?>
+            <strong style="color:var(--primary);font-size:15px"><?= number_format($s['score'] ?? 0, 1) ?></strong>
+            <span style="color:var(--text3);font-size:12px">/ <?= number_format($assessment['max_score'], 1) ?> pts</span>
+        <?php else: ?>
+            <span style="color:var(--text3);font-size:14px;font-weight:600">&mdash;</span>
+            <span style="color:var(--text3);font-size:12px">/ <?= number_format($assessment['max_score'], 1) ?> pts</span>
+        <?php endif; ?>
+    </td>
+    <td>
+        <?php if (!empty($s['submission_id'])): ?>
+            <span class="badge <?= $s['sub_status']==='graded' ? 'badge-green' : 'badge-orange' ?>" style="text-transform:capitalize">
+                <?= htmlspecialchars($s['sub_status']) ?>
+            </span>
+            <?php if (!empty($s['is_auto_graded'])): ?>
+                <br><span class="badge badge-gray" style="font-size:10px;margin-top:3px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0">
+                    <i class="fas fa-robot"></i> Auto-Graded
+                </span>
+            <?php endif; ?>
+            <?php if (!empty($s['pending_essays'])): ?>
+                <br><span class="badge badge-orange" style="font-size:10px;margin-top:3px">
+                    <i class="fas fa-pencil-alt"></i> <?= $s['pending_essays'] ?> Essay<?= $s['pending_essays'] > 1 ? 's' : '' ?> to Grade
+                </span>
+            <?php endif; ?>
+        <?php else: ?>
+            <?php if ($isPastDue): ?>
+                <span class="badge badge-gray" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca">
+                    <i class="fas fa-exclamation-circle"></i> Missing / Past Due
+                </span>
+            <?php else: ?>
+                <span class="badge badge-gray" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca">
+                    <i class="fas fa-clock"></i> Not Taken
+                </span>
+            <?php endif; ?>
+        <?php endif; ?>
+    </td>
+    <td>
+        <?php if (!empty($s['submission_id'])): ?>
+            <a href="grade_submission.php?id=<?= $s['submission_id'] ?>" class="btn <?= !empty($s['pending_essays']) ? 'btn-primary' : 'btn-secondary' ?> btn-sm" style="display:inline-flex;align-items:center;gap:6px">
+                <i class="fas <?= !empty($s['pending_essays']) ? 'fa-pencil-alt' : 'fa-edit' ?>"></i> 
+                <?= !empty($s['pending_essays']) ? 'Grade Essays' : ($s['sub_status']==='graded' ? 'Review / Override' : 'Grade') ?>
+            </a>
+        <?php else: ?>
+            <button class="btn btn-secondary btn-sm" disabled style="opacity:0.55;cursor:not-allowed;display:inline-flex;align-items:center;gap:6px">
+                <i class="fas fa-hourglass-start"></i> Awaiting
+            </button>
+        <?php endif; ?>
     </td>
 </tr>
-<?php endwhile; endif; ?>
+<?php endforeach; endif; ?>
 </tbody>
 </table></div></div>
 
 <?php elseif ($isAll): ?>
 <div class="card" style="margin-bottom:20px"><div class="card-body">
-    <p style="font-size:13px;color:var(--text3);margin:0">Displaying all submissions across your assessments.</p>
+    <p style="font-size:13px;color:var(--text3);margin:0">Displaying all enrolled student rosters and submissions across your assessments.</p>
 </div></div>
 
 <?php foreach ($allData as $block):
     $a = $block['assessment'];
     $rows = $block['submissions'];
+    $subCount = count(array_filter($rows, fn($r) => !empty($r['submission_id'])));
+    $notTakenCount = count($rows) - $subCount;
+    $isPastDue = !empty($a['due_date']) && (strtotime($a['due_date']) < time());
 ?>
 <div class="card" style="margin-bottom:12px"><div class="card-body" style="padding:14px 20px">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <div>
-            <span class="badge badge-blue"><?= htmlspecialchars($a['course_code']) ?></span>
-            <strong style="margin-left:8px"><?= htmlspecialchars($a['title']) ?></strong>
-            <span style="font-size:12px;color:var(--text3);margin-left:8px">(Max: <?= number_format($a['max_score'], 1) ?> pts &bull; <?= $a['q_count'] ?> Questions)</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span class="badge badge-blue"><?= htmlspecialchars($a['course_code']) ?></span>
+                <strong><?= htmlspecialchars($a['title']) ?></strong>
+                <span style="font-size:12px;color:var(--text3)">(Max: <?= number_format($a['max_score'], 1) ?> pts &bull; <?= $a['q_count'] ?> Questions)</span>
+                <span class="badge badge-gray" style="font-size:11px;background:#f1f5f9;color:#334155;font-weight:600">
+                    <i class="fas fa-users"></i> <?= count($rows) ?> Enrolled
+                </span>
+                <span class="badge badge-green" style="font-size:11px;font-weight:600">
+                    <i class="fas fa-check-circle"></i> <?= $subCount ?> Submitted
+                </span>
+                <?php if ($notTakenCount > 0): ?>
+                    <span class="badge badge-gray" style="font-size:11px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-weight:600">
+                        <i class="fas fa-clock"></i> <?= $notTakenCount ?> Not Taken
+                    </span>
+                <?php endif; ?>
+            </div>
+            <?php if (!empty($a['due_date'])): ?>
+                <div style="font-size:12px;color:var(--text3);margin-top:3px">
+                    <i class="far fa-calendar-alt"></i> Due: <?= date('M d, Y g:i A', strtotime($a['due_date'])) ?>
+                    <?php if ($isPastDue): ?>
+                        <span class="badge badge-orange" style="font-size:10px;margin-left:4px">Deadline Passed</span>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
         <a href="grades.php?assessment=<?= $a['id'] ?>" class="btn btn-secondary btn-sm">Filter This</a>
     </div>
@@ -214,38 +300,67 @@ $myAssessments = $stmtMy->get_result();
 </thead>
 <tbody>
 <?php if (empty($rows)): ?>
-    <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">No submissions yet.</td></tr>
+    <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">No students enrolled in this syllabus yet.</td></tr>
 <?php else: foreach ($rows as $s): ?>
 <tr>
     <td>
         <strong><?= htmlspecialchars($s['full_name']) ?></strong><br>
         <small class="text-muted"><?= htmlspecialchars($s['email']) ?></small>
     </td>
-    <td><?= date('M d, Y g:i A', strtotime($s['submitted_at'])) ?></td>
     <td>
-        <strong style="color:var(--primary);font-size:15px"><?= number_format($s['score'] ?? 0, 1) ?></strong>
-        <span style="color:var(--text3);font-size:12px">/ <?= number_format($a['max_score'], 1) ?> pts</span>
-    </td>
-    <td>
-        <span class="badge <?= $s['status']==='graded' ? 'badge-green' : 'badge-orange' ?>" style="text-transform:capitalize">
-            <?= $s['status'] ?>
-        </span>
-        <?php if (!empty($s['is_auto_graded'])): ?>
-            <br><span class="badge badge-gray" style="font-size:10px;margin-top:3px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0">
-                <i class="fas fa-robot"></i> Auto-Graded
-            </span>
-        <?php endif; ?>
-        <?php if (!empty($s['pending_essays'])): ?>
-            <br><span class="badge badge-orange" style="font-size:10px;margin-top:3px">
-                <i class="fas fa-pencil-alt"></i> <?= $s['pending_essays'] ?> Essay<?= $s['pending_essays'] > 1 ? 's' : '' ?> to Grade
-            </span>
+        <?php if (!empty($s['submission_id'])): ?>
+            <?= date('M d, Y g:i A', strtotime($s['submitted_at'])) ?>
+        <?php else: ?>
+            <span class="text-muted" style="font-size:13px;font-style:italic">Not submitted yet</span>
         <?php endif; ?>
     </td>
     <td>
-        <a href="grade_submission.php?id=<?= $s['id'] ?>" class="btn <?= !empty($s['pending_essays']) ? 'btn-primary' : 'btn-secondary' ?> btn-sm" style="display:inline-flex;align-items:center;gap:6px">
-            <i class="fas <?= !empty($s['pending_essays']) ? 'fa-pencil-alt' : 'fa-edit' ?>"></i> 
-            <?= !empty($s['pending_essays']) ? 'Grade Essays' : ($s['status']==='graded' ? 'Review / Override' : 'Grade') ?>
-        </a>
+        <?php if (!empty($s['submission_id'])): ?>
+            <strong style="color:var(--primary);font-size:15px"><?= number_format($s['score'] ?? 0, 1) ?></strong>
+            <span style="color:var(--text3);font-size:12px">/ <?= number_format($a['max_score'], 1) ?> pts</span>
+        <?php else: ?>
+            <span style="color:var(--text3);font-size:14px;font-weight:600">&mdash;</span>
+            <span style="color:var(--text3);font-size:12px">/ <?= number_format($a['max_score'], 1) ?> pts</span>
+        <?php endif; ?>
+    </td>
+    <td>
+        <?php if (!empty($s['submission_id'])): ?>
+            <span class="badge <?= $s['sub_status']==='graded' ? 'badge-green' : 'badge-orange' ?>" style="text-transform:capitalize">
+                <?= htmlspecialchars($s['sub_status']) ?>
+            </span>
+            <?php if (!empty($s['is_auto_graded'])): ?>
+                <br><span class="badge badge-gray" style="font-size:10px;margin-top:3px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0">
+                    <i class="fas fa-robot"></i> Auto-Graded
+                </span>
+            <?php endif; ?>
+            <?php if (!empty($s['pending_essays'])): ?>
+                <br><span class="badge badge-orange" style="font-size:10px;margin-top:3px">
+                    <i class="fas fa-pencil-alt"></i> <?= $s['pending_essays'] ?> Essay<?= $s['pending_essays'] > 1 ? 's' : '' ?> to Grade
+                </span>
+            <?php endif; ?>
+        <?php else: ?>
+            <?php if ($isPastDue): ?>
+                <span class="badge badge-gray" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca">
+                    <i class="fas fa-exclamation-circle"></i> Missing / Past Due
+                </span>
+            <?php else: ?>
+                <span class="badge badge-gray" style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca">
+                    <i class="fas fa-clock"></i> Not Taken
+                </span>
+            <?php endif; ?>
+        <?php endif; ?>
+    </td>
+    <td>
+        <?php if (!empty($s['submission_id'])): ?>
+            <a href="grade_submission.php?id=<?= $s['submission_id'] ?>" class="btn <?= !empty($s['pending_essays']) ? 'btn-primary' : 'btn-secondary' ?> btn-sm" style="display:inline-flex;align-items:center;gap:6px">
+                <i class="fas <?= !empty($s['pending_essays']) ? 'fa-pencil-alt' : 'fa-edit' ?>"></i> 
+                <?= !empty($s['pending_essays']) ? 'Grade Essays' : ($s['sub_status']==='graded' ? 'Review / Override' : 'Grade') ?>
+            </a>
+        <?php else: ?>
+            <button class="btn btn-secondary btn-sm" disabled style="opacity:0.55;cursor:not-allowed;display:inline-flex;align-items:center;gap:6px">
+                <i class="fas fa-hourglass-start"></i> Awaiting
+            </button>
+        <?php endif; ?>
     </td>
 </tr>
 <?php endforeach; endif; ?>

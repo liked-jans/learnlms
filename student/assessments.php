@@ -110,9 +110,6 @@ $tc = ['quiz'=>'badge-green','assignment'=>'badge-blue','exam'=>'badge-red','pro
         if ($a['sub_id']) {
             $ss = ['submitted'=>'badge-orange','graded'=>'badge-green','late'=>'badge-red'];
             echo '<span class="badge '.($ss[$a['sub_status']]??'badge-gray').'">'.ucfirst($a['sub_status']).'</span>';
-            if (!empty($a['is_auto_graded'])) {
-                echo '<br><small style="color:#059669;font-weight:600"><i class="fas fa-robot"></i> Auto-Graded</small>';
-            }
         } elseif ($isOverdue) {
             echo '<span class="badge badge-red">Overdue</span>';
         } else {

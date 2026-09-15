@@ -49,41 +49,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Keep the previously-uploaded syllabus document unless a new one is chosen
-        $syllabusFile = $_POST['existing_syllabus_file'] ?? null;
-        $syllabusFile = $syllabusFile !== '' ? $syllabusFile : null;
-
-        if (!empty($_FILES['syllabus_file']['name'])) {
-            $docExt = strtolower(pathinfo($_FILES['syllabus_file']['name'], PATHINFO_EXTENSION));
-            $allowedDocExt = ['pdf','doc','docx'];
-            if (in_array($docExt, $allowedDocExt) && $_FILES['syllabus_file']['error'] === UPLOAD_ERR_OK) {
-                $docDestDir = '../uploads/syllabus_docs/';
-                if (!is_dir($docDestDir)) mkdir($docDestDir, 0755, true);
-                $docNewName = 'sylfile_' . uniqid() . '.' . $docExt;
-                if (move_uploaded_file($_FILES['syllabus_file']['tmp_name'], $docDestDir . $docNewName)) {
-                    $syllabusFile = $docNewName;
-                } else {
-                    setFlash('error', 'Syllabus document upload failed, but the rest of the syllabus was saved.');
-                }
-            } else {
-                setFlash('error', 'Invalid syllabus document type. Allowed: pdf, doc, docx.');
-            }
-        }
-
         if ($action === 'add') {
             $stmt = $conn->prepare("INSERT INTO syllabi
-                (course_id, teacher_id, academic_year, semester, course_description, course_outcomes, status, image_path, external_url, syllabus_file)
-                VALUES (?,?,?,?,?,?,?,?,?,?)");
-            $stmt->bind_param('iissssssss', $courseId, $teacherId, $academicYear, $semester, $description, $outcomes, $status, $imagePath, $externalUrl, $syllabusFile);
+                (course_id, teacher_id, academic_year, semester, course_description, course_outcomes, status, image_path, external_url)
+                VALUES (?,?,?,?,?,?,?,?,?)");
+            $stmt->bind_param('iisssssss', $courseId, $teacherId, $academicYear, $semester, $description, $outcomes, $status, $imagePath, $externalUrl);
             $stmt->execute();
             setFlash('success', 'Syllabus created.');
         } else {
             $id = (int)$_POST['id'];
             $stmt = $conn->prepare("UPDATE syllabi SET
                 course_id=?, teacher_id=?, academic_year=?, semester=?, course_description=?,
-                course_outcomes=?, status=?, image_path=?, external_url=?, syllabus_file=?
+                course_outcomes=?, status=?, image_path=?, external_url=?
                 WHERE id=?");
-            $stmt->bind_param('iissssssssi', $courseId, $teacherId, $academicYear, $semester, $description, $outcomes, $status, $imagePath, $externalUrl, $syllabusFile, $id);
+            $stmt->bind_param('iisssssssi', $courseId, $teacherId, $academicYear, $semester, $description, $outcomes, $status, $imagePath, $externalUrl, $id);
             $stmt->execute();
             setFlash('success', 'Syllabus updated.');
         }
@@ -111,13 +90,14 @@ $teachersArr = []; while($t = $teachers->fetch_assoc()) $teachersArr[] = $t;
 <div class="page-content">
 <div class="page-header">
     <div class="page-header-left"><h2>All Syllabi</h2><p>View and manage all course syllabi</p></div>
-    <div class="page-header-right">
+    <div class="page-header-right" style="display:flex;gap:10px">
+        <a href="monitoring.php" class="btn btn-secondary"><i class="fas fa-chart-line"></i> Progress Monitor</a>
         <button class="btn btn-primary" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Syllabus</button>
     </div>
 </div>
 <div class="card">
 <div class="table-wrap"><table>
-<thead><tr><th>Image</th><th>Course</th><th>Teacher</th><th>Year/Semester</th><th>Topics</th><th>Progress</th><th>Students</th><th>Document</th><th>Status</th><th>Actions</th></tr></thead>
+<thead><tr><th>Image</th><th>Course</th><th>Teacher</th><th>Year/Semester</th><th>Topics</th><th>Progress</th><th>Students</th><th>Status</th><th>Actions</th></tr></thead>
 <tbody>
 <?php while($s=$syllabi->fetch_assoc()):
     $topicCount = (int)$s['topic_count'];
@@ -154,18 +134,13 @@ $teachersArr = []; while($t = $teachers->fetch_assoc()) $teachersArr[] = $t;
         <?php endif; ?>
     </td>
     <td><span class="badge badge-green"><?= $s['student_count'] ?> students</span></td>
-    <td>
-        <?php if (!empty($s['syllabus_file'] ?? null)): ?>
-            <a href="<?= BASE_URL ?>uploads/syllabus_docs/<?= htmlspecialchars($s['syllabus_file']) ?>" target="_blank" class="btn btn-secondary btn-sm" title="View syllabus document"><i class="fas fa-file-pdf"></i> View</a>
-        <?php else: ?>
-            <span class="text-muted"><small>No file</small></span>
-        <?php endif; ?>
-    </td>
     <td><?php $sc=['draft'=>'badge-gray','published'=>'badge-green','archived'=>'badge-orange'];
         echo '<span class="badge '.$sc[$s['status']].'">'.ucfirst($s['status']).'</span>'; ?></td>
     <td><div class="action-btns">
-        <a href="syllabi_view.php?id=<?= $s['id'] ?>" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i></a>
-        <button type="button" class="btn btn-secondary btn-sm" onclick='openEditModal(<?= htmlspecialchars(json_encode($s), ENT_QUOTES) ?>)'><i class="fas fa-edit"></i></button>
+        <a href="<?= BASE_URL ?>teacher/export_syllabus.php?id=<?= $s['id'] ?>" target="_blank" class="btn btn-secondary btn-sm" title="Print / Export Syllabus Mapping" style="color:var(--primary)"><i class="fas fa-print"></i></a>
+        <a href="syllabi_view.php?id=<?= $s['id'] ?>" class="btn btn-secondary btn-sm" title="View Details"><i class="fas fa-eye"></i></a>
+        <a href="monitoring.php?syl=<?= $s['id'] ?>" class="btn btn-secondary btn-sm" title="Monitor Student Progress"><i class="fas fa-chart-line"></i></a>
+        <button type="button" class="btn btn-secondary btn-sm" onclick='openEditModal(<?= htmlspecialchars(json_encode($s), ENT_QUOTES) ?>)' title="Edit Syllabus"><i class="fas fa-edit"></i></button>
         <form method="POST" style="display:inline">
             <input type="hidden" name="action" value="status"><input type="hidden" name="id" value="<?= $s['id'] ?>">
             <select name="status" class="form-control" style="width:110px;display:inline;padding:6px 8px;font-size:12px" onchange="this.form.submit()">
@@ -196,7 +171,6 @@ $teachersArr = []; while($t = $teachers->fetch_assoc()) $teachersArr[] = $t;
         <input type="hidden" name="action" id="formAction" value="add">
         <input type="hidden" name="id" id="formId" value="">
         <input type="hidden" name="existing_image" id="formExistingImage" value="">
-        <input type="hidden" name="existing_syllabus_file" id="formExistingSyllabusFile" value="">
         <div class="modal-body">
             <div class="form-group">
                 <label>Course</label>
@@ -254,13 +228,6 @@ $teachersArr = []; while($t = $teachers->fetch_assoc()) $teachersArr[] = $t;
                 </div>
             </div>
             <div class="form-group">
-                <label>Syllabus Document <span style="color:var(--text3);font-weight:400">(optional, PDF/DOC/DOCX)</span></label>
-                <input type="file" name="syllabus_file" id="formSyllabusFile" class="form-control" accept=".pdf,.doc,.docx">
-                <div id="formSyllabusFilePreviewWrap" style="margin-top:8px;display:none">
-                    <a href="#" id="formSyllabusFilePreview" target="_blank" class="btn btn-secondary btn-sm"><i class="fas fa-file-pdf"></i> View current file</a>
-                </div>
-            </div>
-            <div class="form-group">
                 <label>External URL <span style="color:var(--text3);font-weight:400">(optional)</span></label>
                 <input type="url" name="external_url" id="formUrl" class="form-control" placeholder="https://...">
             </div>
@@ -287,7 +254,6 @@ function resetSyllabusForm(){
     document.getElementById('formAction').value = 'add';
     document.getElementById('formId').value = '';
     document.getElementById('formExistingImage').value = '';
-    document.getElementById('formExistingSyllabusFile').value = '';
     document.getElementById('formCourse').value = '';
     document.getElementById('formTeacher').value = '';
     document.getElementById('formYear').value = '';
@@ -298,8 +264,6 @@ function resetSyllabusForm(){
     document.getElementById('formUrl').value = '';
     document.getElementById('formImage').value = '';
     document.getElementById('formImagePreviewWrap').style.display = 'none';
-    document.getElementById('formSyllabusFile').value = '';
-    document.getElementById('formSyllabusFilePreviewWrap').style.display = 'none';
 }
 
 function openAddModal(){
@@ -313,7 +277,6 @@ function openEditModal(s){
     document.getElementById('formAction').value = 'edit';
     document.getElementById('formId').value = s.id;
     document.getElementById('formExistingImage').value = s.image_path || '';
-    document.getElementById('formExistingSyllabusFile').value = s.syllabus_file || '';
     document.getElementById('formCourse').value = s.course_id;
     document.getElementById('formTeacher').value = s.teacher_id;
     document.getElementById('formYear').value = s.academic_year;
@@ -326,11 +289,6 @@ function openEditModal(s){
     if (s.image_path) {
         document.getElementById('formImagePreview').src = BASE_URL + 'uploads/syllabi/' + s.image_path;
         document.getElementById('formImagePreviewWrap').style.display = 'block';
-    }
-
-    if (s.syllabus_file) {
-        document.getElementById('formSyllabusFilePreview').href = BASE_URL + 'uploads/syllabus_docs/' + s.syllabus_file;
-        document.getElementById('formSyllabusFilePreviewWrap').style.display = 'block';
     }
 
     document.getElementById('syllabusModalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Syllabus';
