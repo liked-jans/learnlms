@@ -40,8 +40,34 @@ if ($_scriptFs !== '' && strlen($_scriptFs) >= strlen($_siteRootFs)) {
     $_relPath = str_replace($_docRoot, '', rtrim($_siteRootFs, '/'));
 }
 
-$_scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? '') == 443 ? 'https' : 'http';
-define('BASE_URL', $_scheme . '://' . $_SERVER['HTTP_HOST'] . rtrim($_relPath, '/') . '/');
+// Check for reverse proxy scheme (Railway, Cloudflare, etc.)
+if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+    $_scheme = $_SERVER['HTTP_X_FORWARDED_PROTO'];
+} elseif ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['SERVER_PORT'] ?? '') == 443) {
+    $_scheme = 'https';
+} else {
+    $_scheme = 'http';
+}
+
+// Check for host header (prefer X-Forwarded-Host if available)
+$_host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? 'localhost';
+if (strpos($_host, ',') !== false) {
+    $_host = trim(explode(',', $_host)[0]);
+}
+
+// Strip internal container port (:8080, :8000, etc.) when on Railway or behind reverse proxy
+if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) || !empty($_SERVER['HTTP_X_FORWARDED_HOST']) || !empty(getenv('RAILWAY_ENVIRONMENT')) || $_scheme === 'https' || preg_match('/\.railway\.app/', $_host) || preg_match('/:\d+$/', $_host)) {
+    // If not local development (localhost / 127.0.0.1 on custom port), strip port
+    if (!preg_match('/^(localhost|127\.0\.0\.1):[0-9]+$/', $_host) || !empty($_SERVER['HTTP_X_FORWARDED_PROTO']) || !empty(getenv('RAILWAY_ENVIRONMENT'))) {
+        $_host = preg_replace('/:\d+$/', '', $_host);
+    }
+}
+
+if (getenv('APP_URL')) {
+    define('BASE_URL', rtrim(getenv('APP_URL'), '/') . '/');
+} else {
+    define('BASE_URL', $_scheme . '://' . $_host . rtrim($_relPath, '/') . '/');
+}
 define('UPLOAD_PATH', __DIR__ . '/../uploads/');
 
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
