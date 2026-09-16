@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlendEd LMS - Teacher Syllabus Mapping Presentation</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .font-serif {
+      font-family: 'Fraunces', serif;
+    }
+    .slide {
+      display: none;
+      opacity: 0;
+      transform: translateY(12px) scale(0.99);
+      transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    .badge-f2f {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    .badge-online {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+    }
+    .badge-cilo {
+      background: #fdf2f8;
+      color: #be185d;
+      border: 1px solid #fbcfe8;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.6); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-emerald-500 selection:text-white">
+
+  <!-- Top Navigation & Controls Bar -->
+  <header class="w-full bg-slate-900/90 backdrop-blur border-b border-slate-800 px-6 py-3.5 flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-900/40">
+        <i class="fas fa-project-diagram text-sm"></i>
+      </div>
+      <div>
+        <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+          BlendEd LMS
+          <span class="text-[10px] font-semibold uppercase tracking-wider bg-emerald-950 text-emerald-400 border border-emerald-800/60 px-2 py-0.5 rounded-full">Teacher System</span>
+        </h1>
+        <p class="text-xs text-slate-400">Outcome-Based Syllabus Mapping & Instructional Workflow</p>
+      </div>
+    </div>
+
+    <!-- Actions & Slide Progress Counter -->
+    <div class="flex items-center gap-2 sm:gap-4">
+      <span id="slideCounter" class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+        Slide 1 / 9
+      </span>
+      
+      <button onclick="toggleSpeakerNotes()" id="notesBtn" title="Toggle Presenter Notes (Shortcut: S)" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-300 flex items-center gap-1.5 transition">
+        <i class="fas fa-sticky-note text-amber-400"></i>
+        <span class="hidden md:inline">Notes</span>
+      </button>
+
+      <button onclick="toggleFullScreen()" title="Full Screen (Shortcut: F)" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs transition">
+        <i class="fas fa-expand"></i>
+      </button>
+
+      <button onclick="window.print()" title="Print / Save PDF" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs transition">
+        <i class="fas fa-print"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Presentation Viewport -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col justify-center">
+
+    <!-- SLIDE 1: Title & Hero -->
+    <section class="slide active flex-col items-center text-center justify-center py-8">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-xs font-medium mb-6">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Interactive Feature Walkthrough
+      </div>
+
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white font-serif tracking-tight max-w-4xl leading-[1.15] mb-6">
+        Syllabus Mapping &amp; <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">Curriculum Alignment</span>
+      </h1>
+
+      <p class="text-slate-300 text-base sm:text-lg max-w-2xl font-normal leading-relaxed mb-10">
+        Empowering educators to design, align, and deliver Outcome-Based Education (OBE) through dynamic week-by-week syllabus timelines and blended instructional tracking.
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl text-left">
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm flex items-start gap-3.5">
+          <div class="w-10 h-10 rounded-lg bg-emerald-900/40 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-800/40">
+            <i class="fas fa-bullseye text-base"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-semibold text-white">Constructive Alignment</h2>
+            <p class="text-xs text-slate-400 mt-1">Directly link weekly topics with Course Intended Learning Outcomes (CILOs).</p>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm flex items-start gap-3.5">
+          <div class="w-10 h-10 rounded-lg bg-blue-900/40 text-blue-400 flex items-center justify-center shrink-0 border border-blue-800/40">
+            <i class="fas fa-laptop-house text-base"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-semibold text-white">Blended Modality</h2>
+            <p class="text-xs text-slate-400 mt-1">Balance Face-to-Face contact and Online Synchronous / Asynchronous hours.</p>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm flex items-start gap-3.5">
+          <div class="w-10 h-10 rounded-lg bg-purple-900/40 text-purple-400 flex items-center justify-center shrink-0 border border-purple-800/40">
+            <i class="fas fa-file-export text-base"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-semibold text-white">One-Click Export</h2>
+            <p class="text-xs text-slate-400 mt-1">Export accredited academic syllabi ready for institutional compliance.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: The Core Challenge vs BlendEd Solution -->
+    <section class="slide flex-col justify-center py-6">
+      <div class="text-center mb-8">
+        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">The Pedagogical Shift</span>
+        <h2 class="text-3xl sm:text-4xl font-bold font-serif text-white mt-1">Static Paper vs. Living Digital Mapping</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+        <!-- The Old Way -->
+        <div class="p-6 rounded-2xl bg-rose-950/20 border border-rose-900/30 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-2 text-rose-400 font-semibold text-sm mb-3">
+              <i class="fas fa-times-circle"></i> Traditional Disconnected Syllabi
+            </div>
+            <ul class="space-y-3.5 text-xs sm:text-sm text-slate-300">
+              <li class="flex items-start gap-2.5">
+                <i class="fas fa-minus text-rose-500 mt-1 shrink-0"></i>
+                <span>Static PDF documents uploaded once and forgotten in folder drives.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fas fa-minus text-rose-500 mt-1 shrink-0"></i>
+                <span>No link between learning outcomes and weekly instructional delivery.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fas fa-minus text-rose-500 mt-1 shrink-0"></i>
+                <span>Students download files without knowing which syllabus week or competency they belong to.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fas fa-minus text-rose-500 mt-1 shrink-0"></i>
+                <span>Difficult for department heads and deans to verify curriculum progress.</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6 pt-4 border-t border-rose-900/30 text-xs text-rose-300/80 italic">
+            Result: Syllabus compliance is treated as administrative paperwork rather than instructional guide.
+          </div>
+        </div>
+
+        <!-- The BlendEd LMS Way -->
+        <div class="p-6 rounded-2xl bg-emerald-950/30 border border-emerald-800/40 flex flex-col justify-between shadow-lg shadow-emerald-950/20">
+          <div>
+            <div class="flex items-center gap-2 text-emerald-400 font-semibold text-sm mb-3">
+              <i class="fas fa-check-circle"></i> BlendEd Living Syllabus Architecture
+            </div>
+            <ul class="space-y-3.5 text-xs sm:text-sm text-slate-200">
+              <li class="flex items-start gap-2.5">
+                <i class="fas fa-check text-emerald-400 mt-1 shrink-0"></i>
+                <span><strong>Interactive Timeline:</strong> Every week is an interactive node containing topics, delivery mode, and activities.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fas fa-check text-emerald-400 mt-1 shrink-0"></i>
+                <span><strong>Constructive Alignment:</strong> Real-time CILO tagging with instant curriculum gap analysis.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fas fa-check text-emerald-400 mt-1 shrink-0"></i>
+                <span><strong>Direct Content Binding:</strong> Learning files, videos, and quizzes bind directly to specific syllabus topics.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fas fa-check text-emerald-400 mt-1 shrink-0"></i>
+                <span><strong>Progress Tracking:</strong> Real-time analytics showing student reading percentage per topic.</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6 pt-4 border-t border-emerald-800/30 text-xs text-emerald-300/90 font-medium">
+            Result: Transparency, accountability, and measurable educational outcomes for every class.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: Anatomy of a Syllabus Topic (Interactive Demo) -->
+    <section class="slide flex-col justify-center py-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-2 mb-4">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Component Breakdown</span>
+          <h2 class="text-2xl sm:text-3xl font-bold font-serif text-white">The 8 Pillars of a Mapped Topic</h2>
+        </div>
+        <span class="text-xs text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-md">Live UI Mockup in `teacher/topics.php`</span>
+      </div>
+
+      <!-- Mockup Card Container -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <!-- Topic Header -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs flex items-center justify-center">
+              W3
+            </span>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-base font-bold text-white">Object-Oriented Programming (OOP) Principles &amp; Classes</h3>
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-950 text-blue-300 border border-blue-800/60">
+                  <i class="fas fa-users text-[9px] mr-1"></i> Face-to-Face
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">Encapsulation, inheritance, polymorphism, and class instantiation in modern PHP.</p>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-1 rounded border border-slate-700">3.0 Hours</span>
+          </div>
+        </div>
+
+        <!-- Pillars Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-4 text-xs">
+          <!-- Pillar 1: CILO Alignment -->
+          <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-pink-400 flex items-center gap-1.5 mb-1.5">
+              <i class="fas fa-award"></i> CILO Alignment
+            </span>
+            <div class="flex flex-wrap gap-1">
+              <span class="px-2 py-0.5 rounded bg-pink-950 text-pink-300 border border-pink-900/50 text-[11px] font-semibold">CILO 1: Concept Mastery</span>
+              <span class="px-2 py-0.5 rounded bg-pink-950 text-pink-300 border border-pink-900/50 text-[11px] font-semibold">CILO 3: Problem Solving</span>
+            </div>
+          </div>
+
+          <!-- Pillar 2: Delivery & Platform -->
+          <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-cyan-400 flex items-center gap-1.5 mb-1.5">
+              <i class="fas fa-network-wired"></i> Modality &amp; Platform
+            </span>
+            <p class="text-slate-300"><span class="text-slate-400">Mode:</span> In-Person Lecture + Lab</p>
+            <p class="text-slate-300 mt-0.5"><span class="text-slate-400">Platform:</span> Computer Laboratory 204</p>
+          </div>
+
+          <!-- Pillar 3: Assessment Mapping -->
+          <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-amber-400 flex items-center gap-1.5 mb-1.5">
+              <i class="fas fa-tasks"></i> Assessment Integration
+            </span>
+            <div class="flex items-center gap-1.5 text-slate-200">
+              <span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-900/40 text-[10px] font-bold uppercase">Hands-on Lab</span>
+              <span>OOP Bank Account Exercise</span>
+            </div>
+          </div>
+
+          <!-- Pillar 4: Specific Learning Outcomes (SLOs) -->
+          <div class="md:col-span-2 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-400 flex items-center gap-1.5 mb-1.5">
+              <i class="fas fa-graduation-cap"></i> Specific Learning Outcomes (SLO)
+            </span>
+            <p class="text-slate-300 leading-relaxed">
+              1. Formulate classes with encapsulated private fields and public accessors.<br>
+              2. Implement inheritance hierarchies using abstract parent templates.
+            </p>
+          </div>
+
+          <!-- Pillar 5: Linked Lesson Resources -->
+          <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-violet-400 flex items-center gap-1.5 mb-1.5">
+              <i class="fas fa-paperclip"></i> Linked Materials (2)
+            </span>
+            <div class="space-y-1">
+              <div class="flex items-center gap-1.5 text-slate-300 truncate">
+                <i class="fas fa-file-pdf text-rose-400"></i> OOP_Fundamentals.pdf
+              </div>
+              <div class="flex items-center gap-1.5 text-slate-300 truncate">
+                <i class="fas fa-code text-emerald-400"></i> SampleCode_Week3.zip
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: CILO Constructive Alignment & Gap Analysis -->
+    <section class="slide flex-col justify-center py-6">
+      <div class="text-center mb-6">
+        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Outcome-Based Education (OBE)</span>
+        <h2 class="text-3xl sm:text-4xl font-bold font-serif text-white mt-1">CILO Alignment &amp; Gap Analysis View</h2>
+        <p class="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto mt-1.5">
+          Teachers switch seamlessly between the chronological Timeline View and the Outcome Alignment Matrix.
+        </p>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center mb-4">
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <div class="text-xs text-slate-400">Total Course CILOs</div>
+            <div class="text-2xl font-extrabold text-white mt-0.5">5 Outcomes</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <div class="text-xs text-slate-400">Aligned Weeks</div>
+            <div class="text-2xl font-extrabold text-emerald-400 mt-0.5">18 / 18</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <div class="text-xs text-slate-400">Curriculum Gaps</div>
+            <div class="text-2xl font-extrabold text-teal-300 mt-0.5">0 Detected</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <div class="text-xs text-slate-400">Assessments Mapped</div>
+            <div class="text-2xl font-extrabold text-amber-400 mt-0.5">12 Tasks</div>
+          </div>
+        </div>
+
+        <!-- Matrix Table Simulation -->
+        <div class="overflow-x-auto rounded-xl border border-slate-800">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="py-2.5 px-4">CILO Descriptor</th>
+                <th class="py-2.5 px-3">Bloom's Taxonomy</th>
+                <th class="py-2.5 px-3">Mapped Syllabus Weeks</th>
+                <th class="py-2.5 px-3">Assessment Instrument</th>
+                <th class="py-2.5 px-3 text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 font-medium">
+              <tr class="hover:bg-slate-800/30">
+                <td class="py-2.5 px-4 text-white font-semibold">CILO 1: Analyze foundational server architectures</td>
+                <td class="py-2.5 px-3 text-slate-300">Understanding &amp; Analysis</td>
+                <td class="py-2.5 px-3 text-emerald-400">Week 1, Week 2, Week 4</td>
+                <td class="py-2.5 px-3 text-slate-300">Quiz 1, Written Exam</td>
+                <td class="py-2.5 px-3 text-right"><span class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px]">Fully Covered</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/30">
+                <td class="py-2.5 px-4 text-white font-semibold">CILO 2: Design relational database schemas &amp; entities</td>
+                <td class="py-2.5 px-3 text-slate-300">Application &amp; Creation</td>
+                <td class="py-2.5 px-3 text-emerald-400">Week 5, Week 6, Week 7</td>
+                <td class="py-2.5 px-3 text-slate-300">Lab Schema Design, Midterm</td>
+                <td class="py-2.5 px-3 text-right"><span class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px]">Fully Covered</span></td>
+              </tr>
+              <tr class="hover:bg-slate-800/30">
+                <td class="py-2.5 px-4 text-white font-semibold">CILO 3: Implement secure RESTful API endpoints</td>
+                <td class="py-2.5 px-3 text-slate-300">Creation &amp; Synthesis</td>
+                <td class="py-2.5 px-3 text-emerald-400">Week 8, Week 9, Week 11</td>
+                <td class="py-2.5 px-3 text-slate-300">Term Project Milestone 2</td>
+                <td class="py-2.5 px-3 text-right"><span class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px]">Fully Covered</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: Blended Learning Modality Controls -->
+    <section class="slide flex-col justify-center py-6">
+      <div class="text-center mb-8">
+        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Instructional Orchestration</span>
+        <h2 class="text-3xl sm:text-4xl font-bold font-serif text-white mt-1">Balancing Face-to-Face &amp; Online</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Face to Face -->
+        <div class="p-6 rounded-2xl bg-slate-900 border border-blue-900/40 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl"></div>
+          <div class="w-10 h-10 rounded-xl bg-blue-950 text-blue-400 border border-blue-800/50 flex items-center justify-center mb-4">
+            <i class="fas fa-chalkboard-teacher text-lg"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Face-to-Face (F2F) Sessions</h3>
+          <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
+            Dedicated for intensive classroom discussions, collaborative group work, instructor-led coding labs, and physical consultations.
+          </p>
+          <div class="space-y-2 text-xs text-slate-400 border-t border-slate-800 pt-3">
+            <div class="flex items-center justify-between">
+              <span>Classroom / Room Assignment:</span>
+              <span class="text-white font-medium">Auto-mapped in syllabus export</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Contact Hours Calculation:</span>
+              <span class="text-white font-medium">Calculated against course credits</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Online / Digital -->
+        <div class="p-6 rounded-2xl bg-slate-900 border border-emerald-900/40 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl"></div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-800/50 flex items-center justify-center mb-4">
+            <i class="fas fa-laptop-code text-lg"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Online (Sync / Async)</h3>
+          <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
+            Directly store the Virtual Meeting links (Google Meet/Zoom) and link digital reading modules with automatic student progress tracking.
+          </p>
+          <div class="space-y-2 text-xs text-slate-400 border-t border-slate-800 pt-3">
+            <div class="flex items-center justify-between">
+              <span>Platform Link:</span>
+              <span class="text-emerald-300 font-medium">Direct student access with 1 click</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Reading Analytics:</span>
+              <span class="text-emerald-300 font-medium">Automatic % progress capture</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: Digital Materials & Assessment Binding -->
+    <section class="slide flex-col justify-center py-6">
+      <div class="text-center mb-6">
+        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Unified Architecture</span>
+        <h2 class="text-3xl sm:text-4xl font-bold font-serif text-white mt-1">Connecting Materials to the Timeline</h2>
+      </div>
+
+      <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 relative">
+          <!-- Step 1 -->
+          <div class="text-center p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+            <div class="w-12 h-12 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/60 flex items-center justify-center mx-auto mb-3 font-bold text-lg">
+              1
+            </div>
+            <h3 class="text-sm font-bold text-white mb-1">Weekly Topic Defined</h3>
+            <p class="text-xs text-slate-400">
+              The teacher sets the topic scope, outcomes, and delivery mode on `teacher/topics.php`.
+            </p>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="text-center p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+            <div class="w-12 h-12 rounded-full bg-blue-950 text-blue-400 border border-blue-800/60 flex items-center justify-center mx-auto mb-3 font-bold text-lg">
+              2
+            </div>
+            <h3 class="text-sm font-bold text-white mb-1">Attach Files &amp; Links</h3>
+            <p class="text-xs text-slate-400">
+              PDFs, slide decks, video links, or reference docs are bound directly to the topic ID.
+            </p>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="text-center p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+            <div class="w-12 h-12 rounded-full bg-purple-950 text-purple-400 border border-purple-800/60 flex items-center justify-center mx-auto mb-3 font-bold text-lg">
+              3
+            </div>
+            <h3 class="text-sm font-bold text-white mb-1">Student Progress Sync</h3>
+            <p class="text-xs text-slate-400">
+              When students view or read the material, their individual progress bar updates in real-time.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/50 flex items-center justify-between text-xs text-emerald-200">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-sparkles text-emerald-400"></i>
+            <span><strong>No Disconnected Files:</strong> Students never have to guess which lecture slides belong to which week.</span>
+          </div>
+          <span class="text-[11px] font-mono bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-700/50">100% Contextual</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: Official Syllabus Export & Compliance -->
+    <section class="slide flex-col justify-center py-6">
+      <div class="text-center mb-6">
+        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Academic Integrity</span>
+        <h2 class="text-3xl sm:text-4xl font-bold font-serif text-white mt-1">Instant Academic Syllabus Export</h2>
+        <p class="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto mt-1.5">
+          Eliminate dual work. The same mapping used inside the LMS generates formal syllabi for CHED / accreditation audits.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-9 h-9 rounded-lg bg-slate-800 text-emerald-400 flex items-center justify-center mb-3">
+              <i class="fas fa-print"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-1">Standardized Print View</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Formatted with institutional headers, course description, instructor information, grading criteria, and complete weekly matrices.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center gap-1.5">
+            <i class="fas fa-check text-emerald-400"></i> CSS Print Media Optimized
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-9 h-9 rounded-lg bg-slate-800 text-blue-400 flex items-center justify-center mb-3">
+              <i class="fas fa-file-word"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-1">Word &amp; PDF Readiness</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Clean tabular structure easily saved as PDF or copied into Microsoft Word for institutional archiving and curriculum review committees.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center gap-1.5">
+            <i class="fas fa-check text-blue-400"></i> Zero Re-typing Required
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="w-9 h-9 rounded-lg bg-slate-800 text-purple-400 flex items-center justify-center mb-3">
+              <i class="fas fa-user-shield"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-1">Admin Audit Transparency</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Administrators and Department Chairs can inspect and print the exact syllabus timeline live without requesting manual file uploads.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center gap-1.5">
+            <i class="fas fa-check text-purple-400"></i> Live Administrative Sync
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: The 4-Step Teacher Workflow -->
+    <section class="slide flex-col justify-center py-6">
+      <div class="text-center mb-8">
+        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Implementation Guide</span>
+        <h2 class="text-3xl sm:text-4xl font-bold font-serif text-white mt-1">Teacher Journey in 4 Intuitive Steps</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 relative">
+          <span class="text-4xl font-black text-slate-800 absolute top-4 right-4">01</span>
+          <div class="text-emerald-400 font-bold text-sm mb-2">Configure Course</div>
+          <h3 class="text-base font-bold text-white mb-2">Set Course Info</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            In `teacher/syllabus_edit.php`, define course title, prerequisites, credit units, and institutional CILOs.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 relative">
+          <span class="text-4xl font-black text-slate-800 absolute top-4 right-4">02</span>
+          <div class="text-blue-400 font-bold text-sm mb-2">Map Timeline</div>
+          <h3 class="text-base font-bold text-white mb-2">Add Weekly Topics</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            In `teacher/topics.php`, map weeks 1 to 18 with lesson descriptions, delivery modes (F2F/Online), and CILO tags.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 relative">
+          <span class="text-4xl font-black text-slate-800 absolute top-4 right-4">03</span>
+          <div class="text-purple-400 font-bold text-sm mb-2">Attach Content</div>
+          <h3 class="text-base font-bold text-white mb-2">Link Resources</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Attach presentations, PDF notes, and create assessment tasks linked to the specific topics.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 relative">
+          <span class="text-4xl font-black text-slate-800 absolute top-4 right-4">04</span>
+          <div class="text-amber-400 font-bold text-sm mb-2">Review &amp; Export</div>
+          <h3 class="text-base font-bold text-white mb-2">Audit &amp; Publish</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Run the CILO Gap Analysis to ensure 100% curriculum coverage, then export the verified syllabus.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: Summary & System Impact -->
+    <section class="slide flex-col items-center text-center justify-center py-8">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white text-2xl shadow-xl shadow-emerald-900/50 mb-6">
+        <i class="fas fa-graduation-cap"></i>
+      </div>
+
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-white font-serif tracking-tight mb-4">
+        Elevating Educational Excellence at I-TECH College
+      </h2>
+
+      <p class="text-slate-300 text-sm sm:text-base max-w-2xl leading-relaxed mb-8">
+        By transitioning from passive documents to an active syllabus mapping platform, BlendEd LMS provides teachers with structure, students with clarity, and administrators with actionable institutional intelligence.
+      </p>
+
+      <div class="flex flex-wrap justify-center gap-3">
+        <a href="https://learnlms.up.railway.app/login" target="_blank" class="px-6 py-2.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition shadow-md shadow-emerald-500/20 flex items-center gap-2">
+          <span>Open BlendEd LMS Live</span>
+          <i class="fas fa-external-link-alt text-xs"></i>
+        </a>
+        <button onclick="goToSlide(0)" class="px-5 py-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm border border-slate-700 transition">
+          Restart Presentation
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Presenter Notes Drawer (Floating Modal / Drawer) -->
+  <aside id="speakerNotesDrawer" class="hidden fixed bottom-16 right-4 sm:right-8 max-w-md w-full bg-slate-900/95 border border-amber-500/40 rounded-2xl p-4 shadow-2xl backdrop-blur-md z-40 text-xs">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+      <span class="font-bold text-amber-400 flex items-center gap-1.5">
+        <i class="fas fa-comment-alt"></i> Presenter Talking Points
+      </span>
+      <button onclick="toggleSpeakerNotes()" class="text-slate-400 hover:text-white">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="speakerNotesContent" class="text-slate-200 leading-relaxed space-y-2">
+      <!-- Injected via JavaScript based on current slide -->
+    </div>
+  </aside>
+
+  <!-- Bottom Navigation Control Dock -->
+  <footer class="w-full bg-slate-900/90 backdrop-blur border-t border-slate-800 px-6 py-3 flex items-center justify-between sticky bottom-0 z-30">
+    <div class="flex items-center gap-2">
+      <button onclick="prevSlide()" id="prevBtn" class="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed border border-slate-700 text-xs font-semibold text-white transition flex items-center gap-1.5">
+        <i class="fas fa-chevron-left text-[10px]"></i> Previous
+      </button>
+      <button onclick="nextSlide()" id="nextBtn" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-semibold text-white transition flex items-center gap-1.5 shadow-sm shadow-emerald-900/30">
+        Next <i class="fas fa-chevron-right text-[10px]"></i>
+      </button>
+    </div>
+
+    <!-- Dots indicator -->
+    <div id="dotsContainer" class="flex items-center gap-1.5 overflow-x-auto max-w-xs px-2">
+      <!-- Dots injected via JS -->
+    </div>
+
+    <div class="text-[11px] text-slate-500 hidden sm:block">
+      Use <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[10px]">&#8592;</kbd> <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[10px]">&#8594;</kbd> keys to navigate
+    </div>
+  </footer>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    let currentSlide = 0;
+
+    const notesData = [
+      // Slide 1
+      "Welcome colleagues and faculty. Today we are presenting BlendEd LMS with an exclusive deep dive into the Teacher-Side Syllabus Mapping system. This feature turns traditional static syllabi into an active, outcomes-based curriculum engine.",
+      // Slide 2
+      "Highlight the pedagogical problem: Traditional course outlines are dead PDF files. Teachers struggle to prove how daily classroom lectures align with institutional CILOs. BlendEd LMS solves this by making every week an active, measurable roadmap.",
+      // Slide 3
+      "Explain the 8 essential pillars of every topic: Week number, title, detailed description, CILO tags, Face-to-Face vs Online delivery mode, virtual meeting platforms, specific learning outcomes, and direct assessment mapping.",
+      // Slide 4
+      "Demonstrate the CILO Gap Analysis view in `teacher/topics.php`. Teachers can click a single button to see if any learning outcome was omitted or under-taught, guaranteeing 100% constructive alignment for CHED and accreditation compliance.",
+      // Slide 5
+      "Show how the system supports modern Blended Learning. Teachers can mark specific weeks as F2F or Online with platform credentials (e.g. Google Meet), ensuring seamless synchronization between campus and remote classes.",
+      // Slide 6
+      "Explain the connection between Syllabus Topics and Learning Materials (`teacher/materials.php`). Instead of a messy folder of downloads, every presentation, PDF, and quiz is anchored directly to its respective topic node.",
+      // Slide 7
+      "Demonstrate the instant export feature. No teacher needs to spend hours re-typing their syllabus for the Dean or Academic Head. One click exports an accreditation-ready document in print and Word formats.",
+      // Slide 8
+      "Walk the faculty through the 4-step sequence: 1) Course setup, 2) Timeline topic mapping, 3) Attaching lesson materials, and 4) Reviewing alignment and exporting for department verification.",
+      // Slide 9
+      "Conclude with the institutional impact: Increased teacher productivity, clear expectations for students, and complete visibility for academic administration. Open the floor for questions."
+    ];
+
+    function updateSlide() {
+      slides.forEach((slide, index) => {
+        if (index === currentSlide) {
+          slide.classList.add('active');
+        } else {
+          slide.classList.remove('active');
+        }
+      });
+
+      // Update counter
+      document.getElementById('slideCounter').innerText = `Slide ${currentSlide + 1} / ${totalSlides}`;
+
+      // Update button states
+      document.getElementById('prevBtn').disabled = (currentSlide === 0);
+      document.getElementById('nextBtn').disabled = (currentSlide === totalSlides - 1);
+
+      // Update dots
+      renderDots();
+
+      // Update Speaker Notes
+      document.getElementById('speakerNotesContent').innerHTML = `<p>${notesData[currentSlide]}</p>`;
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function goToSlide(index) {
+      if (index >= 0 && index < totalSlides) {
+        currentSlide = index;
+        updateSlide();
+      }
+    }
+
+    function renderDots() {
+      const container = document.getElementById('dotsContainer');
+      container.innerHTML = '';
+      for (let i = 0; i < totalSlides; i++) {
+        const dot = document.createElement('button');
+        dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${i === currentSlide ? 'w-6 bg-emerald-400' : 'bg-slate-700 hover:bg-slate-500'}`;
+        dot.onclick = () => goToSlide(i);
+        dot.title = `Go to slide ${i + 1}`;
+        container.appendChild(dot);
+      }
+    }
+
+    function toggleSpeakerNotes() {
+      const drawer = document.getElementById('speakerNotesDrawer');
+      drawer.classList.toggle('hidden');
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key.toLowerCase() === 's') {
+        toggleSpeakerNotes();
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleFullScreen();
+      } else if (e.key === 'Home') {
+        goToSlide(0);
+      } else if (e.key === 'End') {
+        goToSlide(totalSlides - 1);
+      }
+    });
+
+    // Initialize
+    updateSlide();
+  </script>
+</body>
+</html>
