@@ -205,7 +205,7 @@ if ($submission) {
             </div>
             <div style="text-align:right">
                 <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase">Max Score</div>
-                <div style="font-size:20px;font-weight:800;color:var(--primary)"><?= number_format($assessment['max_score'], 1) ?> pts</div>
+                <div style="font-size:20px;font-weight:800;color:var(--primary)"><?= (float)($assessment['max_score'] ?? 0) ?> pts</div>
             </div>
         </div>
 
@@ -240,7 +240,13 @@ if ($submission) {
             <div style="background:#fff;padding:12px 20px;border-radius:10px;border:1px solid var(--border);text-align:center">
                 <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase">Your Score</div>
                 <div style="font-size:26px;font-weight:900;color:var(--primary)">
-                    <?= number_format($submission['score'], 1) ?> <span style="font-size:14px;color:var(--text3);font-weight:600">/ <?= number_format($assessment['max_score'], 1) ?></span>
+                    <?php if ($submission['score'] !== null && $submission['status'] === 'graded'): ?>
+                        <?= (float)$submission['score'] ?> <span style="font-size:14px;color:var(--text3);font-weight:600">/ <?= (float)($assessment['max_score'] ?? 0) ?> pts</span>
+                    <?php elseif ($submission['score'] !== null): ?>
+                        <?= (float)$submission['score'] ?> <span style="font-size:13px;color:#d97706;font-weight:600">/ <?= (float)($assessment['max_score'] ?? 0) ?> pts (Essay Pending)</span>
+                    <?php else: ?>
+                        <span style="font-size:18px;color:#d97706;font-weight:700">Pending Evaluation</span>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -261,22 +267,34 @@ if ($submission) {
         $qType = $sa['question_type'];
         $isCorrect = $sa['is_correct'];
     ?>
-    <div class="card" style="border:1px solid <?= $isCorrect === 1 ? '#10b981' : ($isCorrect === 0 ? '#ef4444' : '#f59e0b') ?>">
+    <div class="card" style="border:1px solid <?= $qType === 'essay' ? ($submission['status'] === 'graded' ? '#10b981' : '#f59e0b') : ($isCorrect === 1 ? '#10b981' : ($isCorrect === 0 ? '#ef4444' : '#f59e0b')) ?>">
         <div class="card-body" style="padding:18px 20px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
                 <div style="display:flex;align-items:center;gap:8px">
                     <span style="font-weight:800;font-size:13px">Question <?= $num ?></span>
                     <span class="badge" style="background:#2563eb;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px">
-                        <i class="fas fa-star" style="font-size:10px"></i> Declared: <?= (float)$sa['points'] ?> Point<?= $sa['points'] != 1 ? 's' : '' ?><?= $qType === 'essay' ? ' for this Essay' : '' ?>
+                        <i class="fas fa-star" style="font-size:10px"></i> Declared: <?= (float)($sa['points'] ?? 0) ?> Point<?= ($sa['points'] ?? 0) != 1 ? 's' : '' ?><?= $qType === 'essay' ? ' for this Essay' : '' ?>
                     </span>
                 </div>
                 <div>
-                    <?php if ($isCorrect === 1): ?>
-                        <span class="badge badge-green" style="font-size:11px"><i class="fas fa-check"></i> Correct (+<?= (float)$sa['points_awarded'] ?>)</span>
-                    <?php elseif ($isCorrect === 0): ?>
-                        <span class="badge badge-red" style="font-size:11px"><i class="fas fa-times"></i> Incorrect (0 pts)</span>
+                    <?php if ($qType === 'essay'): ?>
+                        <?php if ($submission['status'] === 'graded' && $sa['points_awarded'] !== null): ?>
+                            <span class="badge <?= ((float)$sa['points_awarded'] > 0) ? 'badge-green' : 'badge-gray' ?>" style="font-size:11px;font-weight:700">
+                                <i class="fas <?= ((float)$sa['points_awarded'] > 0) ? 'fa-check' : 'fa-pen' ?>"></i> Score: <?= (float)$sa['points_awarded'] ?> / <?= (float)($sa['points'] ?? 0) ?> pts
+                            </span>
+                        <?php else: ?>
+                            <span class="badge badge-orange" style="font-size:11px;font-weight:700">
+                                <i class="fas fa-clock"></i> Pending Teacher Evaluation
+                            </span>
+                        <?php endif; ?>
                     <?php else: ?>
-                        <span class="badge badge-orange" style="font-size:11px"><i class="fas fa-clock"></i> Pending Teacher Evaluation</span>
+                        <?php if ($isCorrect === 1): ?>
+                            <span class="badge badge-green" style="font-size:11px"><i class="fas fa-check"></i> Correct (+<?= (float)($sa['points_awarded'] ?? 0) ?>)</span>
+                        <?php elseif ($isCorrect === 0): ?>
+                            <span class="badge badge-red" style="font-size:11px"><i class="fas fa-times"></i> Incorrect (0 pts)</span>
+                        <?php else: ?>
+                            <span class="badge badge-orange" style="font-size:11px"><i class="fas fa-clock"></i> Pending Evaluation</span>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>
@@ -290,25 +308,29 @@ if ($submission) {
                 <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;margin-bottom:4px">Your Response:</div>
                 <div style="font-size:13px;color:var(--text);font-weight:600">
                     <?php if ($qType === 'multiple_choice'): 
-                        $ansText = getAssessmentOptionDisplay($sa['options'], $sa['student_answer']);
+                        $ansText = getAssessmentOptionDisplay($sa['options'], (string)($sa['student_answer'] ?? ''));
                         echo $ansText ? htmlspecialchars($ansText) : '<em class="text-muted">No answer selected</em>';
                     elseif ($qType === 'true_false'):
-                        echo htmlspecialchars($sa['student_answer'] ?: 'No answer selected');
+                        echo htmlspecialchars((string)($sa['student_answer'] ?? 'No answer selected'));
                     else:
-                        echo nl2br(htmlspecialchars($sa['student_answer'] ?: 'No response provided.'));
+                        echo nl2br(htmlspecialchars((string)($sa['student_answer'] ?? 'No response provided.')));
                     endif; ?>
                 </div>
             </div>
 
             <!-- Show correct answer for objective questions if wrong -->
-            <?php if ($isCorrect === 0): ?>
+            <?php if ($isCorrect === 0 && $qType !== 'essay'): ?>
                 <div style="padding:8px 12px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;font-size:12px;color:#065f46">
                     <strong><i class="fas fa-check-circle"></i> Correct Answer:</strong>
                     <?php if ($qType === 'multiple_choice'): 
-                        echo htmlspecialchars(getAssessmentOptionDisplay($sa['options'], $sa['correct_answer']));
+                        echo htmlspecialchars(getAssessmentOptionDisplay($sa['options'], (string)($sa['correct_answer'] ?? '')));
                     else:
-                        echo htmlspecialchars($sa['correct_answer']);
+                        echo htmlspecialchars((string)($sa['correct_answer'] ?? ''));
                     endif; ?>
+                </div>
+            <?php elseif ($qType === 'essay' && !empty($sa['explanation'])): ?>
+                <div style="margin-top:8px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#475569">
+                    <strong><i class="fas fa-clipboard-list"></i> Scoring Rubric:</strong> <?= nl2br(htmlspecialchars((string)$sa['explanation'])) ?>
                 </div>
             <?php endif; ?>
 
@@ -355,7 +377,7 @@ if ($submission) {
                             <?= $num ?>
                         </span>
                         <span class="badge" style="background:#2563eb;color:#fff;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:6px">
-                            <i class="fas fa-star" style="font-size:10px"></i> <?= (float)$q['points'] ?> Point<?= $q['points'] != 1 ? 's' : '' ?><?= $q['question_type'] === 'essay' ? ' for this Essay' : '' ?>
+                            <i class="fas fa-star" style="font-size:10px"></i> <?= (float)($q['points'] ?? 0) ?> Point<?= ($q['points'] ?? 0) != 1 ? 's' : '' ?><?= $q['question_type'] === 'essay' ? ' for this Essay' : '' ?>
                         </span>
                     </div>
                     <span style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:700">

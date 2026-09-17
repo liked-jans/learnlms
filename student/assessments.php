@@ -99,10 +99,14 @@ $tc = ['quiz'=>'badge-green','assignment'=>'badge-blue','exam'=>'badge-red','pro
         <?php endif; ?>
     </td>
     <td>
-        <?php if ($a['sub_id'] && $a['score'] !== null): ?>
-            <strong style="color:var(--primary);font-size:14px"><?= number_format($a['score'], 1) ?></strong> / <?= number_format($a['max_score'], 1) ?>
+        <?php if ($a['sub_id'] && $a['sub_status'] === 'graded' && $a['score'] !== null): ?>
+            <strong style="color:var(--primary);font-size:14px"><?= (float)$a['score'] ?></strong> / <?= (float)($a['max_score'] ?? 0) ?>
+        <?php elseif ($a['sub_id'] && $a['score'] !== null): ?>
+            <strong style="color:#d97706;font-size:13px"><?= (float)$a['score'] ?></strong> <small class="text-muted">(Partial)</small>
+        <?php elseif ($a['sub_id']): ?>
+            <span class="badge badge-orange"><i class="fas fa-clock"></i> Under Review</span>
         <?php else: ?>
-            <span class="text-muted"><?= number_format($a['max_score'], 1) ?> pts</span>
+            <span class="text-muted"><?= (float)($a['max_score'] ?? 0) ?> pts</span>
         <?php endif; ?>
     </td>
     <td>
