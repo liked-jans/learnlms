@@ -3,32 +3,34 @@ require_once 'includes/config.php';
 if (isLoggedIn()) redirect(getRoleDashboard($_SESSION['role']));
 
 $error = '';
-$selectedRole = 'admin';
-$roleHintsPhp = [
-    'admin'   => 'Admin: <strong>admin</strong> / <strong>admin123</strong>',
-    'teacher' => 'Sign in with your teacher account credentials',
-    'student' => 'Sign in with your student account credentials',
+
+// Live platform stats
+$statsQuery = $conn->query("
+    SELECT 
+        (SELECT COUNT(*) FROM syllabi) as total_syllabi,
+        (SELECT COUNT(*) FROM syllabus_topics) as total_topics,
+        (SELECT COUNT(*) FROM users WHERE role = 'student' AND status = 'active') as total_students
+");
+$stats = $statsQuery ? $statsQuery->fetch_assoc() : [
+    'total_syllabi' => 0,
+    'total_topics' => 0,
+    'total_students' => 0
 ];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = sanitize($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
-    $selectedRole = in_array($_POST['role'] ?? '', ['admin','teacher','student'], true) ? $_POST['role'] : 'admin';
-    if ($username && $password) {
+    if ($username !== '' && $password !== '') {
         $stmt = $conn->prepare("SELECT * FROM users WHERE username=? AND status='active'");
         $stmt->bind_param('s', $username);
         $stmt->execute();
         $user = $stmt->get_result()->fetch_assoc();
         if ($user && password_verify($password, $user['password'])) {
-            if ($user['role'] !== $selectedRole) {
-                $roleLabels = ['admin'=>'Administrator','teacher'=>'Teacher','student'=>'Student'];
-                $error = "This account is registered as {$roleLabels[$user['role']]}, not {$roleLabels[$selectedRole]}. Switch tabs above and try again.";
-            } else {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['role'] = $user['role'];
-                $_SESSION['full_name'] = $user['full_name'];
-                logActivity($user['id'], 'Logged in', 'Authentication');
-                redirect(getRoleDashboard($user['role']));
-            }
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['full_name'] = $user['full_name'];
+            logActivity($user['id'], 'Logged in', 'Authentication');
+            redirect(getRoleDashboard($user['role']));
         } else {
             $error = 'Invalid username or password.';
         }
@@ -504,20 +506,20 @@ body {
         <div class="deco-card">
             <div class="deco-card-icon g"><i class="fas fa-map"></i></div>
             <div class="deco-card-label">Active Syllabi</div>
-            <div class="deco-card-value">24</div>
-            <div class="deco-card-sub">↑ 3 this semester</div>
+            <div class="deco-card-value"><?= number_format((int)($stats['total_syllabi'] ?? 0)) ?></div>
+            <div class="deco-card-sub">Curriculum outlines</div>
         </div>
         <div class="deco-card">
             <div class="deco-card-icon o"><i class="fas fa-diagram-project"></i></div>
             <div class="deco-card-label">Topics Mapped</div>
-            <div class="deco-card-value">312</div>
-            <div class="deco-card-sub">↑ 87% complete</div>
+            <div class="deco-card-value"><?= number_format((int)($stats['total_topics'] ?? 0)) ?></div>
+            <div class="deco-card-sub">Weekly lesson plans</div>
         </div>
         <div class="deco-card">
             <div class="deco-card-icon b"><i class="fas fa-user-graduate"></i></div>
-            <div class="deco-card-label">Students</div>
-            <div class="deco-card-value">148</div>
-            <div class="deco-card-sub">Across all courses</div>
+            <div class="deco-card-label">Active Students</div>
+            <div class="deco-card-value"><?= number_format((int)($stats['total_students'] ?? 0)) ?></div>
+            <div class="deco-card-sub">Enrolled learners</div>
         </div>
     </div>
 </div>
@@ -530,17 +532,17 @@ body {
 <div class="mobile-stats">
     <div class="mobile-stat">
         <div class="mobile-stat-icon g"><i class="fas fa-map"></i></div>
-        <div class="mobile-stat-value">24</div>
+        <div class="mobile-stat-value"><?= number_format((int)($stats['total_syllabi'] ?? 0)) ?></div>
         <div class="mobile-stat-label">Active Syllabi</div>
     </div>
     <div class="mobile-stat">
         <div class="mobile-stat-icon o"><i class="fas fa-diagram-project"></i></div>
-        <div class="mobile-stat-value">312</div>
+        <div class="mobile-stat-value"><?= number_format((int)($stats['total_topics'] ?? 0)) ?></div>
         <div class="mobile-stat-label">Topics Mapped</div>
     </div>
     <div class="mobile-stat">
         <div class="mobile-stat-icon b"><i class="fas fa-user-graduate"></i></div>
-        <div class="mobile-stat-value">148</div>
+        <div class="mobile-stat-value"><?= number_format((int)($stats['total_students'] ?? 0)) ?></div>
         <div class="mobile-stat-label">Students</div>
     </div>
 </div>
@@ -552,13 +554,6 @@ body {
             <p class="login-sub">Sign in to your account to continue</p>
         </div>
 
-        <div class="role-tabs">
-            <div class="role-tab-indicator" id="roleIndicator"></div>
-            <button type="button" class="role-tab <?= $selectedRole==='admin'?'active':'' ?>" onclick="setRole('admin', this)"><i class="fas fa-shield-alt"></i><span>Admin</span></button>
-            <button type="button" class="role-tab <?= $selectedRole==='teacher'?'active':'' ?>" onclick="setRole('teacher', this)"><i class="fas fa-chalkboard-teacher"></i><span>Teacher</span></button>
-            <button type="button" class="role-tab <?= $selectedRole==='student'?'active':'' ?>" onclick="setRole('student', this)"><i class="fas fa-user-graduate"></i><span>Student</span></button>
-        </div>
-
         <?php if ($error): ?>
         <div class="error-box">
             <i class="fas fa-exclamation-circle"></i>
@@ -567,12 +562,11 @@ body {
         <?php endif; ?>
 
         <form method="POST" id="loginForm">
-            <input type="hidden" name="role" id="roleInput" value="<?= htmlspecialchars($selectedRole) ?>">
             <div class="form-group">
                 <label class="form-label">Username</label>
                 <div class="input-wrap">
                     <i class="fas fa-user input-icon"></i>
-                    <input type="text" name="username" class="form-input" placeholder="Enter your username" required autocomplete="username">
+                    <input type="text" name="username" class="form-input" placeholder="Enter your username" required autocomplete="username" autofocus>
                 </div>
             </div>
             <div class="form-group">
@@ -601,13 +595,6 @@ body {
             </button>
         </form>
 
-        <div class="divider"><span>default credentials</span></div>
-
-        <div class="login-hint">
-            <i class="fas fa-info-circle"></i>
-            <span><?= $roleHintsPhp[$selectedRole] ?? '' ?></span>
-        </div>
-
 <script>
 function togglePass() {
     const inp = document.getElementById('passInput');
@@ -619,34 +606,6 @@ function togglePass() {
         inp.type = 'password';
         ico.className = 'fas fa-eye';
     }
-}
-
-const roleHints = {
-    admin: 'Admin: <strong>admin</strong> / <strong>admin123</strong>',
-    teacher: 'Sign in with your teacher account credentials',
-    student: 'Sign in with your student account credentials'
-};
-const roleTabs = document.querySelectorAll('.role-tab');
-const indicator = document.getElementById('roleIndicator');
-
-// Keep the sliding pill in sync with whichever tab the server marked
-// active (e.g. after a role-mismatch error reload).
-(function initIndicator(){
-    const activeIndex = Array.from(roleTabs).findIndex(b => b.classList.contains('active'));
-    if (activeIndex > -1) indicator.style.transform = `translateX(${activeIndex * 100}%)`;
-})();
-
-function setRole(role, btn) {
-    roleTabs.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const index = Array.from(roleTabs).indexOf(btn);
-    indicator.style.transform = `translateX(${index * 100}%)`;
-
-    const roleInput = document.getElementById('roleInput');
-    if (roleInput) roleInput.value = role;
-
-    const hintSpan = document.querySelector('.login-hint span');
-    if (hintSpan) hintSpan.innerHTML = roleHints[role];
 }
 
 const loginBtn = document.getElementById('loginBtn');
