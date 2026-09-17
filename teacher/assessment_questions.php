@@ -97,6 +97,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             setFlash('error', 'Failed to add question: ' . $stmtInsert->error);
         }
 
+    } elseif ($action === 'edit_question') {
+        $qId = (int)($_POST['question_id'] ?? 0);
+        $qText = sanitize($_POST['question_text'] ?? '');
+        $qType = sanitize($_POST['question_type'] ?? 'multiple_choice');
+        $points = (float)($_POST['points'] ?? 1);
+        if ($points <= 0) $points = 1.0;
+        $explanation = sanitize($_POST['explanation'] ?? '');
+
+        if (empty($qText)) {
+            setFlash('error', 'Question prompt cannot be empty.');
+            redirect(BASE_URL . 'teacher/assessment_questions.php?id=' . $assId);
+        }
+
+        $options = null;
+        $correctAnswer = null;
+
+        if ($qType === 'multiple_choice') {
+            $rawOpts = $_POST['mc_options'] ?? [];
+            $cleanOpts = [];
+            foreach ($rawOpts as $opt) {
+                $trimmed = trim($opt);
+                if ($trimmed !== '') {
+                    $cleanOpts[] = $trimmed;
+                }
+            }
+            if (count($cleanOpts) < 2) {
+                setFlash('error', 'Multiple choice questions require at least 2 choices.');
+                redirect(BASE_URL . 'teacher/assessment_questions.php?id=' . $assId);
+            }
+            $options = json_encode(array_values($cleanOpts));
+            $correctIdx = (int)($_POST['mc_correct'] ?? 0);
+            if (!isset($cleanOpts[$correctIdx])) {
+                $correctIdx = 0;
+            }
+            $correctAnswer = (string)$correctIdx;
+
+        } elseif ($qType === 'true_false') {
+            $options = json_encode(['True', 'False']);
+            $correctAnswer = ($_POST['tf_correct'] ?? 'True') === 'False' ? 'False' : 'True';
+
+        } elseif ($qType === 'essay') {
+            $options = null;
+            $correctAnswer = null;
+        }
+
+        $stmtUpdate = $conn->prepare("
+            UPDATE assessment_questions 
+            SET question_text = ?, question_type = ?, points = ?, options = ?, correct_answer = ?, explanation = ?
+            WHERE id = ? AND assessment_id = ?
+        ");
+        $stmtUpdate->bind_param('ssdsssii', $qText, $qType, $points, $options, $correctAnswer, $explanation, $qId, $assId);
+
+        if ($stmtUpdate->execute()) {
+            // Recalculate max_score
+            $sum = $conn->query("SELECT COALESCE(SUM(points), 0) s FROM assessment_questions WHERE assessment_id = $assId")->fetch_assoc()['s'] ?? 0;
+            $conn->query("UPDATE assessments SET max_score = $sum WHERE id = $assId");
+            setFlash('success', 'Question updated successfully.');
+        } else {
+            setFlash('error', 'Failed to update question: ' . $stmtUpdate->error);
+        }
+
     } elseif ($action === 'delete_question') {
         $qId = (int)($_POST['question_id'] ?? 0);
         $conn->query("DELETE FROM assessment_questions WHERE id = $qId AND assessment_id = $assId");
@@ -265,14 +326,19 @@ foreach ($questions as $q) {
                         <span style="font-size:11px;color:#d97706;font-weight:600"><i class="fas fa-user-edit"></i> Manual Teacher Grading</span>
                     <?php endif; ?>
                 </div>
-                <form method="POST" onsubmit="return confirm('Delete this question?')">
-                    <?= csrfField() ?>
-                    <input type="hidden" name="action" value="delete_question">
-                    <input type="hidden" name="question_id" value="<?= $q['id'] ?>">
-                    <button type="submit" class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:11px" title="Delete question">
-                        <i class="fas fa-trash"></i>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px" title="Edit question" onclick='editQuestion(<?= htmlspecialchars(json_encode($q, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, "UTF-8") ?>)'>
+                        <i class="fas fa-edit"></i>
                     </button>
-                </form>
+                    <form method="POST" onsubmit="return confirm('Delete this question?')">
+                        <?= csrfField() ?>
+                        <input type="hidden" name="action" value="delete_question">
+                        <input type="hidden" name="question_id" value="<?= $q['id'] ?>">
+                        <button type="submit" class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:11px" title="Delete question">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
             </div>
 
             <!-- Question Text -->
@@ -438,6 +504,104 @@ foreach ($questions as $q) {
 </div>
 </div>
 
+<!-- Edit Question Modal -->
+<div class="modal-overlay" id="editQuestionModal">
+<div class="modal" style="max-width:680px">
+    <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-edit" style="color:var(--primary);margin-right:6px"></i> Edit Question</span>
+        <button class="modal-close" onclick="closeModal('editQuestionModal')">&times;</button>
+    </div>
+    <form method="POST">
+        <?= csrfField() ?>
+        <input type="hidden" name="action" value="edit_question">
+        <input type="hidden" name="question_id" id="editQuestionId" value="">
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Question Type</label>
+                    <select name="question_type" id="editModalQType" class="form-control" onchange="switchEditQuestionType(this.value)">
+                        <option value="multiple_choice">Multiple Choice (Auto-Graded)</option>
+                        <option value="true_false">True or False (Auto-Graded)</option>
+                        <option value="essay">Essay / Open Response (Teacher Graded)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label id="editModalPointsLabel"><strong>Points *</strong> <span style="font-weight:400;color:var(--text3)">(e.g. 1, 2, 1.25)</span></label>
+                    <input type="number" name="points" id="editModalPoints" class="form-control" value="1" min="0.01" max="1000" step="any" required>
+                    <small id="editModalPointsHelp" class="text-muted" style="display:block;margin-top:3px">Enter the points for this question (e.g. 1, 2, 1.25, 5, etc.).</small>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Question Prompt / Problem Statement *</label>
+                <textarea name="question_text" id="editQuestionText" class="form-control" rows="3" placeholder="Enter your question clearly..." required></textarea>
+            </div>
+
+            <!-- Multiple Choice Container -->
+            <div id="editMcContainer" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px">
+                <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+                    <span><i class="fas fa-list-ol"></i> Multiple Choice Options</span>
+                    <span style="color:var(--text3);font-weight:400">Select the radio button for the correct answer</span>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:10px">
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <input type="radio" name="mc_correct" id="edit_mc_correct_0" value="0" style="transform:scale(1.2);cursor:pointer">
+                        <span style="font-weight:700;width:20px">A.</span>
+                        <input type="text" name="mc_options[]" id="edit_mc_opt_0" class="form-control" placeholder="Option A text..." required>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <input type="radio" name="mc_correct" id="edit_mc_correct_1" value="1" style="transform:scale(1.2);cursor:pointer">
+                        <span style="font-weight:700;width:20px">B.</span>
+                        <input type="text" name="mc_options[]" id="edit_mc_opt_1" class="form-control" placeholder="Option B text..." required>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <input type="radio" name="mc_correct" id="edit_mc_correct_2" value="2" style="transform:scale(1.2);cursor:pointer">
+                        <span style="font-weight:700;width:20px">C.</span>
+                        <input type="text" name="mc_options[]" id="edit_mc_opt_2" class="form-control" placeholder="Option C text (optional)...">
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <input type="radio" name="mc_correct" id="edit_mc_correct_3" value="3" style="transform:scale(1.2);cursor:pointer">
+                        <span style="font-weight:700;width:20px">D.</span>
+                        <input type="text" name="mc_options[]" id="edit_mc_opt_3" class="form-control" placeholder="Option D text (optional)...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- True or False Container -->
+            <div id="editTfContainer" style="display:none;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:16px;margin-bottom:16px">
+                <div style="font-size:12px;font-weight:700;color:#5b21b6;margin-bottom:10px">
+                    <i class="fas fa-toggle-on"></i> Select the Correct Answer:
+                </div>
+                <div style="display:flex;gap:24px">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px">
+                        <input type="radio" name="tf_correct" id="edit_tf_true" value="True" style="transform:scale(1.2)"> True
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px">
+                        <input type="radio" name="tf_correct" id="edit_tf_false" value="False" style="transform:scale(1.2)"> False
+                    </label>
+                </div>
+            </div>
+
+            <!-- Essay Container -->
+            <div id="editEssayContainer" style="display:none;background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:16px;margin-bottom:16px">
+                <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:6px">
+                    <i class="fas fa-paragraph"></i> Essay Rubric & Evaluation Guide (Optional)
+                </div>
+                <p style="font-size:11px;color:#78350f;margin-bottom:8px">
+                    Students will write their answer in a text response box. You will evaluate and assign marks in the Gradebook.
+                </p>
+                <textarea name="explanation" id="editExplanation" class="form-control" rows="2" placeholder="Key points students should address..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('editQuestionModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Question</button>
+        </div>
+    </form>
+</div>
+</div>
+
 </div></div></div>
 
 <script>
@@ -482,6 +646,89 @@ function switchQuestionType(type) {
         mcInputs[1].required = false;
     }
 }
+
+function switchEditQuestionType(type) {
+    var mc = document.getElementById('editMcContainer');
+    var tf = document.getElementById('editTfContainer');
+    var es = document.getElementById('editEssayContainer');
+    var ptsLabel = document.getElementById('editModalPointsLabel');
+    var ptsHelp = document.getElementById('editModalPointsHelp');
+
+    mc.style.display = (type === 'multiple_choice') ? 'block' : 'none';
+    tf.style.display = (type === 'true_false') ? 'block' : 'none';
+    es.style.display = (type === 'essay') ? 'block' : 'none';
+
+    if (type === 'essay') {
+        ptsLabel.innerHTML = '<strong>Points for Essay *</strong> <span style="color:#d97706">(e.g. 5)</span>';
+        ptsHelp.textContent = 'Enter the point value for this essay (e.g. 5, 10, or custom points).';
+    } else {
+        ptsLabel.innerHTML = '<strong>Points *</strong> <span style="font-weight:400;color:var(--text3)">(e.g. 1, 2, 1.25)</span>';
+        ptsHelp.textContent = 'Enter the point value for this question (e.g. 1, 2, 1.25, etc.).';
+    }
+
+    // Toggle required on MC inputs
+    var mcInputs = mc.querySelectorAll('input[type="text"]');
+    if (type === 'multiple_choice') {
+        mcInputs[0].required = true;
+        mcInputs[1].required = true;
+    } else {
+        mcInputs[0].required = false;
+        mcInputs[1].required = false;
+    }
+}
+
+function editQuestion(q) {
+    document.getElementById('editQuestionId').value = q.id;
+    document.getElementById('editModalQType').value = q.question_type;
+    document.getElementById('editModalPoints').value = q.points;
+    document.getElementById('editQuestionText').value = q.question_text || '';
+    document.getElementById('editExplanation').value = q.explanation || '';
+
+    switchEditQuestionType(q.question_type);
+
+    if (q.question_type === 'multiple_choice') {
+        var opts = [];
+        try {
+            opts = typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []);
+        } catch (e) {
+            opts = [];
+        }
+        if (!Array.isArray(opts) && typeof opts === 'object' && opts !== null) {
+            opts = Object.values(opts);
+        }
+
+        for (var i = 0; i < 4; i++) {
+            var optInput = document.getElementById('edit_mc_opt_' + i);
+            if (optInput) {
+                optInput.value = (opts && opts[i] !== undefined) ? opts[i] : '';
+            }
+        }
+
+        var rawAns = String(q.correct_answer !== null && q.correct_answer !== undefined ? q.correct_answer : '0').trim();
+        var letters = ['A', 'B', 'C', 'D'];
+        var matched = false;
+        for (var i = 0; i < 4; i++) {
+            var rad = document.getElementById('edit_mc_correct_' + i);
+            if (!rad) continue;
+            var isThis = (rad.value === rawAns || letters[i].toLowerCase() === rawAns.toLowerCase() || String(i) === rawAns);
+            rad.checked = isThis;
+            if (isThis) matched = true;
+        }
+        if (!matched) {
+            var rad0 = document.getElementById('edit_mc_correct_0');
+            if (rad0) rad0.checked = true;
+        }
+
+    } else if (q.question_type === 'true_false') {
+        var rawAns = String(q.correct_answer || 'True').toLowerCase();
+        var isFalse = (rawAns === 'false' || rawAns === '0');
+        document.getElementById('edit_tf_true').checked = !isFalse;
+        document.getElementById('edit_tf_false').checked = isFalse;
+    }
+
+    openModal('editQuestionModal');
+}
+
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
 </script>
 </body></html>
