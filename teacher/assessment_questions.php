@@ -278,9 +278,6 @@ foreach ($questions as $q) {
 <!-- Questions List -->
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <h3 style="font-size:16px;font-weight:700">Question Pool (<?= count($questions) ?> items)</h3>
-    <span style="font-size:12px;color:var(--text3)">
-        <i class="fas fa-info-circle"></i> Objective questions auto-grade automatically. Essays are scored in Gradebook.
-    </span>
 </div>
 
 <?php if (empty($questions)): ?>
@@ -320,11 +317,6 @@ foreach ($questions as $q) {
                     <span class="badge" style="background:#2563eb;color:#fff;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:6px">
                         <i class="fas fa-star" style="font-size:10px"></i> Declared: <?= (float)$q['points'] ?> Point<?= $q['points'] != 1 ? 's' : '' ?><?= $q['question_type'] === 'essay' ? ' for this Essay' : '' ?>
                     </span>
-                    <?php if ($q['question_type'] !== 'essay'): ?>
-                        <span style="font-size:11px;color:#059669;font-weight:600"><i class="fas fa-robot"></i> Instant Auto-Grading</span>
-                    <?php else: ?>
-                        <span style="font-size:11px;color:#d97706;font-weight:600"><i class="fas fa-user-edit"></i> Manual Teacher Grading</span>
-                    <?php endif; ?>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px">
                     <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px" title="Edit question" onclick='editQuestion(<?= htmlspecialchars(json_encode($q, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, "UTF-8") ?>)'>
@@ -422,9 +414,9 @@ foreach ($questions as $q) {
                 <div class="form-group">
                     <label>Question Type</label>
                     <select name="question_type" id="modalQType" class="form-control" onchange="switchQuestionType(this.value)">
-                        <option value="multiple_choice" selected>Multiple Choice (Auto-Graded)</option>
-                        <option value="true_false">True or False (Auto-Graded)</option>
-                        <option value="essay">Essay / Open Response (Teacher Graded)</option>
+                        <option value="multiple_choice" selected>Multiple Choice</option>
+                        <option value="true_false">True or False</option>
+                        <option value="essay">Essay / Open Response</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -520,9 +512,9 @@ foreach ($questions as $q) {
                 <div class="form-group">
                     <label>Question Type</label>
                     <select name="question_type" id="editModalQType" class="form-control" onchange="switchEditQuestionType(this.value)">
-                        <option value="multiple_choice">Multiple Choice (Auto-Graded)</option>
-                        <option value="true_false">True or False (Auto-Graded)</option>
-                        <option value="essay">Essay / Open Response (Teacher Graded)</option>
+                        <option value="multiple_choice">Multiple Choice</option>
+                        <option value="true_false">True or False</option>
+                        <option value="essay">Essay / Open Response</option>
                     </select>
                 </div>
                 <div class="form-group">

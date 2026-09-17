@@ -101,11 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if ($hasEssay) {
         $finalStatus = 'submitted';
         $isAuto = 0;
-        $feedback = "Objective questions auto-graded. Essay questions are pending teacher evaluation.";
+        $feedback = "Essay questions are pending teacher evaluation.";
     } else {
         $finalStatus = 'graded';
         $isAuto = 1;
-        $feedback = "All questions auto-graded successfully upon submission.";
+        $feedback = null;
     }
 
     $stmtFinal = $conn->prepare("
@@ -133,9 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     if ($hasEssay) {
-        setFlash('success', "Assessment submitted! Objective questions were auto-graded (Score: $totalEarned pts). Your essay response is awaiting teacher evaluation.");
+        setFlash('success', "Assessment submitted! Score: $totalEarned pts. Your essay response is awaiting teacher evaluation.");
     } else {
-        setFlash('success', "Assessment completed and instantly graded! Score: $totalEarned / {$assessment['max_score']} pts.");
+        setFlash('success', "Assessment submitted! Your score: $totalEarned / {$assessment['max_score']} pts.");
     }
 
     redirect(BASE_URL . 'student/take_assessment.php?id=' . $assId);
@@ -230,7 +230,7 @@ if ($submission) {
                 </div>
                 <div>
                     <h3 style="font-size:18px;font-weight:800;color:var(--text);margin:0 0 4px">
-                        <?= $submission['status']==='graded' ? 'Assessment Completed & Graded' : 'Submission Received (Pending Teacher Review)' ?>
+                        <?= $submission['status']==='graded' ? 'Assessment Results' : 'Submission Received (Pending Teacher Review)' ?>
                     </h3>
                     <div style="font-size:13px;color:var(--text2)">
                         Submitted on <?= date('M d, Y g:i A', strtotime($submission['submitted_at'])) ?>
@@ -444,7 +444,7 @@ if ($submission) {
             <div>
                 <strong style="font-size:14px;color:#166534">Ready to complete your submission?</strong>
                 <p style="font-size:12px;color:#15803d;margin:2px 0 0">
-                    Objective questions will be graded automatically. Review your choices before submitting.
+                    Please review your answers before submitting.
                 </p>
             </div>
             <div style="display:flex;gap:10px">

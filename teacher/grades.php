@@ -205,11 +205,6 @@ $myAssessments = $stmtMy->get_result();
             <span class="badge <?= $s['sub_status']==='graded' ? 'badge-green' : 'badge-orange' ?>" style="text-transform:capitalize">
                 <?= htmlspecialchars($s['sub_status']) ?>
             </span>
-            <?php if (!empty($s['is_auto_graded'])): ?>
-                <br><span class="badge badge-gray" style="font-size:10px;margin-top:3px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0">
-                    <i class="fas fa-robot"></i> Auto-Graded
-                </span>
-            <?php endif; ?>
             <?php if (!empty($s['pending_essays'])): ?>
                 <br><span class="badge badge-orange" style="font-size:10px;margin-top:3px">
                     <i class="fas fa-pencil-alt"></i> <?= $s['pending_essays'] ?> Essay<?= $s['pending_essays'] > 1 ? 's' : '' ?> to Grade
@@ -328,11 +323,6 @@ $myAssessments = $stmtMy->get_result();
             <span class="badge <?= $s['sub_status']==='graded' ? 'badge-green' : 'badge-orange' ?>" style="text-transform:capitalize">
                 <?= htmlspecialchars($s['sub_status']) ?>
             </span>
-            <?php if (!empty($s['is_auto_graded'])): ?>
-                <br><span class="badge badge-gray" style="font-size:10px;margin-top:3px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0">
-                    <i class="fas fa-robot"></i> Auto-Graded
-                </span>
-            <?php endif; ?>
             <?php if (!empty($s['pending_essays'])): ?>
                 <br><span class="badge badge-orange" style="font-size:10px;margin-top:3px">
                     <i class="fas fa-pencil-alt"></i> <?= $s['pending_essays'] ?> Essay<?= $s['pending_essays'] > 1 ? 's' : '' ?> to Grade

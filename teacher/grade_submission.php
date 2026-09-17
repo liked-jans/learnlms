@@ -111,11 +111,6 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
                     <span class="badge <?= $sub['status']==='graded'?'badge-green':'badge-orange' ?>" style="text-transform:capitalize">
                         <?= $sub['status'] ?>
                     </span>
-                    <?php if ($sub['is_auto_graded']): ?>
-                        <span class="badge badge-gray" style="font-size:10px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0">
-                            <i class="fas fa-robot"></i> Auto-Graded
-                        </span>
-                    <?php endif; ?>
                 </div>
                 <h2 style="font-size:22px;font-weight:800;color:var(--text);margin:0 0 4px"><?= htmlspecialchars($sub['full_name']) ?></h2>
                 <p style="font-size:13px;color:var(--text3);margin:0">
