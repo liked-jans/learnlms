@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add_question') {
         $qText = sanitize($_POST['question_text'] ?? '');
         $qType = sanitize($_POST['question_type'] ?? 'multiple_choice');
-        $points = max(0.25, (float)($_POST['points'] ?? 1.0));
+        $points = max(0.25, (float)($_POST['points'] ?? 1.25));
         $explanation = sanitize($_POST['explanation'] ?? '');
 
         if (empty($qText)) {
@@ -171,6 +171,9 @@ foreach ($questions as $q) {
                 </p>
             </div>
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <a href="assessment_print.php?id=<?= $assId ?>" target="_blank" class="btn btn-secondary btn-sm" title="Print this assessment (Student Paper or Answer Key)">
+                    <i class="fas fa-print" style="margin-right:4px"></i> Print Assessment
+                </a>
                 <form method="POST" style="display:inline">
                     <?= csrfField() ?>
                     <input type="hidden" name="action" value="toggle_shuffle">
@@ -358,9 +361,9 @@ foreach ($questions as $q) {
                     </select>
                 </div>
                 <div class="form-group">
-                    <label id="modalPointsLabel"><strong>Declared Points *</strong> <span style="font-weight:400;color:var(--text3)">(Default: 1.0)</span></label>
-                    <input type="number" name="points" id="modalPoints" class="form-control" value="1.0" min="0.25" max="100" step="0.5" required>
-                    <small id="modalPointsHelp" class="text-muted" style="display:block;margin-top:3px">Default is 1.0 point. Declare custom points (e.g. 5.0 points for essays).</small>
+                    <label id="modalPointsLabel"><strong>Declared Points *</strong> <span style="font-weight:400;color:var(--text3)">(Default: 1.25)</span></label>
+                    <input type="number" name="points" id="modalPoints" class="form-control" value="1.25" min="0.25" max="100" step="0.25" required>
+                    <small id="modalPointsHelp" class="text-muted" style="display:block;margin-top:3px">Default is 1.25 points. Declare custom points if needed (e.g. 5.0 points for essays).</small>
                 </div>
             </div>
 
@@ -456,15 +459,15 @@ function switchQuestionType(type) {
         ptsLabel.innerHTML = '<strong>Declared Points for Essay *</strong> <span style="color:#d97706">(e.g. 5.0)</span>';
         ptsHelp.textContent = 'Declare the point value for this essay (default suggestion: 5.0 points).';
         var currentVal = parseFloat(pts.value);
-        if (isNaN(currentVal) || currentVal === 1.0) {
+        if (isNaN(currentVal) || currentVal === 1.25 || currentVal === 1.0) {
             pts.value = '5.0';
         }
     } else {
-        ptsLabel.innerHTML = '<strong>Declared Points *</strong> <span style="font-weight:400;color:var(--text3)">(Default: 1.0)</span>';
-        ptsHelp.textContent = 'Default is 1.0 point per question. You can declare custom points if needed.';
+        ptsLabel.innerHTML = '<strong>Declared Points *</strong> <span style="font-weight:400;color:var(--text3)">(Default: 1.25)</span>';
+        ptsHelp.textContent = 'Default is 1.25 points per question. You can declare custom points if needed.';
         var currentVal = parseFloat(pts.value);
         if (currentVal === 5.0) {
-            pts.value = '1.0';
+            pts.value = '1.25';
         }
     }
 

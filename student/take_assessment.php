@@ -272,7 +272,7 @@ if ($submission) {
                 </div>
                 <div>
                     <?php if ($isCorrect === 1): ?>
-                        <span class="badge badge-green" style="font-size:11px"><i class="fas fa-check"></i> Correct (+<?= number_format($sa['points_awarded'], 1) ?>)</span>
+                        <span class="badge badge-green" style="font-size:11px"><i class="fas fa-check"></i> Correct (+<?= (float)$sa['points_awarded'] ?>)</span>
                     <?php elseif ($isCorrect === 0): ?>
                         <span class="badge badge-red" style="font-size:11px"><i class="fas fa-times"></i> Incorrect (0 pts)</span>
                     <?php else: ?>

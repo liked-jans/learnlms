@@ -165,12 +165,13 @@ $assessments = $conn->query("
             </span>
         <?php endif; ?>
     </td>
-    <td><strong><?= number_format($a['max_score'], 1) ?></strong> pts</td>
+    <td><strong><?= (float)$a['max_score'] ?></strong> pts</td>
     <td><?= $a['due_date'] ? date('M d, Y g:i A', strtotime($a['due_date'])) : '<span class="text-muted">No deadline</span>' ?></td>
     <td><span class="mode-pill mode-<?= $a['delivery_mode']==='online'?'online':($a['delivery_mode']==='offline'?'face':'blended') ?>"><?= $a['delivery_mode'] ?></span></td>
     <td><a href="grades.php?assessment=<?= $a['id'] ?>" class="badge badge-blue"><?= $a['subs'] ?> submissions</a></td>
     <td>
         <div class="action-btns">
+            <a href="assessment_print.php?id=<?= $a['id'] ?>" target="_blank" class="btn btn-secondary btn-sm" title="Print Assessment"><i class="fas fa-print"></i></a>
             <a href="assessment_questions.php?id=<?= $a['id'] ?>" class="btn btn-secondary btn-sm" title="Edit Questions"><i class="fas fa-edit"></i></a>
             <form method="POST" style="display:inline" onsubmit="return confirm('Delete this assessment and all questions?')">
                 <input type="hidden" name="action" value="delete">

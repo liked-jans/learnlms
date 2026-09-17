@@ -175,7 +175,7 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
                             </span>
                         <?php elseif ($sa['is_correct']): ?>
                             <span class="badge badge-green" style="font-size:11px;font-weight:700">
-                                <i class="fas fa-check"></i> Correct (+<?= number_format($sa['points_awarded'], 1) ?> pts)
+                                <i class="fas fa-check"></i> Correct (+<?= (float)$sa['points_awarded'] ?> pts)
                             </span>
                         <?php else: ?>
                             <span class="badge badge-red" style="font-size:11px;font-weight:700">
@@ -234,7 +234,7 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
                             Score Awarded (Max: <?= $ptsMax ?> pts) *
                         </label>
                         <div style="display:flex;align-items:center;gap:6px">
-                            <input type="number" name="points_awarded[<?= $sa['id'] ?>]" class="form-control" value="<?= (float)$sa['points_awarded'] ?>" min="0" max="<?= $ptsMax ?>" step="0.5" required style="font-weight:700;font-size:14px">
+                            <input type="number" name="points_awarded[<?= $sa['id'] ?>]" class="form-control" value="<?= (float)$sa['points_awarded'] ?>" min="0" max="<?= $ptsMax ?>" step="0.25" required style="font-weight:700;font-size:14px">
                             <span style="font-size:13px;color:var(--text3);font-weight:600">/ <?= $ptsMax ?></span>
                         </div>
                     </div>
