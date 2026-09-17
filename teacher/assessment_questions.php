@@ -37,7 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add_question') {
         $qText = sanitize($_POST['question_text'] ?? '');
         $qType = sanitize($_POST['question_type'] ?? 'multiple_choice');
-        $points = max(0.25, (float)($_POST['points'] ?? 1.25));
+        $points = (float)($_POST['points'] ?? 1);
+        if ($points <= 0) $points = 1.0;
         $explanation = sanitize($_POST['explanation'] ?? '');
 
         if (empty($qText)) {
@@ -361,9 +362,9 @@ foreach ($questions as $q) {
                     </select>
                 </div>
                 <div class="form-group">
-                    <label id="modalPointsLabel"><strong>Declared Points *</strong> <span style="font-weight:400;color:var(--text3)">(Default: 1.25)</span></label>
-                    <input type="number" name="points" id="modalPoints" class="form-control" value="1.25" min="0.25" max="100" step="0.25" required>
-                    <small id="modalPointsHelp" class="text-muted" style="display:block;margin-top:3px">Default is 1.25 points. Declare custom points if needed (e.g. 5.0 points for essays).</small>
+                    <label id="modalPointsLabel"><strong>Points *</strong> <span style="font-weight:400;color:var(--text3)">(e.g. 1, 2, 1.25)</span></label>
+                    <input type="number" name="points" id="modalPoints" class="form-control" value="1" min="0.01" max="1000" step="any" required>
+                    <small id="modalPointsHelp" class="text-muted" style="display:block;margin-top:3px">Enter the points for this question (e.g. 1, 2, 1.25, 5, etc.).</small>
                 </div>
             </div>
 
@@ -456,18 +457,18 @@ function switchQuestionType(type) {
     es.style.display = (type === 'essay') ? 'block' : 'none';
 
     if (type === 'essay') {
-        ptsLabel.innerHTML = '<strong>Declared Points for Essay *</strong> <span style="color:#d97706">(e.g. 5.0)</span>';
-        ptsHelp.textContent = 'Declare the point value for this essay (default suggestion: 5.0 points).';
+        ptsLabel.innerHTML = '<strong>Points for Essay *</strong> <span style="color:#d97706">(e.g. 5)</span>';
+        ptsHelp.textContent = 'Enter the point value for this essay (e.g. 5, 10, or custom points).';
         var currentVal = parseFloat(pts.value);
-        if (isNaN(currentVal) || currentVal === 1.25 || currentVal === 1.0) {
-            pts.value = '5.0';
+        if (isNaN(currentVal) || currentVal === 1) {
+            pts.value = '5';
         }
     } else {
-        ptsLabel.innerHTML = '<strong>Declared Points *</strong> <span style="font-weight:400;color:var(--text3)">(Default: 1.25)</span>';
-        ptsHelp.textContent = 'Default is 1.25 points per question. You can declare custom points if needed.';
+        ptsLabel.innerHTML = '<strong>Points *</strong> <span style="font-weight:400;color:var(--text3)">(e.g. 1, 2, 1.25)</span>';
+        ptsHelp.textContent = 'Enter the point value for this question (e.g. 1, 2, 1.25, etc.).';
         var currentVal = parseFloat(pts.value);
-        if (currentVal === 5.0) {
-            pts.value = '1.25';
+        if (currentVal === 5) {
+            pts.value = '1';
         }
     }
 

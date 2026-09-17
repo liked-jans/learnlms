@@ -9,12 +9,12 @@ $assId = (int)($_GET['id'] ?? 0);
 if ($userRole === 'admin') {
     $stmt = $conn->prepare("
         SELECT a.*, s.course_id, c.course_code, c.course_name, c.units,
-               t.week_number, t.title as topic_title,
+               t.week_number, t.topic_title,
                u.full_name as teacher_name, u.email as teacher_email,
                d.name as department_name
         FROM assessments a
-        JOIN syllabi s ON a.syllabus_id = s.id
-        JOIN courses c ON s.course_id = c.id
+        LEFT JOIN syllabi s ON a.syllabus_id = s.id
+        LEFT JOIN courses c ON s.course_id = c.id
         LEFT JOIN users u ON a.teacher_id = u.id
         LEFT JOIN departments d ON c.department_id = d.id
         LEFT JOIN syllabus_topics t ON a.topic_id = t.id
@@ -24,18 +24,18 @@ if ($userRole === 'admin') {
 } else {
     $stmt = $conn->prepare("
         SELECT a.*, s.course_id, c.course_code, c.course_name, c.units,
-               t.week_number, t.title as topic_title,
+               t.week_number, t.topic_title,
                u.full_name as teacher_name, u.email as teacher_email,
                d.name as department_name
         FROM assessments a
-        JOIN syllabi s ON a.syllabus_id = s.id
-        JOIN courses c ON s.course_id = c.id
+        LEFT JOIN syllabi s ON a.syllabus_id = s.id
+        LEFT JOIN courses c ON s.course_id = c.id
         LEFT JOIN users u ON a.teacher_id = u.id
         LEFT JOIN departments d ON c.department_id = d.id
         LEFT JOIN syllabus_topics t ON a.topic_id = t.id
-        WHERE a.id = ? AND a.teacher_id = ?
+        WHERE a.id = ? AND (a.teacher_id = ? OR s.teacher_id = ?)
     ");
-    $stmt->bind_param('ii', $assId, $tid);
+    $stmt->bind_param('iii', $assId, $tid, $tid);
 }
 $stmt->execute();
 $assessment = $stmt->get_result()->fetch_assoc();
