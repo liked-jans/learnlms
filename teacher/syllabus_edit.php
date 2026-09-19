@@ -5,6 +5,8 @@ $sid = (int)($_GET['id'] ?? 0);
 $tid = $_SESSION['user_id'];
 ensureColumnExists('syllabus_topics', 'is_completed', "TINYINT(1) NOT NULL DEFAULT 0");
 ensureColumnExists('syllabus_topics', 'completion_notes', "TEXT DEFAULT NULL");
+ensureColumnExists('syllabus_topics', 'deletion_requested', "TINYINT(1) NOT NULL DEFAULT 0");
+ensureColumnExists('syllabus_topics', 'deletion_reason', "TEXT DEFAULT NULL");
 $syl = $conn->query("SELECT s.*,c.course_name,c.course_code FROM syllabi s JOIN courses c ON s.course_id=c.id WHERE s.id=$sid AND s.teacher_id=$tid")->fetch_assoc();
 if (!$syl) { setFlash('error','Not found.'); redirect(BASE_URL.'teacher/syllabi.php'); }
 
@@ -66,10 +68,26 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $stmt=$conn->prepare("UPDATE syllabus_topics SET week_number=?,topic_title=?,topic_description=?,learning_outcomes=?,delivery_mode=?,online_platform=?,resources=?,assessment_type=? WHERE id=? AND syllabus_id=?");
         $stmt->bind_param('isssssssii',$wk,$title,$tdesc,$lo,$dm,$plat,$res,$ass,$topicId,$sid); $stmt->execute();
         setFlash('success','Topic updated.');
-    } elseif ($action === 'delete_topic') {
+    } elseif ($action === 'request_delete_topic') {
         $topicId=(int)$_POST['topic_id'];
-        $conn->query("DELETE FROM syllabus_topics WHERE id=$topicId AND syllabus_id=$sid");
-        setFlash('success','Topic deleted.');
+        $reason = sanitize($_POST['deletion_reason'] ?? '');
+        if (empty($reason)) {
+            setFlash('error', 'Please provide a reason for requesting topic deletion.');
+        } else {
+            $stmtReq = $conn->prepare("UPDATE syllabus_topics SET deletion_requested = 1, deletion_reason = ? WHERE id = ? AND syllabus_id = ?");
+            $stmtReq->bind_param('sii', $reason, $topicId, $sid);
+            $stmtReq->execute();
+            if (function_exists('logActivity')) {
+                logActivity($tid, "Requested deletion of topic ID {$topicId} in syllabus ID {$sid}. Reason: {$reason}", 'Syllabus');
+            }
+            setFlash('success', 'Topic deletion request submitted to administrator.');
+        }
+    } elseif ($action === 'cancel_delete_request') {
+        $topicId=(int)$_POST['topic_id'];
+        $stmtCancel = $conn->prepare("UPDATE syllabus_topics SET deletion_requested = 0, deletion_reason = NULL WHERE id = ? AND syllabus_id = ?");
+        $stmtCancel->bind_param('ii', $topicId, $sid);
+        $stmtCancel->execute();
+        setFlash('success', 'Deletion request cancelled.');
     } elseif ($action === 'toggle_complete') {
         // AJAX endpoint (mirrors the student progress tracker) — no redirect, returns JSON.
         $topicId = (int)$_POST['topic_id'];
@@ -479,12 +497,37 @@ $isDone = !empty($t['is_completed']);
                     onclick="event.stopPropagation(); handleLessonModalClick(this)"
                     title="Upload Lesson Resource"><i class="fas fa-upload"></i></button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick='editTopic(<?= htmlspecialchars(json_encode($t), ENT_QUOTES) ?>)' title="Edit Topic"><i class="fas fa-edit"></i></button>
-                <form method="POST" style="display:inline" onsubmit="return confirm('Delete topic?')">
-                    <input type="hidden" name="action" value="delete_topic"><input type="hidden" name="topic_id" value="<?= $t['id'] ?>">
-                    <button class="btn btn-danger btn-sm" title="Delete Topic"><i class="fas fa-trash"></i></button>
-                </form>
+                <?php if (!empty($t['deletion_requested'])): ?>
+                    <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:11px;padding:3px 8px" title="Deletion requested from Admin">
+                        <i class="fas fa-clock"></i> Deletion Requested
+                    </span>
+                    <form method="POST" style="display:inline" onsubmit="return confirm('Cancel this deletion request?')">
+                        <input type="hidden" name="action" value="cancel_delete_request">
+                        <input type="hidden" name="topic_id" value="<?= $t['id'] ?>">
+                        <button class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px" title="Cancel Deletion Request">
+                            <i class="fas fa-undo"></i> Cancel Request
+                        </button>
+                    </form>
+                <?php else: ?>
+                    <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px;color:#dc2626"
+                        data-topic-id="<?= $t['id'] ?>"
+                        data-topic-title="<?= htmlspecialchars('Week '.$t['week_number'].' - '.$t['topic_title'], ENT_QUOTES) ?>"
+                        onclick="event.stopPropagation(); openDeleteRequestModal(this)"
+                        title="Request Deletion from Administrator">
+                        <i class="fas fa-trash-alt"></i> Request Delete
+                    </button>
+                <?php endif; ?>
             </div>
         </div>
+
+        <?php if (!empty($t['deletion_requested'])): ?>
+        <div style="margin-top:8px;padding:8px 12px;background:#fffbeb;border:1px solid #fef3c7;border-radius:6px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:8px">
+            <i class="fas fa-exclamation-triangle" style="color:#d97706"></i>
+            <div>
+                <strong>Deletion Request Pending:</strong> <?= htmlspecialchars($t['deletion_reason'] ?? 'Awaiting administrative review') ?>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Topic Title & Description -->
         <div class="week-title" style="cursor:pointer;margin-top:6px" onclick="toggleWeekDetails(<?= $t['id'] ?>)">
@@ -1088,6 +1131,33 @@ $isDone = !empty($t['is_completed']);
 </div>
 </div>
 
+<!-- Request Deletion Modal -->
+<div class="modal-overlay" id="requestDeleteModal">
+<div class="modal" style="max-width:480px">
+    <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-exclamation-triangle" style="color:#d97706;margin-right:6px"></i> Request Topic Deletion</span>
+        <button class="modal-close" onclick="closeModal('requestDeleteModal')">&times;</button>
+    </div>
+    <form method="POST">
+        <input type="hidden" name="action" value="request_delete_topic">
+        <input type="hidden" name="topic_id" id="requestDeleteTopicId" value="">
+        <div class="modal-body">
+            <p style="font-size:13px;color:var(--text);margin-bottom:12px">
+                You are requesting removal of <strong id="requestDeleteTopicTitle"></strong>. Curriculum changes require administrative approval.
+            </p>
+            <div class="form-group">
+                <label>Reason for Deletion *</label>
+                <textarea name="deletion_reason" class="form-control" rows="3" placeholder="e.g. Combined into another week, curriculum scope update, or redundant topic..." required></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('requestDeleteModal')">Cancel</button>
+            <button type="submit" class="btn btn-danger"><i class="fas fa-paper-plane"></i> Submit Request</button>
+        </div>
+    </form>
+</div>
+</div>
+
 </div></div></div>
 <script>
 function openModal(id){document.getElementById(id).classList.add('open');}
@@ -1097,6 +1167,13 @@ function showTab(id,btn){
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     btn.classList.add('active');
+}
+function openDeleteRequestModal(btn) {
+    var topicId = btn.getAttribute('data-topic-id');
+    var topicTitle = btn.getAttribute('data-topic-title') || '';
+    document.getElementById('requestDeleteTopicId').value = topicId;
+    document.getElementById('requestDeleteTopicTitle').textContent = topicTitle;
+    openModal('requestDeleteModal');
 }
 function editTopic(t){
     document.getElementById('topicModalTitle').textContent='Edit Topic';

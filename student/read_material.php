@@ -14,7 +14,7 @@ $matId = (int)($_GET['id'] ?? 0);
 
 if ($matId <= 0) {
     setFlash('error', 'Material not specified.');
-    redirect($isStudent ? BASE_URL . 'student/materials.php' : BASE_URL . 'teacher/materials.php');
+    redirect($isStudent ? BASE_URL . 'student/materials.php' : ($userRole === 'admin' ? BASE_URL . 'admin/monitoring.php' : BASE_URL . 'teacher/materials.php'));
 }
 
 // Fetch material based on role (students require enrollment; teachers/admins preview directly)
@@ -27,7 +27,7 @@ if ($isStudent) {
         FROM learning_materials m
         JOIN syllabi s ON m.syllabus_id = s.id
         JOIN courses c ON s.course_id = c.id
-        JOIN users u ON m.teacher_id = u.id
+        LEFT JOIN users u ON m.teacher_id = u.id
         JOIN enrollments e ON e.syllabus_id = s.id AND e.student_id = ? AND e.status = 'enrolled'
         LEFT JOIN syllabus_topics st ON m.syllabus_topic_id = st.id
         LEFT JOIN topic_progress tp ON tp.syllabus_topic_id = st.id AND tp.student_id = ?
@@ -44,7 +44,7 @@ if ($isStudent) {
         FROM learning_materials m
         JOIN syllabi s ON m.syllabus_id = s.id
         JOIN courses c ON s.course_id = c.id
-        JOIN users u ON m.teacher_id = u.id
+        LEFT JOIN users u ON m.teacher_id = u.id
         LEFT JOIN syllabus_topics st ON m.syllabus_topic_id = st.id
         WHERE m.id = ?
         LIMIT 1
@@ -57,7 +57,7 @@ $mat = $stmt->get_result()->fetch_assoc();
 
 if (!$mat) {
     setFlash('error', 'Learning material not found or access restricted.');
-    redirect($isStudent ? BASE_URL . 'student/materials.php' : BASE_URL . 'teacher/materials.php');
+    redirect($isStudent ? BASE_URL . 'student/materials.php' : ($userRole === 'admin' ? BASE_URL . 'admin/monitoring.php' : BASE_URL . 'teacher/materials.php'));
 }
 
 $pageTitle = $mat['title'];
@@ -283,23 +283,28 @@ if (!empty($mat['topic_id'])) {
 <div class="page-content" style="max-width:960px;margin:0 auto;padding-bottom:80px;">
 
     <?php if ($isTeacherOrAdmin): ?>
-    <!-- Teacher Preview Mode Banner -->
+    <!-- Preview Mode Banner -->
     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div style="display:flex;align-items:center;gap:10px;color:#1e40af;font-size:13px;font-weight:600">
-            <i class="fas fa-chalkboard-teacher" style="font-size:18px"></i>
-            <span>Teacher Preview Mode &bull; Previewing full-context lesson as students see it in the immersive reader.</span>
+            <i class="fas <?= $userRole === 'admin' ? 'fa-user-shield' : 'fa-chalkboard-teacher' ?>" style="font-size:18px"></i>
+            <span><?= $userRole === 'admin' ? 'Administrator Preview Mode &bull; Inspecting interactive lesson module as learners experience it.' : 'Teacher Preview Mode &bull; Previewing full-context lesson as students see it in the immersive reader.' ?></span>
         </div>
         <div style="display:flex;gap:8px">
+            <?php if ($userRole === 'admin'): ?>
+            <a href="<?= BASE_URL ?>admin/monitoring.php" class="btn btn-secondary btn-sm" style="font-size:12px"><i class="fas fa-arrow-left"></i> Back to Progress Monitor</a>
+            <a href="<?= BASE_URL ?>admin/syllabi_view.php?id=<?= $mat['syl_id'] ?>" class="btn btn-secondary btn-sm" style="font-size:12px"><i class="fas fa-file-alt"></i> View Syllabus</a>
+            <?php else: ?>
             <a href="<?= BASE_URL ?>teacher/materials.php" class="btn btn-secondary btn-sm" style="font-size:12px"><i class="fas fa-arrow-left"></i> Back to Materials</a>
             <a href="<?= BASE_URL ?>teacher/topics.php?syl_id=<?= $mat['syl_id'] ?>" class="btn btn-secondary btn-sm" style="font-size:12px"><i class="fas fa-list-ul"></i> Syllabus Mapping</a>
+            <?php endif; ?>
         </div>
     </div>
     <?php endif; ?>
 
     <!-- Navigation Bar -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-        <a href="<?= $isStudent ? BASE_URL . 'student/syllabus.php?syl=' . $mat['syl_id'] : BASE_URL . 'teacher/materials.php' ?>" class="btn btn-secondary btn-sm">
-            <i class="fas fa-arrow-left"></i> <?= $isStudent ? 'Back to Syllabus' : 'Back to Materials' ?>
+        <a href="<?= $isStudent ? BASE_URL . 'student/syllabus.php?syl=' . $mat['syl_id'] : ($userRole === 'admin' ? BASE_URL . 'admin/monitoring.php' : BASE_URL . 'teacher/materials.php') ?>" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> <?= $isStudent ? 'Back to Syllabus' : ($userRole === 'admin' ? 'Back to Progress Monitor' : 'Back to Materials') ?>
         </a>
         <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-size:12px;color:var(--text3);font-weight:600">
@@ -618,13 +623,19 @@ if (!empty($mat['topic_id'])) {
                             </p>
                         </div>
                         <div>
-                            <?php if ($isSubmitted): ?>
-                                <button class="btn btn-secondary btn-sm" disabled style="width:100%">
-                                    <i class="fas fa-check-circle" style="color:#10b981"></i> Submitted (<?= $ass['total_score'] !== null ? number_format((float)$ass['total_score'], 1) . ' pts' : 'Under Review' ?>)
-                                </button>
+                            <?php if ($isStudent): ?>
+                                <?php if ($isSubmitted): ?>
+                                    <button class="btn btn-secondary btn-sm" disabled style="width:100%">
+                                        <i class="fas fa-check-circle" style="color:#10b981"></i> Submitted (<?= $ass['total_score'] !== null ? number_format((float)$ass['total_score'], 1) . ' pts' : 'Under Review' ?>)
+                                    </button>
+                                <?php else: ?>
+                                    <a href="<?= BASE_URL ?>student/take_assessment.php?id=<?= $ass['id'] ?>" class="btn btn-primary btn-sm" style="width:100%;text-align:center">
+                                        <i class="fas fa-pen"></i> Take Assessment Now
+                                    </a>
+                                <?php endif; ?>
                             <?php else: ?>
-                                <a href="<?= BASE_URL ?>student/take_assessment.php?id=<?= $ass['id'] ?>" class="btn btn-primary btn-sm" style="width:100%;text-align:center">
-                                    <i class="fas fa-pen"></i> Take Assessment Now
+                                <a href="<?= BASE_URL ?>teacher/assessment_questions.php?id=<?= $ass['id'] ?>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="width:100%;text-align:center">
+                                    <i class="fas fa-list-ol"></i> View Assessment Questions
                                 </a>
                             <?php endif; ?>
                         </div>

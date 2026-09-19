@@ -3,3 +3,5 @@
 *cookie*.txt
 .DS_Store
 Thumbs.db
+.env
+

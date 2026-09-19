@@ -4,6 +4,30 @@ requireRole('admin');
 $id = (int)($_GET['id'] ?? 0);
 ensureColumnExists('syllabus_topics', 'is_completed', "TINYINT(1) NOT NULL DEFAULT 0");
 ensureColumnExists('syllabus_topics', 'completion_notes', "TEXT DEFAULT NULL");
+ensureColumnExists('syllabus_topics', 'deletion_requested', "TINYINT(1) NOT NULL DEFAULT 0");
+ensureColumnExists('syllabus_topics', 'deletion_reason', "TEXT DEFAULT NULL");
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    $action = $_POST['action'] ?? '';
+    if ($action === 'admin_delete_topic') {
+        $topicId = (int)$_POST['topic_id'];
+        $conn->query("DELETE FROM syllabus_topics WHERE id=$topicId AND syllabus_id=$id");
+        if (function_exists('logActivity')) {
+            logActivity($_SESSION['user_id'], "Admin permanently deleted topic ID {$topicId} from syllabus ID {$id}", 'Syllabus');
+        }
+        setFlash('success', 'Topic has been permanently deleted.');
+        redirect(BASE_URL . 'admin/syllabi_view.php?id=' . $id);
+    } elseif ($action === 'admin_dismiss_delete_request') {
+        $topicId = (int)$_POST['topic_id'];
+        $conn->query("UPDATE syllabus_topics SET deletion_requested = 0, deletion_reason = NULL WHERE id=$topicId AND syllabus_id=$id");
+        if (function_exists('logActivity')) {
+            logActivity($_SESSION['user_id'], "Admin dismissed deletion request for topic ID {$topicId} in syllabus ID {$id}", 'Syllabus');
+        }
+        setFlash('success', 'Deletion request dismissed. Topic retained.');
+        redirect(BASE_URL . 'admin/syllabi_view.php?id=' . $id);
+    }
+}
+
 $syl = $conn->query("SELECT s.*,c.course_name,c.course_code,c.units,u.full_name as teacher_name,u.email as teacher_email,d.name as dept_name FROM syllabi s JOIN courses c ON s.course_id=c.id JOIN users u ON s.teacher_id=u.id JOIN departments d ON c.department_id=d.id WHERE s.id=$id")->fetch_assoc();
 if (!$syl) redirect(BASE_URL.'admin/syllabi.php');
 $pageTitle = 'Syllabus: '.$syl['course_code'];
@@ -110,6 +134,25 @@ while ($st = $studentsQuery->fetch_assoc()) {
 </div></div>
 <?php endif; ?>
 
+<?php 
+$pendingDeletionCount = count(array_filter($topicsArr, fn($t) => !empty($t['deletion_requested'])));
+if ($pendingDeletionCount > 0): 
+?>
+<div class="card" style="margin-bottom:20px;border-left:4px solid #f59e0b;background:#fffbeb">
+    <div class="card-body" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:50%;background:#fef3c7;color:#d97706;display:flex;align-items:center;justify-content:center;font-size:18px">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div>
+                <strong style="color:#92400e;font-size:14px"><?= $pendingDeletionCount ?> Topic Deletion Request<?= $pendingDeletionCount > 1 ? 's' : '' ?> Pending Review</strong>
+                <div style="color:#b45309;font-size:12px;margin-top:2px">The instructor has requested to delete weekly curriculum topics. Review the stated reasons and approve or dismiss below.</div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <div class="week-timeline">
 <?php foreach($topicsArr as $t):
 $modeClass = ['face-to-face'=>'face','online'=>'online','blended'=>'blended','asynchronous'=>'async','synchronous'=>'sync'][$t['delivery_mode']] ?? 'blended';
@@ -127,10 +170,51 @@ $isDone = !empty($t['is_completed']);
                 <?php else: ?>
                 <span class="badge badge-gray">Not done</span>
                 <?php endif; ?>
+                <?php if (!empty($t['deletion_requested'])): ?>
+                <span class="badge badge-orange" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a"><i class="fas fa-clock"></i> Deletion Requested</span>
+                <?php endif; ?>
+                <form method="POST" style="display:inline" onsubmit="return confirm('Admin: Permanently delete this topic? This cannot be undone.');">
+                    <input type="hidden" name="action" value="admin_delete_topic">
+                    <input type="hidden" name="topic_id" value="<?= $t['id'] ?>">
+                    <button type="submit" class="btn btn-secondary btn-sm" style="padding:2px 6px;font-size:11px;color:#dc2626" title="Delete Topic">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
             </div>
         </div>
         <div class="week-title" style="<?= $isDone ? 'text-decoration:line-through;color:var(--text3)' : '' ?>"><?= htmlspecialchars($t['topic_title']) ?></div>
         <?php if($t['topic_description']): ?><p style="font-size:13px;color:var(--text3);margin-top:6px"><?= htmlspecialchars($t['topic_description']) ?></p><?php endif; ?>
+
+        <?php if (!empty($t['deletion_requested'])): ?>
+        <div style="margin-top:10px;padding:12px 14px;background:#fffbeb;border:1px solid #fef3c7;border-radius:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <div>
+                    <strong style="font-size:12px;color:#92400e;display:flex;align-items:center;gap:6px">
+                        <i class="fas fa-exclamation-circle"></i> Teacher Deletion Request
+                    </strong>
+                    <p style="font-size:13px;color:#78350f;margin:4px 0 0">
+                        <strong>Stated Reason:</strong> <?= htmlspecialchars($t['deletion_reason'] ?? 'No reason provided') ?>
+                    </p>
+                </div>
+                <div style="display:flex;gap:6px">
+                    <form method="POST" onsubmit="return confirm('Approve deletion of this topic?');">
+                        <input type="hidden" name="action" value="admin_delete_topic">
+                        <input type="hidden" name="topic_id" value="<?= $t['id'] ?>">
+                        <button type="submit" class="btn btn-danger btn-sm" style="font-size:11px;padding:4px 10px">
+                            <i class="fas fa-check"></i> Approve & Delete
+                        </button>
+                    </form>
+                    <form method="POST">
+                        <input type="hidden" name="action" value="admin_dismiss_delete_request">
+                        <input type="hidden" name="topic_id" value="<?= $t['id'] ?>">
+                        <button type="submit" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 10px">
+                            <i class="fas fa-times"></i> Dismiss Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
         <?php if($isDone && !empty($t['completion_notes'])): ?>
         <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;border-left:3px solid var(--primary)">
             <strong style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)"><i class="fas fa-pen"></i> Teacher's Notes</strong>

@@ -12,7 +12,25 @@
 // define('DB_USER', 'root');
 // define('DB_PASS', '');
 // define('DB_NAME', 'learnlms');
-// define('SITE_NAME', 'BlendEd LMS');
+// Load local .env if present (used for local testing against Railway DB)
+$_envFile = dirname(__DIR__) . '/.env';
+if (file_exists($_envFile) && is_readable($_envFile)) {
+    $_envLines = file($_envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($_envLines as $_line) {
+        $_line = trim($_line);
+        if ($_line === '' || $_line[0] === '#') continue;
+        if (strpos($_line, '=') !== false) {
+            list($_key, $_val) = explode('=', $_line, 2);
+            $_key = trim($_key);
+            $_val = trim($_val, " \t\n\r\0\x0B\"'");
+            if (getenv($_key) === false || getenv($_key) === '') {
+                putenv("$_key=$_val");
+                $_ENV[$_key] = $_val;
+                $_SERVER[$_key] = $_val;
+            }
+        }
+    }
+}
 
 define('DB_HOST', getenv('MYSQLHOST') ?: (getenv('DB_HOST') ?: 'localhost'));
 define('DB_USER', getenv('MYSQLUSER') ?: (getenv('DB_USER') ?: 'root'));

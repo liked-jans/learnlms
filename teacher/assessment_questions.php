@@ -1,32 +1,51 @@
 <?php
 require_once '../includes/config.php';
-requireRole('teacher');
-$tid = $_SESSION['user_id'];
+requireRole(['teacher', 'admin']);
+$isAdmin = (($_SESSION['role'] ?? '') === 'admin');
+$tid = (int)$_SESSION['user_id'];
 $assId = (int)($_GET['id'] ?? 0);
 
-// Verify assessment belongs to this teacher
-$stmt = $conn->prepare("
-    SELECT a.*, s.course_id, c.course_code, c.course_name,
-           (SELECT COUNT(*) FROM assessment_questions WHERE assessment_id = a.id) as q_count,
-           (SELECT COUNT(*) FROM submissions WHERE assessment_id = a.id) as sub_count
-    FROM assessments a 
-    JOIN syllabi s ON a.syllabus_id = s.id 
-    JOIN courses c ON s.course_id = c.id 
-    WHERE a.id = ? AND a.teacher_id = ?
-");
-$stmt->bind_param('ii', $assId, $tid);
+// Verify assessment belongs to this teacher or allow admin oversight
+if ($isAdmin) {
+    $stmt = $conn->prepare("
+        SELECT a.*, s.course_id, c.course_code, c.course_name,
+               (SELECT COUNT(*) FROM assessment_questions WHERE assessment_id = a.id) as q_count,
+               (SELECT COUNT(*) FROM submissions WHERE assessment_id = a.id) as sub_count
+        FROM assessments a 
+        JOIN syllabi s ON a.syllabus_id = s.id 
+        JOIN courses c ON s.course_id = c.id 
+        WHERE a.id = ?
+    ");
+    $stmt->bind_param('i', $assId);
+} else {
+    $stmt = $conn->prepare("
+        SELECT a.*, s.course_id, c.course_code, c.course_name,
+               (SELECT COUNT(*) FROM assessment_questions WHERE assessment_id = a.id) as q_count,
+               (SELECT COUNT(*) FROM submissions WHERE assessment_id = a.id) as sub_count
+        FROM assessments a 
+        JOIN syllabi s ON a.syllabus_id = s.id 
+        JOIN courses c ON s.course_id = c.id 
+        WHERE a.id = ? AND a.teacher_id = ?
+    ");
+    $stmt->bind_param('ii', $assId, $tid);
+}
 $stmt->execute();
 $assessment = $stmt->get_result()->fetch_assoc();
 
 if (!$assessment) {
     setFlash('error', 'Assessment not found or you do not have permission to manage it.');
-    redirect(BASE_URL . 'teacher/assessments.php');
+    redirect($isAdmin ? BASE_URL . 'admin/monitoring.php' : BASE_URL . 'teacher/assessments.php');
 }
 
-$pageTitle = 'Manage Questions: ' . $assessment['title'];
+$pageTitle = ($isAdmin ? 'View Assessment: ' : 'Manage Questions: ') . $assessment['title'];
 
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($isAdmin) {
+        setFlash('error', 'Administrators have read-only oversight and cannot add, edit, or delete assessment questions.');
+        redirect(BASE_URL . 'teacher/assessment_questions.php?id=' . $assId);
+    }
+
     if (!verifyCsrfToken()) {
         setFlash('error', 'Security token expired. Please try again.');
         redirect(BASE_URL . 'teacher/assessment_questions.php?id=' . $assId);
@@ -203,14 +222,27 @@ foreach ($questions as $q) {
 
 <!-- Breadcrumb -->
 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);margin-bottom:16px">
-    <a href="assessments.php" style="color:var(--primary);text-decoration:none">
-        <i class="fas fa-arrow-left" style="margin-right:4px"></i> Assessments
+    <a href="<?= $isAdmin ? BASE_URL . 'admin/monitoring.php' : 'assessments.php' ?>" style="color:var(--primary);text-decoration:none">
+        <i class="fas fa-arrow-left" style="margin-right:4px"></i> <?= $isAdmin ? 'Progress Monitor' : 'Assessments' ?>
     </a>
     <span>/</span>
     <span style="color:var(--text)"><?= htmlspecialchars($assessment['course_code']) ?></span>
     <span>/</span>
     <span style="color:var(--text);font-weight:600"><?= htmlspecialchars($assessment['title']) ?></span>
 </div>
+
+<?php if ($isAdmin): ?>
+<!-- Admin Read-Only Oversight Banner -->
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;align-items:center;gap:10px;color:#1e40af;font-size:13px;font-weight:600">
+        <i class="fas fa-user-shield" style="font-size:18px"></i>
+        <span>Administrator Assessment Oversight &bull; Read-only mode. Modifying, adding, or deleting questions is restricted to the course instructor.</span>
+    </div>
+    <div style="display:flex;gap:8px">
+        <a href="<?= BASE_URL ?>admin/monitoring.php" class="btn btn-secondary btn-sm" style="font-size:12px"><i class="fas fa-arrow-left"></i> Back to Progress Monitor</a>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Header Card -->
 <div class="card" style="margin-bottom:24px;border:1px solid rgba(59,130,246,0.25);box-shadow:0 4px 14px rgba(0,0,0,0.03)">
@@ -236,6 +268,7 @@ foreach ($questions as $q) {
                 <a href="assessment_print.php?id=<?= $assId ?>" target="_blank" class="btn btn-secondary btn-sm" title="Print this assessment (Student Paper or Answer Key)">
                     <i class="fas fa-print" style="margin-right:4px"></i> Print Assessment
                 </a>
+                <?php if (!$isAdmin): ?>
                 <form method="POST" style="display:inline">
                     <?= csrfField() ?>
                     <input type="hidden" name="action" value="toggle_shuffle">
@@ -246,6 +279,11 @@ foreach ($questions as $q) {
                 <button type="button" class="btn btn-primary btn-sm" onclick="openModal('addQuestionModal')">
                     <i class="fas fa-plus" style="margin-right:4px"></i> Add Question
                 </button>
+                <?php else: ?>
+                <span class="badge badge-blue" style="font-size:12px;padding:6px 12px;font-weight:600;display:inline-flex;align-items:center;gap:5px">
+                    <i class="fas fa-shield-alt"></i> Read-Only View
+                </span>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -289,9 +327,11 @@ foreach ($questions as $q) {
     <p style="font-size:13px;max-width:480px;margin:0 auto 16px">
         Build your assessment questionnaire by adding Multiple Choice, True or False, or Essay questions.
     </p>
+    <?php if (!$isAdmin): ?>
     <button type="button" class="btn btn-primary btn-sm" onclick="openModal('addQuestionModal')">
         <i class="fas fa-plus"></i> Add First Question
     </button>
+    <?php endif; ?>
 </div>
 <?php else: ?>
 <div style="display:flex;flex-direction:column;gap:14px">
@@ -318,6 +358,7 @@ foreach ($questions as $q) {
                         <i class="fas fa-star" style="font-size:10px"></i> Declared: <?= (float)$q['points'] ?> Point<?= $q['points'] != 1 ? 's' : '' ?><?= $q['question_type'] === 'essay' ? ' for this Essay' : '' ?>
                     </span>
                 </div>
+                <?php if (!$isAdmin): ?>
                 <div style="display:flex;align-items:center;gap:6px">
                     <button type="button" class="btn btn-secondary btn-sm" style="padding:4px 8px;font-size:11px" title="Edit question" onclick='editQuestion(<?= htmlspecialchars(json_encode($q, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, "UTF-8") ?>)'>
                         <i class="fas fa-edit"></i>
@@ -331,6 +372,7 @@ foreach ($questions as $q) {
                         </button>
                     </form>
                 </div>
+                <?php endif; ?>
             </div>
 
             <!-- Question Text -->
@@ -399,6 +441,7 @@ foreach ($questions as $q) {
 </div>
 <?php endif; ?>
 
+<?php if (!$isAdmin): ?>
 <!-- Add Question Modal -->
 <div class="modal-overlay" id="addQuestionModal">
 <div class="modal" style="max-width:680px">
@@ -593,6 +636,7 @@ foreach ($questions as $q) {
     </form>
 </div>
 </div>
+<?php endif; ?>
 
 </div></div></div>
 
