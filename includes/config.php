@@ -32,11 +32,14 @@ if (file_exists($_envFile) && is_readable($_envFile)) {
     }
 }
 
-define('DB_HOST', getenv('MYSQLHOST') ?: (getenv('DB_HOST') ?: 'localhost'));
-define('DB_USER', getenv('MYSQLUSER') ?: (getenv('DB_USER') ?: 'root'));
-define('DB_PASS', getenv('MYSQLPASSWORD') !== false ? getenv('MYSQLPASSWORD') : (getenv('DB_PASS') !== false ? getenv('DB_PASS') : ''));
-define('DB_NAME', getenv('MYSQLDATABASE') ?: (getenv('DB_NAME') ?: 'learnlms'));
-define('DB_PORT', (int)(getenv('MYSQLPORT') ?: (getenv('DB_PORT') ?: 3306)));
+// Target Database: MySQL-CmV2 (acela.proxy.rlwy.net:53053)
+$_isOldRailway = (getenv('MYSQLHOST') === 'mysql.railway.internal' || getenv('MYSQLHOST') === 'sakura.proxy.rlwy.net' || getenv('MYSQLHOST') === 'localhost');
+
+define('DB_HOST', getenv('DB_HOST') ?: (!$_isOldRailway && getenv('MYSQLHOST') ? getenv('MYSQLHOST') : 'acela.proxy.rlwy.net'));
+define('DB_USER', getenv('DB_USER') ?: (!$_isOldRailway && getenv('MYSQLUSER') ? getenv('MYSQLUSER') : 'root'));
+define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : (!$_isOldRailway && getenv('MYSQLPASSWORD') !== false ? getenv('MYSQLPASSWORD') : 'cpXRhWNHvBgAaSIHsuVmwUhWhzNNMWKK'));
+define('DB_NAME', getenv('DB_NAME') ?: (getenv('MYSQLDATABASE') ?: 'railway'));
+define('DB_PORT', (int)(getenv('DB_PORT') ?: (!$_isOldRailway && getenv('MYSQLPORT') ? getenv('MYSQLPORT') : 53053)));
 define('SITE_NAME', getenv('SITE_NAME') ?: 'BlendEd LMS');
 
 // Figure out the site's URL root by comparing the filesystem path of the
