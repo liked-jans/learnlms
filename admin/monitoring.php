@@ -5,6 +5,16 @@ $pageTitle = 'Progress Monitor';
 
 $focusSylId = (int)($_GET['syl'] ?? 0);
 
+// Ensure optional columns exist or fall back gracefully
+ensureColumnExists('syllabus_topics', 'deletion_requested', "TINYINT(1) NOT NULL DEFAULT 0");
+ensureColumnExists('syllabus_topics', 'deletion_reason', "TEXT DEFAULT NULL");
+
+$hasDelCol = false;
+$colCheck = $conn->query("SHOW COLUMNS FROM syllabus_topics LIKE 'deletion_requested'");
+if ($colCheck && $colCheck->num_rows > 0) {
+    $hasDelCol = true;
+}
+
 // Global Executive Statistics
 $totalSyllabiCount = (int)($conn->query("SELECT COUNT(*) c FROM syllabi")->fetch_assoc()['c'] ?? 0);
 $publishedSyllabiCount = (int)($conn->query("SELECT COUNT(*) c FROM syllabi WHERE status = 'published'")->fetch_assoc()['c'] ?? 0);
@@ -94,10 +104,11 @@ if (!empty($sylIds)) {
     }
 
     // 3. Fetch all weekly topics with strictly enrolled student readers
+    $delCols = $hasDelCol ? "st.deletion_requested, st.deletion_reason," : "0 as deletion_requested, '' as deletion_reason,";
     $topicsRes = $conn->query("
         SELECT st.id, st.syllabus_id, st.week_number, st.topic_title, st.topic_description,
                st.learning_outcomes, st.ilo_code, st.blooms_level, st.delivery_mode,
-               st.deletion_requested, st.deletion_reason,
+               $delCols
                (SELECT COUNT(*) FROM learning_materials WHERE syllabus_topic_id = st.id) as materials_count,
                (SELECT COUNT(*) FROM assessments WHERE topic_id = st.id) as assessments_count,
                (SELECT COUNT(DISTINCT tp.student_id) FROM topic_progress tp 
