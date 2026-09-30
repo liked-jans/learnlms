@@ -99,6 +99,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
         redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
 
+    } elseif ($action === 'link_material') {
+        $topicId = (int)$_POST['topic_id'];
+        $materialId = (int)$_POST['material_id'];
+        $sylId = (int)$_POST['syllabus_id'];
+
+        if ($materialId > 0 && $topicId > 0) {
+            $stmtLinkM = $conn->prepare("UPDATE learning_materials SET syllabus_topic_id = ? WHERE id = ? AND teacher_id = ?");
+            $stmtLinkM->bind_param('iii', $topicId, $materialId, $tid);
+            $stmtLinkM->execute();
+            setFlash('success', 'Learning material linked to topic successfully!');
+        }
+        redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+
+    } elseif ($action === 'add_assessment') {
+        $topicId = (int)$_POST['topic_id'];
+        $sylId = (int)$_POST['syllabus_id'];
+        $title = sanitize($_POST['title'] ?? '');
+        $desc = sanitize($_POST['description'] ?? '');
+        $type = sanitize($_POST['type'] ?? 'quiz');
+        $max = (float)($_POST['max_score'] ?? 10);
+        $due = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
+        $dm = sanitize($_POST['delivery_mode'] ?? 'online');
+        $shuffle = isset($_POST['shuffle_questions']) ? 1 : 0;
+        $subType = 'quiz_builder';
+
+        if (!$sylId || empty($title) || !$topicId) {
+            setFlash('error', 'Please enter an assessment title and select a valid topic.');
+            redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+        }
+
+        $stmt = $conn->prepare("INSERT INTO assessments (syllabus_id, topic_id, teacher_id, title, description, type, max_score, due_date, delivery_mode, submission_type, shuffle_questions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('iiisssdsssi', $sylId, $topicId, $tid, $title, $desc, $type, $max, $due, $dm, $subType, $shuffle);
+
+        if ($stmt->execute()) {
+            $newId = $stmt->insert_id;
+            logActivity($tid, "Created assessment ($title) for topic ID $topicId", 'Curriculum');
+            setFlash('success', "Assessment '$title' created! You can now configure questions.");
+            redirect(BASE_URL . 'teacher/assessment_questions.php?id=' . $newId);
+        } else {
+            setFlash('error', 'Could not save assessment: ' . $stmt->error);
+            redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+        }
+
     } elseif ($action === 'attach_material') {
         $topicId = (int)$_POST['topic_id'];
         $sylId = (int)$_POST['syllabus_id'];
@@ -149,6 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 $mappingRows = [];
 $ciloGroups = [];
 $unlinkedAssessments = [];
+$unlinkedMaterials = [];
 $totalAssessmentsCount = 0;
 $formativeCount = 0;
 $summativeCount = 0;
@@ -157,7 +201,7 @@ $cilosWithAssessments = [];
 if ($activeSyl) {
     $mapSql = "
         SELECT st.*, 
-               (SELECT GROUP_CONCAT(CONCAT(lm.id, '::', REPLACE(lm.title, '::', ' '), '::', lm.type, '::', COALESCE(lm.estimated_read_time, 5)) SEPARATOR '||') 
+               (SELECT GROUP_CONCAT(CONCAT(lm.id, '::', REPLACE(lm.title, '::', ' '), '::', lm.type, '::', COALESCE(lm.estimated_read_time, 5), '::', COALESCE(lm.file_path, '')) SEPARATOR '||') 
                 FROM learning_materials lm WHERE lm.syllabus_topic_id = st.id) as materials_list,
                (SELECT GROUP_CONCAT(CONCAT(a.id, '::', REPLACE(a.title, '::', ' '), '::', a.type, '::', a.max_score) SEPARATOR '||') 
                 FROM assessments a WHERE a.topic_id = st.id) as assessments_data,
@@ -237,6 +281,17 @@ if ($activeSyl) {
     $stmtUnlinked->bind_param('ii', $selectedSylId, $tid);
     $stmtUnlinked->execute();
     $unlinkedAssessments = $stmtUnlinked->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    // Fetch unlinked learning materials for this syllabus that teacher can quick-map
+    $stmtUnlinkedMat = $conn->prepare("
+        SELECT id, title, type, estimated_read_time, file_path 
+        FROM learning_materials 
+        WHERE syllabus_id = ? AND teacher_id = ? AND (syllabus_topic_id IS NULL OR syllabus_topic_id = 0)
+        ORDER BY created_at DESC
+    ");
+    $stmtUnlinkedMat->bind_param('ii', $selectedSylId, $tid);
+    $stmtUnlinkedMat->execute();
+    $unlinkedMaterials = $stmtUnlinkedMat->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
 // Compute Mapping & Gap Progress
@@ -443,6 +498,38 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
     background: #fffbeb;
     color: #b45309;
     border: 1px dashed #f59e0b;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+.interactive-mat-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-decoration: none;
+    margin-bottom: 4px;
+    transition: all 0.2s;
+}
+.interactive-mat-link:hover {
+    background: #059669;
+    color: white;
+    border-color: #059669;
+}
+.unattached-gap-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8fafc;
+    color: #64748b;
+    border: 1px dashed #cbd5e1;
     font-size: 11px;
     font-weight: 700;
     padding: 4px 8px;
@@ -695,16 +782,24 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                             $mTitle = $mParts[1] ?? 'Material';
                                             $mType = $mParts[2] ?? 'module';
                                             $mTime = (int)($mParts[3] ?? 5);
-                                            $icon = ($mType === 'module') ? 'fa-book-reader' : (($mType === 'presentation') ? 'fa-file-powerpoint' : (($mType === 'link') ? 'fa-link' : 'fa-file-alt'));
-                                            $mColor = ($mType === 'module') ? '#2563eb' : '#475569';
+                                            $mFile = $mParts[4] ?? '';
+                                            $icon = ($mType === 'module') ? 'fa-book-reader' : (($mType === 'presentation') ? 'fa-file-powerpoint' : (($mType === 'link') ? 'fa-link' : (($mType === 'video') ? 'fa-play-circle' : 'fa-file-alt')));
                                         ?>
-                                            <div style="display:flex;align-items:center;gap:6px;font-size:12px">
-                                                <i class="fas <?= $icon ?>" style="color:<?= $mColor ?>;font-size:11px"></i>
-                                                <a href="<?= BASE_URL ?>student/read_material.php?id=<?= $mId ?>" target="_blank" style="color:var(--text);font-weight:600;text-decoration:none" title="Preview Material">
-                                                    <?= htmlspecialchars($mTitle) ?>
+                                            <div style="display:flex;align-items:center;gap:4px">
+                                                <a href="<?= BASE_URL ?>student/read_material.php?id=<?= $mId ?>" target="_blank" class="interactive-mat-link" title="Preview Material in Reader">
+                                                    <i class="fas <?= $icon ?>"></i>
+                                                    <span><?= htmlspecialchars($mTitle) ?></span>
+                                                    <?php if (!empty($mFile)): ?>
+                                                        <small style="opacity:0.85"><i class="fas fa-paperclip"></i></small>
+                                                    <?php endif; ?>
+                                                    <?php if ($mType === 'module'): ?>
+                                                        <small style="opacity:0.8">(<?= $mTime ?>m)</small>
+                                                    <?php endif; ?>
                                                 </a>
-                                                <?php if ($mType === 'module'): ?>
-                                                    <span style="font-size:10px;color:var(--text3)">(<?= $mTime ?>m)</span>
+                                                <?php if (!empty($mFile)): ?>
+                                                    <a href="<?= BASE_URL ?>uploads/materials/<?= htmlspecialchars($mFile) ?>" target="_blank" download style="color:#059669;padding:4px 6px;font-size:12px" title="Download <?= htmlspecialchars($mFile) ?>">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
                                                 <?php endif; ?>
                                             </div>
                                         <?php endforeach; ?>
@@ -717,15 +812,32 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                             </div>
                                         <?php endif; ?>
 
-                                        <div>
+                                        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
                                             <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="openAttachMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
-                                                <i class="fas fa-plus"></i> Add More
+                                                <i class="fas fa-plus"></i> Add Material
                                             </button>
+                                            <?php if (!empty($unlinkedMaterials)): ?>
+                                                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px" onclick="openLinkMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)" title="Link existing material to this topic">
+                                                    <i class="fas fa-link"></i> Link
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     <?php else: ?>
-                                        <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 8px" onclick="openAttachMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
-                                            <i class="fas fa-paperclip"></i> Attach Material
-                                        </button>
+                                        <div style="display:flex;flex-direction:column;gap:6px">
+                                            <span class="unattached-gap-badge">
+                                                <i class="fas fa-file-alt"></i> No Materials
+                                            </span>
+                                            <div style="display:flex;flex-wrap:wrap;gap:4px">
+                                                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px" onclick="openAttachMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
+                                                    <i class="fas fa-plus"></i> Add Learning Material
+                                                </button>
+                                                <?php if (!empty($unlinkedMaterials)): ?>
+                                                    <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px" onclick="openLinkMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)">
+                                                        <i class="fas fa-link"></i> Link Material
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -739,6 +851,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                 </td>
                                 <td>
                                     <?php if (!empty($assessments)): ?>
+                                        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px">
                                         <?php foreach($assessments as $assRaw): 
                                             $aParts = explode('::', $assRaw);
                                             $aId = $aParts[0] ?? 0;
@@ -752,20 +865,32 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                                 <small style="opacity:0.8">(<?= number_format((float)$aMax, 1) ?> pts)</small>
                                             </a>
                                         <?php endforeach; ?>
+                                        </div>
+                                        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+                                            <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="openAddAssessmentModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
+                                                <i class="fas fa-plus"></i> Add Assessment
+                                            </button>
+                                            <?php if (!empty($unlinkedAssessments)): ?>
+                                                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px" onclick="openLinkModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)" title="Link existing unassigned assessment">
+                                                    <i class="fas fa-link"></i> Link
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
                                     <?php else: ?>
-                                        <div style="display:flex;flex-direction:column;gap:4px">
+                                        <div style="display:flex;flex-direction:column;gap:6px">
                                             <span class="unassessed-gap-badge">
                                                 <i class="fas fa-exclamation-triangle"></i> Unassessed
                                             </span>
-                                            <?php if (!empty($unlinkedAssessments)): ?>
-                                                <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 6px" onclick="openLinkModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)">
-                                                    <i class="fas fa-link"></i> Link Quiz
+                                            <div style="display:flex;flex-wrap:wrap;gap:4px">
+                                                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px" onclick="openAddAssessmentModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
+                                                    <i class="fas fa-plus"></i> Add Assessment
                                                 </button>
-                                            <?php else: ?>
-                                                <a href="assessments.php" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 6px">
-                                                    <i class="fas fa-plus"></i> Create Quiz
-                                                </a>
-                                            <?php endif; ?>
+                                                <?php if (!empty($unlinkedAssessments)): ?>
+                                                    <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px" onclick="openLinkModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)">
+                                                        <i class="fas fa-link"></i> Link Quiz
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     <?php endif; ?>
                                 </td>
@@ -1129,6 +1254,44 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
 </div>
 <?php endif; ?>
 
+<!-- Modal: Quick Link Existing Learning Material -->
+<?php if (!empty($unlinkedMaterials)): ?>
+<div class="modal-overlay" id="linkMatModal">
+    <div class="modal" style="max-width:500px">
+        <div class="modal-header">
+            <span class="modal-title" id="linkMatModalTitle"><i class="fas fa-link"></i> Link Learning Material</span>
+            <button class="modal-close" onclick="closeModal('linkMatModal')">&times;</button>
+        </div>
+        <form method="POST">
+            <?= csrfField() ?>
+            <input type="hidden" name="action" value="link_material">
+            <input type="hidden" name="syllabus_id" value="<?= $selectedSylId ?>">
+            <input type="hidden" name="topic_id" id="linkMatTopicId" value="">
+
+            <div class="modal-body" style="font-size:13px;line-height:1.6">
+                <p style="margin-bottom:12px">Select an existing course material to link directly to this weekly topic:</p>
+                <div class="form-group">
+                    <label>Learning Material *</label>
+                    <select name="material_id" class="form-control" required>
+                        <?php foreach($unlinkedMaterials as $um): ?>
+                            <option value="<?= $um['id'] ?>">
+                                <?= htmlspecialchars($um['title']) ?> (<?= ucfirst($um['type']) ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('linkMatModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="background:#2563eb;border-color:#2563eb">
+                    <i class="fas fa-link" style="margin-right:6px"></i> Link Material
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Modal: Quick View -->
 <div class="modal-overlay" id="viewModal">
     <div class="modal" style="max-width:500px">
@@ -1247,7 +1410,128 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
     </div>
 </div>
 
+<!-- Modal: Add Assessment Task -->
+<div class="modal-overlay" id="addAssModal">
+    <div class="modal" style="max-width:580px;width:95%">
+        <div class="modal-header">
+            <span class="modal-title" id="addAssModalTitle"><i class="fas fa-tasks"></i> Add Assessment Task</span>
+            <button class="modal-close" onclick="closeModal('addAssModal')">&times;</button>
+        </div>
+        <form method="POST">
+            <?= csrfField() ?>
+            <input type="hidden" name="action" value="add_assessment">
+            <input type="hidden" name="syllabus_id" value="<?= $selectedSylId ?>">
+            <input type="hidden" name="topic_id" id="assTopicId" value="">
+
+            <div class="modal-body" style="font-size:13px;line-height:1.6;display:flex;flex-direction:column;gap:14px">
+                <div id="assTopicBadge" style="padding:8px 12px;background:#f1f5f9;border-radius:6px;font-weight:600;color:var(--text2)"></div>
+
+                <div class="form-group">
+                    <label>Assessment Title *</label>
+                    <input type="text" name="title" id="assTitleInput" class="form-control" placeholder="e.g. Week 1 Practical Quiz" required>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="form-group">
+                        <label>Assessment Type *</label>
+                        <select name="type" id="assTypeSelect" class="form-control" required>
+                            <option value="quiz" selected>Quiz</option>
+                            <option value="activity">Lab / Practical Activity</option>
+                            <option value="exam">Major Examination</option>
+                            <option value="project">Project / Case Study</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Max Score (Points) *</label>
+                        <input type="number" name="max_score" id="assMaxScoreInput" class="form-control" value="10" min="1" step="any" required>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="form-group">
+                        <label>Delivery Mode *</label>
+                        <select name="delivery_mode" class="form-control" required>
+                            <option value="online" selected>Online</option>
+                            <option value="offline">In-Person / Offline</option>
+                            <option value="both">Blended / Both</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Due Date & Time (Optional)</label>
+                        <input type="datetime-local" name="due_date" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Instructions / Description (Optional)</label>
+                    <textarea name="description" class="form-control" rows="2" placeholder="Brief guidelines or instructions for this assessment..."></textarea>
+                </div>
+
+                <div class="form-group" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin:0">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:13px;font-weight:600">
+                        <input type="checkbox" name="shuffle_questions" value="1" checked style="transform:scale(1.15)">
+                        <span><i class="fas fa-random" style="color:var(--primary);margin-right:4px"></i> Scramble / Randomize Question Order for Students</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addAssModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="background:#2563eb;border-color:#2563eb">
+                    <i class="fas fa-arrow-right" style="margin-right:6px"></i> Continue to Add Questions
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('open');
+}
+
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+}
+
+function openAddAssessmentModal(topicId, weekNum, topicTitle) {
+    var topicIdInput = document.getElementById('assTopicId');
+    if (topicIdInput) topicIdInput.value = topicId;
+
+    var topicBadge = document.getElementById('assTopicBadge');
+    if (topicBadge) {
+        topicBadge.innerHTML = '<i class="fas fa-tasks" style="color:var(--primary);margin-right:6px"></i> Week ' + weekNum + ': ' + topicTitle;
+    }
+
+    var titleInput = document.getElementById('assTitleInput');
+    if (titleInput) {
+        titleInput.value = '';
+    }
+
+    var modalTitle = document.getElementById('addAssModalTitle');
+    if (modalTitle) {
+        modalTitle.innerHTML = '<i class="fas fa-tasks"></i> Add Assessment &bull; Week ' + weekNum;
+    }
+
+    openModal('addAssModal');
+}
+
+function openLinkMaterialModal(topicId, weekNum) {
+    var tidInput = document.getElementById('linkMatTopicId');
+    if (tidInput) tidInput.value = topicId;
+    var titleEl = document.getElementById('linkMatModalTitle');
+    if (titleEl) titleEl.innerHTML = '<i class="fas fa-link"></i> Link Learning Material &bull; Week ' + weekNum;
+    openModal('linkMatModal');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(function(m) {
+    m.addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('open');
+    });
+});
+
 const LEARNING_MODULE_TEMPLATE = `<h3>1. Overview & Core Purpose</h3>
 <p>Provide a comprehensive executive overview of this week's lesson, introducing the foundational problem statement, key industry applications, and learning objectives.</p>
 
@@ -1407,7 +1691,7 @@ function openAttachMaterialModal(topicId, weekNum, topicTitle) {
     document.getElementById('attachTopicId').value = topicId;
     document.getElementById('attachTopicBadge').innerHTML = '<i class="fas fa-bookmark" style="color:var(--primary);margin-right:6px"></i> Week ' + weekNum + ': ' + topicTitle;
     document.getElementById('attachModalTitle').innerHTML = '<i class="fas fa-paperclip"></i> Attach Material &bull; Week ' + weekNum;
-    document.getElementById('matTitleInput').value = 'Week ' + weekNum + ' Module: ' + topicTitle;
+    document.getElementById('matTitleInput').value = '';
     document.getElementById('matTypeSelect').value = 'module';
     toggleMatFields('module');
     

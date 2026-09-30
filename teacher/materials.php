@@ -1228,6 +1228,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('add') === '1') {
+        const sylId = urlParams.get('syl');
+        const topicId = urlParams.get('topic_id');
+        if (sylId) {
+            const sylSelect = document.getElementById('matSyl');
+            if (sylSelect) sylSelect.value = sylId;
+            loadTopics(sylId, 'matTopic', topicId);
+        }
+        openAddMaterialModal();
+    }
 });
 </script>
 </body></html>

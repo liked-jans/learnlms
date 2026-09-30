@@ -4,4 +4,6 @@
 .DS_Store
 Thumbs.db
 .env
-
+*.docx
+/*.png
+/*.svg

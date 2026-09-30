@@ -491,11 +491,6 @@ $isDone = !empty($t['is_completed']);
                         <i class="fas fa-check"></i> Mark Done
                     </button>
                 <?php endif; ?>
-                <button type="button" class="btn btn-secondary btn-sm"
-                    data-topic-id="<?= (int)$t['id'] ?>"
-                    data-topic-title="<?= htmlspecialchars('Week '.$t['week_number'].' - '.$t['topic_title'], ENT_QUOTES) ?>"
-                    onclick="event.stopPropagation(); handleLessonModalClick(this)"
-                    title="Upload Lesson Resource"><i class="fas fa-upload"></i></button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick='editTopic(<?= htmlspecialchars(json_encode($t), ENT_QUOTES) ?>)' title="Edit Topic"><i class="fas fa-edit"></i></button>
                 <?php if (!empty($t['deletion_requested'])): ?>
                     <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:11px;padding:3px 8px" title="Deletion requested from Admin">
@@ -602,13 +597,9 @@ $isDone = !empty($t['is_completed']);
                 <strong style="font-size:11px;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:5px">
                     <i class="fas fa-folder-open" style="color:var(--success)"></i> Learning Materials (<?= count($topicMaterials) ?>)
                 </strong>
-                <button type="button" class="btn btn-secondary btn-sm"
-                    data-topic-id="<?= (int)$t['id'] ?>"
-                    data-topic-title="<?= htmlspecialchars('Week '.$t['week_number'].' - '.$t['topic_title'], ENT_QUOTES) ?>"
-                    onclick="event.stopPropagation(); handleLessonModalClick(this)"
-                    style="font-size:10px;padding:2px 8px">
-                    <i class="fas fa-upload"></i> Upload File
-                </button>
+                <a href="materials.php?syl=<?= $sid ?>&topic_id=<?= $t['id'] ?>&add=1" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px">
+                    <i class="fas fa-plus"></i> Add Material
+                </a>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <?php foreach($topicMaterials as $m):
@@ -635,12 +626,24 @@ $isDone = !empty($t['is_completed']);
                 <a class="btn <?= $btnClass ?> btn-sm" href="<?= htmlspecialchars($readerUrl) ?>" target="_blank" title="Preview Material in Reader" style="display:inline-flex;align-items:center;gap:6px">
                     <i class="fas <?= $icon ?>"></i>
                     <span><?= htmlspecialchars($m['title']) ?></span>
+                    <?php if (!empty($m['file_path'])): ?>
+                        <small style="opacity:0.85"><i class="fas fa-paperclip"></i></small>
+                    <?php endif; ?>
                     <?php if ($mType === 'module' && !empty($m['estimated_read_time'])): ?>
                         <span style="font-size:10px;opacity:0.85">(<?= (int)$m['estimated_read_time'] ?>m)</span>
                     <?php endif; ?>
                 </a>
                 <?php endforeach; ?>
             </div>
+        </div>
+        <?php else: ?>
+        <div style="margin-top:10px;padding:8px 14px;background:var(--bg);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;color:var(--text3)">
+                <i class="fas fa-folder-open" style="margin-right:5px"></i> No learning materials attached yet.
+            </span>
+            <a href="materials.php?syl=<?= $sid ?>&topic_id=<?= $t['id'] ?>&add=1" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px">
+                <i class="fas fa-plus"></i> Add Material
+            </a>
         </div>
         <?php endif; ?>
 

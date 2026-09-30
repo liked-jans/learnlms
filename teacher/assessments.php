@@ -198,7 +198,7 @@ $assessments = $conn->query("
     <div class="form-row">
         <div class="form-group">
             <label>Syllabus / Course *</label>
-            <select name="syllabus_id" class="form-control" required onchange="loadTopics2(this.value)">
+            <select name="syllabus_id" id="assSyl" class="form-control" required onchange="loadTopics2(this.value)">
                 <option value="">Select course...</option>
                 <?php foreach($sylArr as $s): ?>
                     <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['course_code'].' - '.$s['course_name']) ?></option>
@@ -276,14 +276,34 @@ $assessments = $conn->query("
 <script>
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-function loadTopics2(sylId){
+function loadTopics2(sylId, selectedTopicId){
     if(!sylId)return;
     fetch('get_topics.php?syl='+sylId).then(r=>r.json()).then(data=>{
         const sel=document.getElementById('assTopic');
         sel.innerHTML='<option value="">Not linked to specific topic</option>';
-        data.forEach(t=>sel.innerHTML+=`<option value="${t.id}">Week ${t.week_number}: ${t.topic_title}</option>`);
+        data.forEach(t=>{
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = `Week ${t.week_number}: ${t.topic_title}`;
+            if(selectedTopicId && String(t.id) === String(selectedTopicId)) opt.selected = true;
+            sel.appendChild(opt);
+        });
     });
 }
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('add') === '1') {
+        const sylParam = urlParams.get('syl');
+        const topicParam = urlParams.get('topic_id');
+        if (sylParam) {
+            const sylSelect = document.getElementById('assSyl');
+            if (sylSelect) sylSelect.value = sylParam;
+            loadTopics2(sylParam, topicParam);
+        }
+        openModal('addAssModal');
+    }
+});
 </script>
 </body></html>
