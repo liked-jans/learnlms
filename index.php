@@ -21,7 +21,7 @@ require_once 'includes/config.php';
                 <span class="text-2xl font-bold font-serif tracking-tight">BlendEd LMS</span>
                 <div class="flex items-center gap-6">
                     <a href="#about" class="font-semibold text-slate-600 hover:text-emerald-900 transition">About System</a>
-                    <a href="login.php" class="bg-emerald-900 text-white px-6 py-2.5 rounded-full font-semibold hover:bg-emerald-800 transition shadow-sm hover:shadow-md transition-all">Login</a>
+                    <a href="login" class="bg-emerald-900 text-white px-6 py-2.5 rounded-full font-semibold hover:bg-emerald-800 transition shadow-sm hover:shadow-md transition-all">Login</a>
                 </div>
             </nav>
 
@@ -37,7 +37,7 @@ require_once 'includes/config.php';
                 <p class="text-xl text-slate-600 max-w-2xl mx-auto mb-10">
                     A capstone research initiative at I-TECH College Bago City, designed to bridge the gap between curriculum alignment and instructional delivery.
                 </p>
-                <a href="login.php" class="inline-block bg-emerald-600 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:bg-emerald-700 transition transform hover:-translate-y-1 shadow-lg shadow-emerald-200">
+                <a href="login" class="inline-block bg-emerald-600 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:bg-emerald-700 transition transform hover:-translate-y-1 shadow-lg shadow-emerald-200">
                     Access Portal
                 </a>
             </header>

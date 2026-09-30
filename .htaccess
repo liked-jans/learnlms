@@ -21,15 +21,13 @@ ServerSignature Off
     RewriteCond %{HTTPS} !=on
     RewriteRule ^ - [E=MY_SCHEME:http]
 
-    # Extract host: strip port if on reverse proxy or Railway
-    RewriteCond %{HTTP:X-Forwarded-Proto} !="" [OR]
-    RewriteCond %{HTTP_HOST} \.railway\.app [NC]
-    RewriteCond %{HTTP_HOST} ^([^:]+)
+    # Extract host: check X-Forwarded-Host first, then HTTP_HOST (strip port)
+    RewriteCond %{HTTP:X-Forwarded-Host} ^([^:,]+)
     RewriteRule ^ - [E=MY_HOST:%1]
 
-    # Fallback for local development: keep HTTP_HOST as-is
     RewriteCond %{ENV:MY_HOST} ^$
-    RewriteRule ^ - [E=MY_HOST:%{HTTP_HOST}]
+    RewriteCond %{HTTP_HOST} ^([^:]+)
+    RewriteRule ^ - [E=MY_HOST:%1]
 
     # If someone requests /page.php directly, send them to the
     # extension-less /page URL cleanly without internal container port
