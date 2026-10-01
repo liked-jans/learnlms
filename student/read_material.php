@@ -710,16 +710,26 @@ if (!empty($mat['topic_id'])) {
     function sendReadingBeacon(pct) {
         if (!isStudent || !topicId || topicId <= 0) return;
         
-        fetch('<?= BASE_URL ?>student/save_reading_progress.php', {
+        const payload = JSON.stringify({
+            topic_id: topicId,
+            material_id: materialId,
+            percentage: pct
+        });
+
+        if (navigator.sendBeacon && pct >= 90) {
+            try {
+                const blob = new Blob([payload], { type: 'application/json' });
+                navigator.sendBeacon('save_reading_progress.php', blob);
+            } catch(e) {}
+        }
+
+        fetch('save_reading_progress.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                topic_id: topicId,
-                material_id: materialId,
-                percentage: pct
-            })
+            body: payload,
+            keepalive: true
         })
         .then(res => res.json())
         .then(data => {
@@ -727,7 +737,16 @@ if (!empty($mat['topic_id'])) {
                 updateUICompleted();
             }
         })
-        .catch(err => console.error('Error saving reading progress:', err));
+        .catch(err => {
+            // Fallback FormData request
+            try {
+                const fd = new FormData();
+                fd.append('topic_id', topicId);
+                fd.append('material_id', materialId);
+                fd.append('percentage', pct);
+                fetch('save_reading_progress.php', { method: 'POST', body: fd });
+            } catch (e2) {}
+        });
     }
 
     // Interactive Action Handlers (exposed globally)
@@ -822,8 +841,10 @@ if (!empty($mat['topic_id'])) {
 })();
 </script>
 
+<?php if (!empty($mediaInfo) && ($mediaInfo['ext'] ?? '') === 'docx'): ?>
 <!-- Mammoth.js for client-side Word .docx to HTML conversion -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js" defer></script>
+<?php endif; ?>
 
 <style>
 #docxRenderedBody h1, #docxRenderedBody h2, #docxRenderedBody h3, #docxRenderedBody h4 {

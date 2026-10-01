@@ -7,10 +7,10 @@ if (!isLoggedIn() || ($_SESSION['role'] ?? '') !== 'student') {
     exit();
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
-if (!$input) {
-    echo json_encode(['success' => false, 'error' => 'Invalid payload']);
-    exit();
+$rawBody = file_get_contents('php://input');
+$input = json_decode($rawBody, true);
+if (!$input || !is_array($input)) {
+    $input = !empty($_POST) ? $_POST : $_GET;
 }
 
 $stid = (int)$_SESSION['user_id'];
@@ -32,9 +32,9 @@ $stmt = $conn->prepare("
     VALUES (?, ?, ?, ?, NOW(), IF(? = 1, NOW(), NULL))
     ON DUPLICATE KEY UPDATE
         read_percentage = GREATEST(COALESCE(read_percentage, 0), VALUES(read_percentage)),
-        status = IF(GREATEST(COALESCE(read_percentage, 0), VALUES(read_percentage)) >= 90, 'completed', 'in_progress'),
+        status = IF(GREATEST(COALESCE(read_percentage, 0), VALUES(read_percentage)) >= 90 OR status = 'completed', 'completed', 'in_progress'),
         last_read_at = NOW(),
-        completed_at = IF(completed_at IS NULL AND VALUES(status) = 'completed', NOW(), completed_at)
+        completed_at = IF(completed_at IS NULL AND (VALUES(status) = 'completed' OR status = 'completed'), NOW(), completed_at)
 ");
 $stmt->bind_param('iisdi', $stid, $topicId, $status, $percentage, $isCompleted);
 $stmt->execute();

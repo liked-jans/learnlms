@@ -29,8 +29,10 @@ ServerSignature Off
     RewriteCond %{HTTP_HOST} ^([^:]+)
     RewriteRule ^ - [E=MY_HOST:%1]
 
-    # If someone requests /page.php directly, send them to the
-    # extension-less /page URL cleanly without internal container port
+    # If someone requests /page.php directly via GET, send them to the
+    # extension-less /page URL cleanly without internal container port.
+    # Exclude POST requests so API endpoints and AJAX beacons are never 301-redirected!
+    RewriteCond %{REQUEST_METHOD} !POST [NC]
     RewriteCond %{THE_REQUEST} \s/+(.+?)\.php[\s?] [NC]
     RewriteRule ^ %{ENV:MY_SCHEME}://%{ENV:MY_HOST}/%1 [R=301,L]
 

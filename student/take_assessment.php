@@ -120,10 +120,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (!empty($assessment['topic_id'])) {
         $topId = (int)$assessment['topic_id'];
         $stmtProg = $conn->prepare("
-            INSERT INTO topic_progress (student_id, syllabus_topic_id, status, completed_at, last_read_at)
-            VALUES (?, ?, 'completed', NOW(), NOW())
+            INSERT INTO topic_progress (student_id, syllabus_topic_id, status, read_percentage, completed_at, last_read_at)
+            VALUES (?, ?, 'completed', 100.00, NOW(), NOW())
             ON DUPLICATE KEY UPDATE
-                status = IF(read_percentage >= 90 OR status = 'completed', 'completed', 'in_progress'),
+                status = 'completed',
+                read_percentage = GREATEST(COALESCE(read_percentage, 0), 100.00),
                 completed_at = COALESCE(completed_at, NOW()),
                 last_read_at = NOW()
         ");
