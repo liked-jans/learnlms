@@ -357,9 +357,9 @@ $docxExts = ['docx'];
                             $avgRead = round((float)($m['avg_read_pct'] ?? 0), 1);
                         ?>
                         <tr>
-                            <td><strong><?= htmlspecialchars($m['title']) ?></strong><br><small class="text-muted"><?= htmlspecialchars(substr($m['description'] ?? '', 0, 60)) ?></small></td>
+                            <td><strong><?= safeHtml($m['title']) ?></strong><br><small class="text-muted"><?= safeHtml(substr($m['description'] ?? '', 0, 60)) ?></small></td>
                             <td><?= htmlspecialchars($m['course_code'] ?? '-') ?></td>
-                            <td><?= $m['topic_title'] ? htmlspecialchars(substr($m['topic_title'], 0, 30)) : '<span class="text-muted">General</span>' ?></td>
+                            <td><?= $m['topic_title'] ? safeHtml(substr($m['topic_title'], 0, 30)) : '<span class="text-muted">General</span>' ?></td>
                             <td><span class="badge <?= $colors[$m['type']] ?? 'badge-gray' ?>"><i class="fas <?= $icons[$m['type']] ?? 'fa-file' ?>"></i> <?= ucfirst($m['type']) ?></span></td>
                             <td><?php $mc=['online'=>'mode-online','offline'=>'mode-face','both'=>'mode-blended']; echo '<span class="mode-pill '.$mc[$m['delivery_mode']].'">'.ucfirst($m['delivery_mode']).'</span>'; ?></td>
                             <td>

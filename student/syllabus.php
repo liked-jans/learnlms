@@ -148,18 +148,18 @@ $isInProgress = $t['progress_status'] === 'in_progress';
                 </button>
             </div>
         </div>
-        <div class="week-title"><?= htmlspecialchars($t['topic_title']) ?></div>
-        <?php if($t['topic_description']): ?><p style="font-size:13px;color:var(--text3);margin-top:6px"><?= nl2br(htmlspecialchars($t['topic_description'])) ?></p><?php endif; ?>
+        <div class="week-title"><?= safeHtml($t['topic_title']) ?></div>
+        <?php if($t['topic_description']): ?><p style="font-size:13px;color:var(--text3);margin-top:6px"><?= formatMultilineText($t['topic_description']) ?></p><?php endif; ?>
         <?php if($t['learning_outcomes']): ?>
         <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.5);border-radius:8px">
             <strong style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)"><i class="fas fa-bullseye"></i> Learning Outcomes</strong>
-            <p style="font-size:13px;margin-top:4px"><?= nl2br(htmlspecialchars($t['learning_outcomes'])) ?></p>
+            <p style="font-size:13px;margin-top:4px"><?= formatMultilineText($t['learning_outcomes']) ?></p>
         </div>
         <?php endif; ?>
         <?php if($isDone && !empty($t['progress_notes'])): ?>
         <div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.5);border-radius:8px;border-left:3px solid var(--primary)">
             <strong style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)"><i class="fas fa-pen"></i> Your Reflection</strong>
-            <p style="font-size:13px;margin-top:4px"><?= nl2br(htmlspecialchars($t['progress_notes'])) ?></p>
+            <p style="font-size:13px;margin-top:4px"><?= formatMultilineText($t['progress_notes']) ?></p>
         </div>
         <?php endif; ?>
         <div class="week-meta">

@@ -113,7 +113,7 @@ $myAssessments = $stmtMy->get_result();
                 <option value="all" <?= $isAll ? 'selected' : '' ?>>-- All Assessments --</option>
                 <?php while($a = $myAssessments->fetch_assoc()): ?>
                     <option value="<?= $a['id'] ?>" <?= (!$isAll && $assFilterInt == $a['id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($a['course_code'].' - '.$a['title']) ?>
+                        <?= safeHtml($a['course_code'].' - '.$a['title']) ?>
                     </option>
                 <?php endwhile; ?>
             </select>
@@ -146,7 +146,7 @@ $myAssessments = $stmtMy->get_result();
                         </span>
                     <?php endif; ?>
                 </div>
-                <h3 style="font-size:18px;font-weight:700;color:var(--text);margin:0"><?= htmlspecialchars($assessment['title']) ?></h3>
+                <h3 style="font-size:18px;font-weight:700;color:var(--text);margin:0"><?= safeHtml($assessment['title']) ?></h3>
                 <?php if (!empty($assessment['due_date'])): ?>
                     <div style="font-size:12px;color:var(--text3);margin-top:4px">
                         <i class="far fa-calendar-alt"></i> Due: <?= date('M d, Y g:i A', strtotime($assessment['due_date'])) ?>
@@ -256,7 +256,7 @@ $myAssessments = $stmtMy->get_result();
         <div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <span class="badge badge-blue"><?= htmlspecialchars($a['course_code']) ?></span>
-                <strong><?= htmlspecialchars($a['title']) ?></strong>
+                <strong><?= safeHtml($a['title']) ?></strong>
                 <span style="font-size:12px;color:var(--text3)">(Max: <?= number_format($a['max_score'], 1) ?> pts &bull; <?= $a['q_count'] ?> Questions)</span>
                 <span class="badge badge-gray" style="font-size:11px;background:#f1f5f9;color:#334155;font-weight:600">
                     <i class="fas fa-users"></i> <?= count($rows) ?> Enrolled

@@ -150,8 +150,8 @@ $assessments = $conn->query("
 ?>
 <tr>
     <td>
-        <strong><?= htmlspecialchars($a['title']) ?></strong>
-        <?php if($a['description']): ?><br><small class="text-muted"><?= htmlspecialchars(substr($a['description'],0,50)) ?></small><?php endif; ?>
+        <strong><?= safeHtml($a['title']) ?></strong>
+        <?php if($a['description']): ?><br><small class="text-muted"><?= safeHtml(substr($a['description'],0,50)) ?></small><?php endif; ?>
     </td>
     <td><?= $a['course_code'] ? htmlspecialchars($a['course_code']) : '-' ?></td>
     <td><span class="badge <?= $tc[$a['type']] ?? 'badge-gray' ?>" style="text-transform:capitalize"><?= $a['type'] ?></span></td>

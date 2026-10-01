@@ -142,6 +142,19 @@ function sanitize($data) {
     return mysqli_real_escape_string($conn, htmlspecialchars(strip_tags(trim($data))));
 }
 
+function safeHtml($text) {
+    if ($text === null || $text === '') return '';
+    $text = htmlspecialchars_decode($text, ENT_QUOTES);
+    return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+}
+
+function formatMultilineText($text) {
+    if ($text === null || $text === '') return '';
+    $text = str_replace(["\\r\\n", "\\r", "\\n", '\r\n', '\r', '\n'], "\n", $text);
+    $text = htmlspecialchars_decode($text, ENT_QUOTES);
+    return nl2br(htmlspecialchars(trim($text), ENT_QUOTES, 'UTF-8'));
+}
+
 function redirect($url) {
     header("Location: $url");
     exit();

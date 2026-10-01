@@ -81,8 +81,8 @@ $tc = ['quiz'=>'badge-green','assignment'=>'badge-blue','exam'=>'badge-red','pro
 ?>
 <tr>
     <td>
-        <strong><?= htmlspecialchars($a['title']) ?></strong>
-        <?php if($a['description']): ?><br><small class="text-muted"><?= htmlspecialchars(substr($a['description'],0,60)) ?></small><?php endif; ?>
+        <strong><?= safeHtml($a['title']) ?></strong>
+        <?php if($a['description']): ?><br><small class="text-muted"><?= safeHtml(substr($a['description'],0,60)) ?></small><?php endif; ?>
     </td>
     <td><span class="badge badge-blue"><?= htmlspecialchars($a['course_code']) ?></span></td>
     <td><span class="badge <?= $tc[$a['type']] ?? 'badge-gray' ?>" style="text-transform:capitalize"><?= $a['type'] ?></span></td>

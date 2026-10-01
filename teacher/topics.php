@@ -48,12 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $week = (int)$_POST['week_number'];
         $iloCode = sanitize($_POST['ilo_code']);
         $bloomsLevel = sanitize($_POST['blooms_level'] ?? 'understanding');
-        $topicTitle = sanitize($_POST['topic_title']);
-        $topicDesc = sanitize($_POST['topic_description']);
-        $iloDesc = sanitize($_POST['learning_outcomes']);
-        $actTitle = sanitize($_POST['activity_title']);
-        $mode = sanitize($_POST['delivery_mode']);
-        $platform = sanitize($_POST['online_platform']);
+        $topicTitle = sanitize($_POST['topic_title'] ?? '');
+        $topicDesc = sanitize(str_replace(["\\r\\n", "\\r", "\\n", '\r\n', '\r', '\n'], "\n", $_POST['topic_description'] ?? ''));
+        $iloDesc = sanitize(str_replace(["\\r\\n", "\\r", "\\n", '\r\n', '\r', '\n'], "\n", $_POST['learning_outcomes'] ?? ''));
+        $actTitle = sanitize($_POST['activity_title'] ?? '');
+        $mode = sanitize($_POST['delivery_mode'] ?? 'blended');
+        $platform = sanitize($_POST['online_platform'] ?? '');
 
         $stmt = $conn->prepare("
             INSERT INTO syllabus_topics (syllabus_id, week_number, ilo_code, blooms_level, topic_title, topic_description, learning_outcomes, activity_title, delivery_mode, online_platform, sort_order)
@@ -760,14 +760,14 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                         <span class="ilo-badge"><?= htmlspecialchars($iloCode) ?></span>
                                         <span class="bloom-tag bloom-<?= htmlspecialchars($bloom) ?>"><?= ucfirst(htmlspecialchars($bloom)) ?></span>
                                     </div>
-                                    <div style="font-size:12px;color:var(--text2);margin-top:4px">
-                                        <?= htmlspecialchars($row['learning_outcomes'] ?: 'Achieve core competency for this module.') ?>
+                                    <div style="font-size:12px;color:var(--text2);margin-top:4px;line-height:1.45">
+                                        <?= formatMultilineText($row['learning_outcomes'] ?: 'Achieve core competency for this module.') ?>
                                     </div>
                                 </td>
                                 <td>
                                     <strong style="color:var(--text);font-size:13px">Week <?= $row['week_number'] ?></strong>
                                     <div style="color:var(--text2);margin-top:2px;font-weight:600">
-                                        <?= htmlspecialchars($row['topic_title']) ?>
+                                        <?= safeHtml($row['topic_title']) ?>
                                     </div>
                                     <span class="badge <?= $row['delivery_mode']==='online'?'badge-blue':($row['delivery_mode']==='blended'?'badge-purple':'badge-orange') ?>" style="font-size:10px;margin-top:4px">
                                         <?= ucfirst($row['delivery_mode'] ?: 'Face-to-Face') ?>
@@ -788,7 +788,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                             <div style="display:flex;align-items:center;gap:4px">
                                                 <a href="<?= BASE_URL ?>student/read_material.php?id=<?= $mId ?>" target="_blank" class="interactive-mat-link" title="Preview Material in Reader">
                                                     <i class="fas <?= $icon ?>"></i>
-                                                    <span><?= htmlspecialchars($mTitle) ?></span>
+                                                    <span><?= safeHtml($mTitle) ?></span>
                                                     <?php if (!empty($mFile)): ?>
                                                         <small style="opacity:0.85"><i class="fas fa-paperclip"></i></small>
                                                     <?php endif; ?>
@@ -861,7 +861,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                         ?>
                                             <a href="assessment_questions.php?id=<?= $aId ?>" class="interactive-ass-link" title="Click to view/edit question bank">
                                                 <i class="fas fa-tasks"></i> 
-                                                <span><?= htmlspecialchars($aTitle) ?></span>
+                                                <span><?= safeHtml($aTitle) ?></span>
                                                 <small style="opacity:0.8">(<?= number_format((float)$aMax, 1) ?> pts)</small>
                                             </a>
                                         <?php endforeach; ?>
@@ -924,8 +924,8 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                         <div>
                             <span class="ilo-badge" style="font-size:13px;padding:4px 10px"><?= htmlspecialchars($grp['code']) ?></span>
                             <span class="bloom-tag bloom-<?= htmlspecialchars($grp['blooms_level']) ?>"><?= ucfirst(htmlspecialchars($grp['blooms_level'])) ?></span>
-                            <div style="font-size:14px;color:var(--text);font-weight:600;margin-top:6px">
-                                <?= htmlspecialchars($grp['description'] ?: 'Core curriculum competency.') ?>
+                            <div style="font-size:14px;color:var(--text);font-weight:600;margin-top:6px;line-height:1.45">
+                                <?= formatMultilineText($grp['description'] ?: 'Core curriculum competency.') ?>
                             </div>
                         </div>
                         <div>
@@ -949,7 +949,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                             </strong>
                             <?php foreach ($grp['topics'] as $t): ?>
                                 <div style="font-size:12px;margin-bottom:4px">
-                                    <strong>Week <?= $t['week'] ?>:</strong> <?= htmlspecialchars($t['title']) ?>
+                                    <strong>Week <?= $t['week'] ?>:</strong> <?= safeHtml($t['title']) ?>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -962,7 +962,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                 <?php foreach ($grp['assessments'] as $a): ?>
                                     <div style="margin-bottom:4px">
                                         <a href="assessment_questions.php?id=<?= $a['id'] ?>" class="interactive-ass-link">
-                                            <i class="fas fa-check-circle"></i> <?= htmlspecialchars($a['title']) ?> (<?= $a['max_score'] ?> pts)
+                                            <i class="fas fa-check-circle"></i> <?= safeHtml($a['title']) ?> (<?= $a['max_score'] ?> pts)
                                         </a>
                                     </div>
                                 <?php endforeach; ?>
@@ -1237,7 +1237,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                     <select name="assessment_id" class="form-control" required>
                         <?php foreach($unlinkedAssessments as $ua): ?>
                             <option value="<?= $ua['id'] ?>">
-                                <?= htmlspecialchars($ua['title']) ?> (<?= ucfirst($ua['type']) ?> &bull; <?= $ua['max_score'] ?> pts)
+                                <?= safeHtml($ua['title']) ?> (<?= ucfirst($ua['type']) ?> &bull; <?= $ua['max_score'] ?> pts)
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -1275,7 +1275,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                     <select name="material_id" class="form-control" required>
                         <?php foreach($unlinkedMaterials as $um): ?>
                             <option value="<?= $um['id'] ?>">
-                                <?= htmlspecialchars($um['title']) ?> (<?= ucfirst($um['type']) ?>)
+                                <?= safeHtml($um['title']) ?> (<?= ucfirst($um['type']) ?>)
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -1755,17 +1755,22 @@ function openLinkModal(topicId, weekNum) {
     openModal('linkAssModal');
 }
 
+function formatJsText(str) {
+    if (!str) return 'None';
+    return String(str).replace(/\\r\\n|\\r|\\n/g, '<br>').replace(/\r\n|\r|\n/g, '<br>');
+}
+
 function viewTopicModal(t) {
-    document.getElementById('viewTitle').textContent = `Week ${t.week_number}: ${t.topic_title}`;
+    document.getElementById('viewTitle').textContent = `Week ${t.week_number}: ${t.topic_title || ''}`;
     let html = `
         <div style="margin-bottom:12px">
             <span class="ilo-badge">${t.ilo_code || 'CILO'}</span>
             <span class="bloom-tag bloom-${t.blooms_level || 'understanding'}">${(t.blooms_level || 'understanding').toUpperCase()}</span>
         </div>
-        <div style="margin-bottom:12px"><strong>Learning Outcome:</strong><br><span style="color:var(--text2)">${t.learning_outcomes || 'None'}</span></div>
+        <div style="margin-bottom:12px"><strong>Learning Outcome:</strong><br><span style="color:var(--text2);line-height:1.45">${formatJsText(t.learning_outcomes)}</span></div>
         <div style="margin-bottom:12px"><strong>Activity (TLA):</strong><br><span style="color:var(--text2)">${t.activity_title || 'None'}</span></div>
         <div style="margin-bottom:12px"><strong>Delivery Mode:</strong> ${(t.delivery_mode || 'face-to-face').toUpperCase()} (${t.online_platform || 'Campus'})</div>
-        <div><strong>Description:</strong><br><span style="color:var(--text3)">${t.topic_description || 'No detailed description.'}</span></div>
+        <div><strong>Description:</strong><br><span style="color:var(--text3);line-height:1.45">${formatJsText(t.topic_description)}</span></div>
     `;
     document.getElementById('viewBody').innerHTML = html;
     openModal('viewModal');

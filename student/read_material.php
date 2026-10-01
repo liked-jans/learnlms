@@ -341,7 +341,7 @@ if (!empty($mat['topic_id'])) {
             </div>
 
             <h1 style="font-family:'Fraunces', serif;font-size:28px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:14px">
-                <?= htmlspecialchars($mat['title']) ?>
+                <?= safeHtml($mat['title']) ?>
             </h1>
 
             <div style="display:flex;align-items:center;gap:16px;color:var(--text3);font-size:13px;flex-wrap:wrap">
@@ -354,7 +354,7 @@ if (!empty($mat['topic_id'])) {
 
             <?php if (!empty($mat['description'])): ?>
             <div style="margin-top:16px;padding:12px 16px;background:rgba(255,255,255,0.7);border-left:3px solid var(--primary);border-radius:6px;font-size:13px;color:var(--text2)">
-                <?= nl2br(htmlspecialchars($mat['description'])) ?>
+                <?= formatMultilineText($mat['description']) ?>
             </div>
             <?php endif; ?>
         </div>
@@ -579,7 +579,7 @@ if (!empty($mat['topic_id'])) {
 
                 <?php foreach ($siblingMats as $sm): ?>
                 <a href="<?= BASE_URL ?>student/read_material.php?id=<?= $sm['id'] ?>" class="btn btn-outline btn-sm">
-                    <i class="fas <?= $sm['type']==='module' ? 'fa-book' : 'fa-file' ?>"></i> <?= htmlspecialchars($sm['title']) ?>
+                    <i class="fas <?= $sm['type']==='module' ? 'fa-book' : 'fa-file' ?>"></i> <?= safeHtml($sm['title']) ?>
                 </a>
                 <?php endforeach; ?>
             </div>
@@ -616,7 +616,7 @@ if (!empty($mat['topic_id'])) {
                                 <span style="font-size:12px;font-weight:700;color:var(--text2)"><?= number_format((float)$ass['max_score'], 1) ?> Pts</span>
                             </div>
                             <strong style="font-size:14px;color:var(--text);display:block;margin-bottom:6px">
-                                <?= htmlspecialchars($ass['title']) ?>
+                                <?= safeHtml($ass['title']) ?>
                             </strong>
                             <p style="font-size:12px;color:var(--text3);margin-bottom:12px">
                                 Tests learning outcomes aligned with this reading module.

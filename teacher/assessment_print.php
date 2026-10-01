@@ -510,7 +510,7 @@ $pageTitle = 'Print Assessment - ' . $assessment['course_code'] . ' ' . $assessm
             <i class="fas fa-arrow-left"></i> Back to Questions
         </a>
         <span style="font-size:13px;color:#94a3b8;margin-left:4px">
-            <?= htmlspecialchars($assessment['course_code']) ?> &bull; <?= htmlspecialchars($assessment['title']) ?>
+            <?= htmlspecialchars($assessment['course_code']) ?> &bull; <?= safeHtml($assessment['title']) ?>
         </span>
     </div>
     <div class="bar-right">
@@ -574,7 +574,7 @@ $pageTitle = 'Print Assessment - ' . $assessment['course_code'] . ' ' . $assessm
         <?php if (!empty($assessment['topic_title'])): ?>
         <div class="meta-row" style="grid-column: 1 / -1">
             <span class="meta-label">Topic / Unit:</span>
-            <span class="meta-val">Week <?= $assessment['week_number'] ?? 1 ?>: <?= htmlspecialchars($assessment['topic_title']) ?></span>
+            <span class="meta-val">Week <?= $assessment['week_number'] ?? 1 ?>: <?= safeHtml($assessment['topic_title']) ?></span>
         </div>
         <?php endif; ?>
     </div>
@@ -614,7 +614,7 @@ $pageTitle = 'Print Assessment - ' . $assessment['course_code'] . ' ' . $assessm
     <!-- General Instructions -->
     <div class="instructions-box">
         <strong>General Instructions:</strong>
-        <?= !empty($assessment['description']) ? htmlspecialchars($assessment['description']) . ' ' : '' ?>
+        <?= !empty($assessment['description']) ? safeHtml($assessment['description']) . ' ' : '' ?>
         Read each question carefully. For multiple-choice questions, encircle or write the letter corresponding to your answer. For True/False questions, mark the correct option. For essay items, formulate concise, substantive answers using the provided spaces. Erasures or superimpositions should be avoided.
         <?php if (!empty($assessment['time_limit_minutes'])): ?>
             <strong>Time Limit:</strong> <?= (int)$assessment['time_limit_minutes'] ?> minutes.
@@ -637,7 +637,7 @@ $pageTitle = 'Print Assessment - ' . $assessment['course_code'] . ' ' . $assessm
                 <div class="question-head">
                     <div class="question-number-prompt">
                         <span class="question-num"><?= $num ?>.</span>
-                        <div><?= nl2br(htmlspecialchars($q['question_text'])) ?></div>
+                        <div><?= formatMultilineText($q['question_text']) ?></div>
                     </div>
                     <div class="question-pts">
                         [<?= $pts ?> pt<?= $pts != 1 ? 's' : '' ?>]
@@ -665,7 +665,7 @@ $pageTitle = 'Print Assessment - ' . $assessment['course_code'] . ' ' . $assessm
                     <div class="mc-option <?= $highlight ? 'is-correct-answer' : '' ?>">
                         <span class="mc-circle"></span>
                         <span class="mc-letter"><?= $letter ?>.</span>
-                        <span><?= htmlspecialchars($optText) ?></span>
+                        <span><?= safeHtml($optText) ?></span>
                         <?php if ($highlight): ?>
                             <span class="key-badge"><i class="fas fa-check"></i> Correct</span>
                         <?php endif; ?>
@@ -710,7 +710,7 @@ $pageTitle = 'Print Assessment - ' . $assessment['course_code'] . ' ' . $assessm
                         <div class="essay-key-rubric">
                             <strong><i class="fas fa-clipboard-check"></i> Rubric Guidance / Key Evaluation Criteria:</strong>
                             <div style="margin-top:4px">
-                                <?= !empty($q['explanation']) ? nl2br(htmlspecialchars($q['explanation'])) : 'Evaluate the student\'s depth of explanation, methodology, adherence to course standards, and conceptual clarity.' ?>
+                                <?= !empty($q['explanation']) ? formatMultilineText($q['explanation']) : 'Evaluate the student\'s depth of explanation, methodology, adherence to course standards, and conceptual clarity.' ?>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -722,7 +722,7 @@ $pageTitle = 'Print Assessment - ' . $assessment['course_code'] . ' ' . $assessm
 
     <!-- Document Footer -->
     <div style="margin-top:36px;padding-top:14px;border-top:1px solid #cbd5e1;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#64748b">
-        <div><?= htmlspecialchars($assessment['course_code']) ?> &bull; <?= htmlspecialchars($assessment['title']) ?></div>
+        <div><?= htmlspecialchars($assessment['course_code']) ?> &bull; <?= safeHtml($assessment['title']) ?></div>
         <div>Generated via BlendEd LMS &bull; Page 1</div>
     </div>
 </div>

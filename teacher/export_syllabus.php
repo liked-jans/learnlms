@@ -392,7 +392,7 @@ $pageTitle = 'Official OBE Syllabus - ' . $syllabus['course_code'];
                         <?= ucfirst(htmlspecialchars($t['blooms_level'] ?? 'Understanding')) ?>
                     </span>
                 </td>
-                <td><?= htmlspecialchars($t['learning_outcomes'] ?: 'Understand and apply core algorithmic concepts in ' . $t['topic_title']) ?></td>
+                <td><?= formatMultilineText($t['learning_outcomes'] ?: 'Understand and apply core algorithmic concepts in ' . $t['topic_title']) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -430,10 +430,10 @@ $pageTitle = 'Official OBE Syllabus - ' . $syllabus['course_code'];
                     </span>
                 </td>
                 <td>
-                    <strong><?= htmlspecialchars($row['topic_title']) ?></strong>
+                    <strong><?= safeHtml($row['topic_title']) ?></strong>
                     <?php if (!empty($row['topic_description'])): ?>
                         <div style="font-size:10px;color:#475569;margin-top:3px">
-                            <?= htmlspecialchars(substr($row['topic_description'], 0, 100)) ?><?= strlen($row['topic_description']) > 100 ? '...' : '' ?>
+                            <?= formatMultilineText(substr($row['topic_description'], 0, 100)) ?><?= strlen($row['topic_description']) > 100 ? '...' : '' ?>
                         </div>
                     <?php endif; ?>
                     <div style="margin-top:4px">

@@ -178,7 +178,7 @@ if ($submission) {
     <span>/</span>
     <span style="color:var(--text)"><?= htmlspecialchars($assessment['course_code']) ?></span>
     <span>/</span>
-    <span style="color:var(--text);font-weight:600"><?= htmlspecialchars($assessment['title']) ?></span>
+    <span style="color:var(--text);font-weight:600"><?= safeHtml($assessment['title']) ?></span>
 </div>
 
 <!-- Assessment Header Card -->
@@ -195,11 +195,11 @@ if ($submission) {
                         </span>
                     <?php endif; ?>
                 </div>
-                <h2 style="font-size:22px;font-weight:800;color:var(--text);margin:0 0 6px"><?= htmlspecialchars($assessment['title']) ?></h2>
+                <h2 style="font-size:22px;font-weight:800;color:var(--text);margin:0 0 6px"><?= safeHtml($assessment['title']) ?></h2>
                 <p style="font-size:13px;color:var(--text3);margin:0">
                     <?= htmlspecialchars($assessment['course_name']) ?>
                     <?php if (!empty($assessment['description'])): ?>
-                        &bull; <?= htmlspecialchars($assessment['description']) ?>
+                        &bull; <?= safeHtml($assessment['description']) ?>
                     <?php endif; ?>
                 </p>
             </div>
@@ -254,7 +254,7 @@ if ($submission) {
         <?php if (!empty($submission['feedback'])): ?>
             <div style="margin-top:16px;padding:12px 16px;background:#fff;border-left:4px solid var(--primary);border-radius:6px;font-size:13px">
                 <strong><i class="fas fa-comment-dots" style="color:var(--primary);margin-right:4px"></i> Feedback / Remarks:</strong>
-                <div style="color:var(--text2);margin-top:4px"><?= nl2br(htmlspecialchars($submission['feedback'])) ?></div>
+                <div style="color:var(--text2);margin-top:4px"><?= formatMultilineText($submission['feedback']) ?></div>
             </div>
         <?php endif; ?>
     </div>
@@ -300,7 +300,7 @@ if ($submission) {
             </div>
 
             <div style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text)">
-                <?= nl2br(htmlspecialchars($sa['question_text'])) ?>
+                <?= formatMultilineText($sa['question_text']) ?>
             </div>
 
             <!-- Student Answer Display -->
@@ -309,11 +309,11 @@ if ($submission) {
                 <div style="font-size:13px;color:var(--text);font-weight:600">
                     <?php if ($qType === 'multiple_choice'): 
                         $ansText = getAssessmentOptionDisplay($sa['options'], (string)($sa['student_answer'] ?? ''));
-                        echo $ansText ? htmlspecialchars($ansText) : '<em class="text-muted">No answer selected</em>';
+                        echo $ansText ? safeHtml($ansText) : '<em class="text-muted">No answer selected</em>';
                     elseif ($qType === 'true_false'):
-                        echo htmlspecialchars((string)($sa['student_answer'] ?? 'No answer selected'));
+                        echo safeHtml((string)($sa['student_answer'] ?? 'No answer selected'));
                     else:
-                        echo nl2br(htmlspecialchars((string)($sa['student_answer'] ?? 'No response provided.')));
+                        echo formatMultilineText((string)($sa['student_answer'] ?? 'No response provided.'));
                     endif; ?>
                 </div>
             </div>
@@ -323,20 +323,20 @@ if ($submission) {
                 <div style="padding:8px 12px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;font-size:12px;color:#065f46">
                     <strong><i class="fas fa-check-circle"></i> Correct Answer:</strong>
                     <?php if ($qType === 'multiple_choice'): 
-                        echo htmlspecialchars(getAssessmentOptionDisplay($sa['options'], (string)($sa['correct_answer'] ?? '')));
+                        echo safeHtml(getAssessmentOptionDisplay($sa['options'], (string)($sa['correct_answer'] ?? '')));
                     else:
-                        echo htmlspecialchars((string)($sa['correct_answer'] ?? ''));
+                        echo safeHtml((string)($sa['correct_answer'] ?? ''));
                     endif; ?>
                 </div>
             <?php elseif ($qType === 'essay' && !empty($sa['explanation'])): ?>
                 <div style="margin-top:8px;padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#475569">
-                    <strong><i class="fas fa-clipboard-list"></i> Scoring Rubric:</strong> <?= nl2br(htmlspecialchars((string)$sa['explanation'])) ?>
+                    <strong><i class="fas fa-clipboard-list"></i> Scoring Rubric:</strong> <?= formatMultilineText((string)$sa['explanation']) ?>
                 </div>
             <?php endif; ?>
 
             <?php if (!empty($sa['teacher_feedback'])): ?>
                 <div style="margin-top:8px;padding:8px 12px;background:#fffbeb;border:1px solid #fef3c7;border-radius:6px;font-size:12px;color:#92400e">
-                    <strong><i class="fas fa-comment"></i> Teacher Comment:</strong> <?= htmlspecialchars($sa['teacher_feedback']) ?>
+                    <strong><i class="fas fa-comment"></i> Teacher Comment:</strong> <?= safeHtml($sa['teacher_feedback']) ?>
                 </div>
             <?php endif; ?>
         </div>
@@ -387,7 +387,7 @@ if ($submission) {
 
                 <!-- Prompt -->
                 <div style="font-size:15px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:16px">
-                    <?= nl2br(htmlspecialchars($q['question_text'])) ?>
+                    <?= formatMultilineText($q['question_text']) ?>
                 </div>
 
                 <!-- Multiple Choice Options -->
@@ -406,7 +406,7 @@ if ($submission) {
                     <label for="<?= $choiceId ?>" style="padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:#fff;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s ease">
                         <input type="radio" name="answers[<?= $qId ?>]" id="<?= $choiceId ?>" value="<?= htmlspecialchars($choiceVal) ?>" style="transform:scale(1.2);cursor:pointer">
                         <strong style="color:var(--primary);width:18px"><?= $letter ?>.</strong>
-                        <span style="font-size:13.5px;color:var(--text)"><?= htmlspecialchars($optText) ?></span>
+                        <span style="font-size:13.5px;color:var(--text)"><?= safeHtml($optText) ?></span>
                     </label>
                     <?php endforeach; ?>
                 </div>

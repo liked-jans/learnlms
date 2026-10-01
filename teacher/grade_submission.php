@@ -97,7 +97,7 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
     <span>/</span>
     <span style="color:var(--text)"><?= htmlspecialchars($sub['course_code']) ?></span>
     <span>/</span>
-    <span style="color:var(--text);font-weight:600"><?= htmlspecialchars($sub['assessment_title']) ?></span>
+    <span style="color:var(--text);font-weight:600"><?= safeHtml($sub['assessment_title']) ?></span>
 </div>
 
 <!-- Student Header Card -->
@@ -182,7 +182,7 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
 
                 <!-- Question Prompt -->
                 <div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:14px">
-                    <?= nl2br(htmlspecialchars($sa['question_text'])) ?>
+                    <?= formatMultilineText($sa['question_text']) ?>
                 </div>
 
                 <!-- Student Answer Box -->
@@ -193,11 +193,11 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
                     <div style="font-size:13.5px;color:var(--text);font-weight:<?= $isEssay ? '400' : '600' ?>;line-height:1.6">
                         <?php if ($qType === 'multiple_choice'): 
                             $ansText = getAssessmentOptionDisplay($sa['options'], $sa['student_answer']);
-                            echo $ansText ? htmlspecialchars($ansText) : '<em class="text-muted">No choice selected</em>';
+                            echo $ansText ? safeHtml($ansText) : '<em class="text-muted">No choice selected</em>';
                         elseif ($qType === 'true_false'):
-                            echo htmlspecialchars($sa['student_answer'] ?: 'No choice selected');
+                            echo safeHtml($sa['student_answer'] ?: 'No choice selected');
                         else:
-                            echo nl2br(htmlspecialchars($sa['student_answer'] ?: 'No response provided by student.'));
+                            echo formatMultilineText($sa['student_answer'] ?: 'No response provided by student.');
                         endif; ?>
                     </div>
                 </div>
@@ -207,9 +207,9 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
                     <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;padding:8px 12px;font-size:12px;color:#065f46;margin-bottom:14px">
                         <strong><i class="fas fa-check-circle"></i> Correct Answer Reference:</strong>
                         <?php if ($qType === 'multiple_choice'): 
-                            echo htmlspecialchars(getAssessmentOptionDisplay($sa['options'], $sa['correct_answer']));
+                            echo safeHtml(getAssessmentOptionDisplay($sa['options'], $sa['correct_answer']));
                         else:
-                            echo htmlspecialchars($sa['correct_answer']);
+                            echo safeHtml($sa['correct_answer']);
                         endif; ?>
                     </div>
                 <?php endif; ?>
@@ -218,7 +218,7 @@ $answers = $stmtAns->get_result()->fetch_all(MYSQLI_ASSOC);
                 <?php if ($isEssay && !empty($sa['explanation'])): ?>
                     <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:6px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:14px">
                         <strong><i class="fas fa-clipboard-check"></i> Rubric Guidance:</strong>
-                        <div style="margin-top:2px;color:#78350f"><?= nl2br(htmlspecialchars($sa['explanation'])) ?></div>
+                        <div style="margin-top:2px;color:#78350f"><?= formatMultilineText($sa['explanation']) ?></div>
                     </div>
                 <?php endif; ?>
 

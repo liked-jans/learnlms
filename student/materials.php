@@ -184,8 +184,8 @@ $colors = ['document'=>'badge-red','video'=>'badge-blue','link'=>'badge-gray','p
             </span>
         <?php endif; ?>
     </div>
-    <h4 style="margin:8px 0"><?= htmlspecialchars($m['title']) ?></h4>
-    <p style="font-size:12px; color:var(--text3); margin-bottom: 12px;"><?= htmlspecialchars($m['course_code'] ?? '') ?><?= !empty($m['topic_title']) ? ' &bull; '.htmlspecialchars($m['topic_title']) : '' ?></p>
+    <h4 style="margin:8px 0"><?= safeHtml($m['title']) ?></h4>
+    <p style="font-size:12px; color:var(--text3); margin-bottom: 12px;"><?= htmlspecialchars($m['course_code'] ?? '') ?><?= !empty($m['topic_title']) ? ' &bull; '.safeHtml($m['topic_title']) : '' ?></p>
 
     <div style="display:flex; flex-wrap: wrap; gap:6px">
         <?php if($m['type'] !== 'activity'): ?>

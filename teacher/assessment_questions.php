@@ -54,11 +54,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'add_question') {
-        $qText = sanitize($_POST['question_text'] ?? '');
+        $rawText = str_replace(["\\r\\n", "\\r", "\\n"], "\n", $_POST['question_text'] ?? '');
+        $rawText = htmlspecialchars_decode($rawText, ENT_QUOTES);
+        $qText = sanitize($rawText);
         $qType = sanitize($_POST['question_type'] ?? 'multiple_choice');
         $points = (float)($_POST['points'] ?? 1);
         if ($points <= 0) $points = 1.0;
-        $explanation = sanitize($_POST['explanation'] ?? '');
+        $rawExpl = str_replace(["\\r\\n", "\\r", "\\n"], "\n", $_POST['explanation'] ?? '');
+        $rawExpl = htmlspecialchars_decode($rawExpl, ENT_QUOTES);
+        $explanation = sanitize($rawExpl);
 
         if (empty($qText)) {
             setFlash('error', 'Question prompt cannot be empty.');
@@ -118,11 +122,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     } elseif ($action === 'edit_question') {
         $qId = (int)($_POST['question_id'] ?? 0);
-        $qText = sanitize($_POST['question_text'] ?? '');
+        $rawText = str_replace(["\\r\\n", "\\r", "\\n"], "\n", $_POST['question_text'] ?? '');
+        $rawText = htmlspecialchars_decode($rawText, ENT_QUOTES);
+        $qText = sanitize($rawText);
         $qType = sanitize($_POST['question_type'] ?? 'multiple_choice');
         $points = (float)($_POST['points'] ?? 1);
         if ($points <= 0) $points = 1.0;
-        $explanation = sanitize($_POST['explanation'] ?? '');
+        $rawExpl = str_replace(["\\r\\n", "\\r", "\\n"], "\n", $_POST['explanation'] ?? '');
+        $rawExpl = htmlspecialchars_decode($rawExpl, ENT_QUOTES);
+        $explanation = sanitize($rawExpl);
 
         if (empty($qText)) {
             setFlash('error', 'Question prompt cannot be empty.');
@@ -228,7 +236,7 @@ foreach ($questions as $q) {
     <span>/</span>
     <span style="color:var(--text)"><?= htmlspecialchars($assessment['course_code']) ?></span>
     <span>/</span>
-    <span style="color:var(--text);font-weight:600"><?= htmlspecialchars($assessment['title']) ?></span>
+    <span style="color:var(--text);font-weight:600"><?= safeHtml($assessment['title']) ?></span>
 </div>
 
 <?php if ($isAdmin): ?>
@@ -256,11 +264,11 @@ foreach ($questions as $q) {
                         <span class="badge badge-green" style="font-size:11px"><i class="fas fa-random"></i> Scrambled for Students</span>
                     <?php endif; ?>
                 </div>
-                <h2 style="font-size:20px;font-weight:800;color:var(--text);margin:0 0 6px"><?= htmlspecialchars($assessment['title']) ?></h2>
+                <h2 style="font-size:20px;font-weight:800;color:var(--text);margin:0 0 6px"><?= safeHtml($assessment['title']) ?></h2>
                 <p style="font-size:13px;color:var(--text3);margin:0">
                     <?= htmlspecialchars($assessment['course_name']) ?>
                     <?php if (!empty($assessment['description'])): ?>
-                        &bull; <?= htmlspecialchars($assessment['description']) ?>
+                        &bull; <?= safeHtml($assessment['description']) ?>
                     <?php endif; ?>
                 </p>
             </div>
@@ -377,7 +385,7 @@ foreach ($questions as $q) {
 
             <!-- Question Text -->
             <div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:14px">
-                <?= nl2br(htmlspecialchars($q['question_text'])) ?>
+                <?= formatMultilineText($q['question_text']) ?>
             </div>
 
             <!-- Options Display -->
@@ -400,7 +408,7 @@ foreach ($questions as $q) {
                 <div style="padding:10px 14px;border-radius:6px;border:1px solid <?= $isCorrect ? '#10b981' : 'var(--border)' ?>;background:<?= $isCorrect ? '#ecfdf5' : '#fff' ?>;display:flex;align-items:center;justify-content:space-between;gap:8px">
                     <div style="display:flex;align-items:center;gap:10px">
                         <strong style="color:<?= $isCorrect ? '#065f46' : 'var(--text3)' ?>"><?= $letter ?>.</strong>
-                        <span style="font-size:13px;color:<?= $isCorrect ? '#065f46;font-weight:600' : 'var(--text)' ?>"><?= htmlspecialchars($optText) ?></span>
+                        <span style="font-size:13px;color:<?= $isCorrect ? '#065f46;font-weight:600' : 'var(--text)' ?>"><?= safeHtml($optText) ?></span>
                     </div>
                     <?php if ($isCorrect): ?>
                         <span style="font-size:11px;font-weight:700;color:#059669;display:inline-flex;align-items:center;gap:4px">
@@ -432,7 +440,7 @@ foreach ($questions as $q) {
             <?php elseif ($q['question_type'] === 'essay'): ?>
             <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:6px;padding:10px 14px;font-size:12px;color:#92400e">
                 <strong><i class="fas fa-clipboard-check"></i> Scoring Guidance / Rubric:</strong>
-                <div style="margin-top:4px;color:#78350f"><?= !empty($q['explanation']) ? nl2br(htmlspecialchars($q['explanation'])) : 'Evaluate student depth of explanation, methodology, and relevance.' ?></div>
+                <div style="margin-top:4px;color:#78350f"><?= !empty($q['explanation']) ? formatMultilineText($q['explanation']) : 'Evaluate student depth of explanation, methodology, and relevance.' ?></div>
             </div>
             <?php endif; ?>
         </div>
@@ -713,12 +721,19 @@ function switchEditQuestionType(type) {
     }
 }
 
+function decodeHtmlEntities(str) {
+    if (!str) return '';
+    var txt = document.createElement('textarea');
+    txt.innerHTML = String(str).replace(/\\r\\n|\\r|\\n/g, '\n');
+    return txt.value;
+}
+
 function editQuestion(q) {
     document.getElementById('editQuestionId').value = q.id;
     document.getElementById('editModalQType').value = q.question_type;
     document.getElementById('editModalPoints').value = q.points;
-    document.getElementById('editQuestionText').value = q.question_text || '';
-    document.getElementById('editExplanation').value = q.explanation || '';
+    document.getElementById('editQuestionText').value = decodeHtmlEntities(q.question_text);
+    document.getElementById('editExplanation').value = decodeHtmlEntities(q.explanation);
 
     switchEditQuestionType(q.question_type);
 
@@ -736,7 +751,7 @@ function editQuestion(q) {
         for (var i = 0; i < 4; i++) {
             var optInput = document.getElementById('edit_mc_opt_' + i);
             if (optInput) {
-                optInput.value = (opts && opts[i] !== undefined) ? opts[i] : '';
+                optInput.value = (opts && opts[i] !== undefined) ? decodeHtmlEntities(opts[i]) : '';
             }
         }
 

@@ -53,18 +53,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         setFlash('success','Syllabus info updated.');
 
     } elseif ($action === 'add_topic') {
-        $wk=(int)$_POST['week_number']; $title=sanitize($_POST['topic_title']); $tdesc=sanitize($_POST['topic_description']);
-        $lo=sanitize($_POST['learning_outcomes']); $dm=sanitize($_POST['delivery_mode']);
-        $plat=sanitize($_POST['online_platform']); $res=sanitize($_POST['resources']); $ass=sanitize($_POST['assessment_type']);
+        $wk=(int)$_POST['week_number']; $title=sanitize($_POST['topic_title'] ?? ''); 
+        $tdesc=sanitize(str_replace(["\\r\\n", "\\r", "\\n", '\r\n', '\r', '\n'], "\n", $_POST['topic_description'] ?? ''));
+        $lo=sanitize(str_replace(["\\r\\n", "\\r", "\\n", '\r\n', '\r', '\n'], "\n", $_POST['learning_outcomes'] ?? '')); $dm=sanitize($_POST['delivery_mode'] ?? 'blended');
+        $plat=sanitize($_POST['online_platform'] ?? ''); $res=sanitize($_POST['resources'] ?? ''); $ass=sanitize($_POST['assessment_type'] ?? '');
         $stmt=$conn->prepare("INSERT INTO syllabus_topics (syllabus_id,week_number,topic_title,topic_description,learning_outcomes,delivery_mode,online_platform,resources,assessment_type) VALUES (?,?,?,?,?,?,?,?,?)");
         $stmt->bind_param('iisssssss',$sid,$wk,$title,$tdesc,$lo,$dm,$plat,$res,$ass);
         $stmt->execute();
         setFlash('success','Topic added.');
 
     } elseif ($action === 'edit_topic') {
-        $topicId=(int)$_POST['topic_id']; $wk=(int)$_POST['week_number']; $title=sanitize($_POST['topic_title']);
-        $tdesc=sanitize($_POST['topic_description']); $lo=sanitize($_POST['learning_outcomes']); $dm=sanitize($_POST['delivery_mode']);
-        $plat=sanitize($_POST['online_platform']); $res=sanitize($_POST['resources']); $ass=sanitize($_POST['assessment_type']);
+        $topicId=(int)$_POST['topic_id']; $wk=(int)$_POST['week_number']; $title=sanitize($_POST['topic_title'] ?? '');
+        $tdesc=sanitize(str_replace(["\\r\\n", "\\r", "\\n", '\r\n', '\r', '\n'], "\n", $_POST['topic_description'] ?? '')); 
+        $lo=sanitize(str_replace(["\\r\\n", "\\r", "\\n", '\r\n', '\r', '\n'], "\n", $_POST['learning_outcomes'] ?? '')); $dm=sanitize($_POST['delivery_mode'] ?? 'blended');
+        $plat=sanitize($_POST['online_platform'] ?? ''); $res=sanitize($_POST['resources'] ?? ''); $ass=sanitize($_POST['assessment_type'] ?? '');
         $stmt=$conn->prepare("UPDATE syllabus_topics SET week_number=?,topic_title=?,topic_description=?,learning_outcomes=?,delivery_mode=?,online_platform=?,resources=?,assessment_type=? WHERE id=? AND syllabus_id=?");
         $stmt->bind_param('isssssssii',$wk,$title,$tdesc,$lo,$dm,$plat,$res,$ass,$topicId,$sid); $stmt->execute();
         setFlash('success','Topic updated.');
@@ -678,7 +680,7 @@ $isDone = !empty($t['is_completed']);
                 <strong style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)">
                     <i class="fas fa-bullseye" style="color:var(--primary);margin-right:4px"></i> Intended Learning Outcomes (ILOs)
                 </strong>
-                <p style="font-size:13px;margin-top:6px;line-height:1.5;color:var(--text)"><?= nl2br(htmlspecialchars($t['learning_outcomes'])) ?></p>
+                <p style="font-size:13px;margin-top:6px;line-height:1.5;color:var(--text)"><?= formatMultilineText($t['learning_outcomes']) ?></p>
             </div>
             <?php endif; ?>
 
