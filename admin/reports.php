@@ -4,7 +4,28 @@ requireRole('admin');
 $pageTitle = 'Reports & Analytics';
 
 $totalUsers = $conn->query("SELECT role, COUNT(*) c FROM users WHERE role!='admin' GROUP BY role")->fetch_all(MYSQLI_ASSOC);
-$syllabiByStatus = $conn->query("SELECT s.status, COUNT(*) c FROM syllabi s JOIN courses c ON s.course_id=c.id GROUP BY s.status")->fetch_all(MYSQLI_ASSOC);
+// Syllabi status counts
+$statusCounts = [
+    'published' => (int)($conn->query("SELECT COUNT(*) c FROM syllabi s JOIN courses c ON s.course_id=c.id WHERE s.status='published'")->fetch_assoc()['c'] ?? 0),
+    'draft'     => (int)($conn->query("SELECT COUNT(*) c FROM syllabi s JOIN courses c ON s.course_id=c.id WHERE s.status='draft'")->fetch_assoc()['c'] ?? 0),
+    'archived'  => (int)($conn->query("SELECT COUNT(*) c FROM syllabi s JOIN courses c ON s.course_id=c.id WHERE s.status='archived'")->fetch_assoc()['c'] ?? 0),
+];
+$totalSyllabiCount = array_sum($statusCounts);
+
+// Curriculum Coverage
+$syllabiWithMaterials = (int)($conn->query("SELECT COUNT(DISTINCT s.id) c FROM syllabi s JOIN courses c ON s.course_id=c.id JOIN learning_materials lm ON lm.syllabus_id=s.id")->fetch_assoc()['c'] ?? 0);
+$syllabiWithAssessments = (int)($conn->query("SELECT COUNT(DISTINCT s.id) c FROM syllabi s JOIN courses c ON s.course_id=c.id JOIN assessments a ON a.syllabus_id=s.id")->fetch_assoc()['c'] ?? 0);
+
+// Department breakdown
+$deptDistribution = $conn->query("
+    SELECT d.name as dept_name, d.code as dept_code, COUNT(s.id) as syl_count, SUM(c.units) as total_units
+    FROM syllabi s
+    JOIN courses c ON s.course_id = c.id
+    JOIN departments d ON c.department_id = d.id
+    GROUP BY d.id
+    ORDER BY syl_count DESC
+")->fetch_all(MYSQLI_ASSOC);
+
 $topicsByMode = $conn->query("SELECT st.delivery_mode, COUNT(*) c FROM syllabus_topics st JOIN syllabi s ON st.syllabus_id=s.id JOIN courses c ON s.course_id=c.id GROUP BY st.delivery_mode ORDER BY c DESC")->fetch_all(MYSQLI_ASSOC);
 $enrollStats = (int)($conn->query("SELECT COUNT(*) c FROM enrollments e JOIN syllabi s ON e.syllabus_id=s.id JOIN courses c ON s.course_id=c.id WHERE e.status='enrolled'")->fetch_assoc()['c'] ?? 0);
 $completedTopics = (int)($conn->query("SELECT COUNT(DISTINCT tp.id) c FROM topic_progress tp JOIN syllabus_topics st ON tp.syllabus_topic_id=st.id JOIN syllabi s ON st.syllabus_id=s.id JOIN courses c ON s.course_id=c.id JOIN enrollments e ON e.student_id=tp.student_id AND e.syllabus_id=s.id WHERE tp.status='completed' AND e.status='enrolled'")->fetch_assoc()['c'] ?? 0);
@@ -35,39 +56,112 @@ $topCourses = $conn->query("SELECT c.course_name, c.course_code, COUNT(e.id) enr
 
 <div class="dash-grid">
 <div>
+<!-- Enhanced Curriculum & Syllabus Operations Card -->
 <div class="card">
-    <div class="card-header"><span class="card-title">Syllabi by Status</span></div>
-    <div class="card-body">
-    <?php foreach($syllabiByStatus as $s): 
-        $colors=['draft'=>'#94a3b8','published'=>'var(--primary)','archived'=>'var(--accent)'];
-        $total = array_sum(array_column($syllabiByStatus,'c'));
-        $pct = $total ? round($s['c']/$total*100) : 0;
-    ?>
-    <div style="margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <span style="font-size:13px;font-weight:600;text-transform:capitalize"><?= $s['status'] ?></span>
-            <span style="font-size:13px;color:var(--text3)"><?= $s['c'] ?> (<?= $pct ?>%)</span>
-        </div>
-        <div class="progress-bar"><div class="progress-fill" style="width:<?= $pct ?>%;background:<?= $colors[$s['status']] ?>"></div></div>
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+        <span class="card-title"><i class="fas fa-book-open" style="color:var(--primary);margin-right:8px"></i> Curriculum & Syllabus Health</span>
+        <span class="badge badge-green" style="font-size:11px;font-weight:700"><?= $totalSyllabiCount ?> Syllabi Active</span>
     </div>
-    <?php endforeach; ?>
+    <div class="card-body">
+        <!-- Status Badges Strip -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;text-align:center">
+                <div style="font-size:11px;color:#166534;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Published</div>
+                <div style="font-size:22px;font-weight:800;color:#15803d;margin-top:2px"><?= $statusCounts['published'] ?></div>
+                <div style="font-size:10px;color:#16a34a;margin-top:2px"><i class="fas fa-check-circle"></i> Live for Students</div>
+            </div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;text-align:center">
+                <div style="font-size:11px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Draft</div>
+                <div style="font-size:22px;font-weight:800;color:#334155;margin-top:2px"><?= $statusCounts['draft'] ?></div>
+                <div style="font-size:10px;color:#64748b;margin-top:2px"><i class="fas fa-pencil-alt"></i> In Preparation</div>
+            </div>
+            <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:10px 12px;text-align:center">
+                <div style="font-size:11px;color:#92400e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Archived</div>
+                <div style="font-size:22px;font-weight:800;color:#b45309;margin-top:2px"><?= $statusCounts['archived'] ?></div>
+                <div style="font-size:10px;color:#d97706;margin-top:2px"><i class="fas fa-archive"></i> Prior Semesters</div>
+            </div>
+        </div>
+
+        <!-- Curriculum Readiness Indicators -->
+        <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px">
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Instructional Readiness</div>
+            
+            <?php 
+                $matPct = $totalSyllabiCount > 0 ? round(($syllabiWithMaterials / $totalSyllabiCount) * 100) : 0;
+                $assPct = $totalSyllabiCount > 0 ? round(($syllabiWithAssessments / $totalSyllabiCount) * 100) : 0;
+            ?>
+            <div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px">
+                    <span style="color:var(--text2);font-weight:600"><i class="fas fa-file-alt" style="color:#2563eb;margin-right:6px"></i> Learning Modules Uploaded</span>
+                    <span style="font-weight:700;color:var(--text)"><?= $syllabiWithMaterials ?> / <?= $totalSyllabiCount ?> (<?= $matPct ?>%)</span>
+                </div>
+                <div class="progress-bar" style="height:7px;background:#e2e8f0;border-radius:99px;overflow:hidden">
+                    <div class="progress-fill" style="width:<?= $matPct ?>%;background:#2563eb;height:100%;border-radius:99px"></div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:6px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px">
+                    <span style="color:var(--text2);font-weight:600"><i class="fas fa-tasks" style="color:#10b981;margin-right:6px"></i> Outcome Assessments Aligned</span>
+                    <span style="font-weight:700;color:var(--text)"><?= $syllabiWithAssessments ?> / <?= $totalSyllabiCount ?> (<?= $assPct ?>%)</span>
+                </div>
+                <div class="progress-bar" style="height:7px;background:#e2e8f0;border-radius:99px;overflow:hidden">
+                    <div class="progress-fill" style="width:<?= $assPct ?>%;background:#10b981;height:100%;border-radius:99px"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Academic Program Summary -->
+        <?php if (!empty($deptDistribution)): ?>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text2)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <span style="font-weight:700;color:var(--text)"><?= htmlspecialchars($deptDistribution[0]['dept_name']) ?></span>
+                    <span style="color:var(--text3);margin-left:4px">(<?= htmlspecialchars($deptDistribution[0]['dept_code']) ?>)</span>
+                </div>
+                <span class="badge badge-gray" style="font-size:10px;font-weight:700"><?= $deptDistribution[0]['total_units'] ?? 0 ?> Units Total</span>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 
+<!-- Enhanced Topics by Delivery Mode with Vibrant, High-Contrast Visibility -->
 <div class="card" style="margin-top:20px">
-    <div class="card-header"><span class="card-title">Topics by Delivery Mode</span></div>
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+        <span class="card-title"><i class="fas fa-chalkboard" style="color:#f59e0b;margin-right:8px"></i> Topics by Delivery Mode</span>
+        <span style="font-size:12px;color:var(--text3);font-weight:600"><?= $totalTopics ?> Total Mapped Topics</span>
+    </div>
     <div class="card-body">
-    <?php $total2 = array_sum(array_column($topicsByMode,'c'));
-    $mc=['face-to-face'=>'var(--accent2)','online'=>'var(--info)','blended'=>'var(--primary)','asynchronous'=>'var(--warning)','synchronous'=>'#7c3aed'];
+    <?php 
+    $total2 = array_sum(array_column($topicsByMode,'c'));
+    $modeConfig = [
+        'face-to-face' => ['color' => '#d97706', 'bar' => '#f59e0b', 'icon' => 'chalkboard-teacher', 'label' => 'Face-To-Face'],
+        'online'       => ['color' => '#1d4ed8', 'bar' => '#2563eb', 'icon' => 'laptop',              'label' => 'Online'],
+        'blended'      => ['color' => '#047857', 'bar' => '#10b981', 'icon' => 'layer-group',         'label' => 'Blended'],
+        'asynchronous' => ['color' => '#6d28d9', 'bar' => '#8b5cf6', 'icon' => 'clock',               'label' => 'Asynchronous'],
+        'synchronous'  => ['color' => '#0e7490', 'bar' => '#06b6d4', 'icon' => 'video',               'label' => 'Synchronous'],
+    ];
     foreach($topicsByMode as $m):
-        $pct2 = $total2 ? round($m['c']/$total2*100) : 0;
-        $col = $mc[$m['delivery_mode']] ?? 'var(--primary)'; ?>
-    <div style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-            <span style="font-size:13px;font-weight:600;text-transform:capitalize"><?= $m['delivery_mode'] ?></span>
-            <span style="font-size:13px;color:var(--text3)"><?= $m['c'] ?> topics</span>
+        $rawMode = strtolower(trim($m['delivery_mode']));
+        $pct2 = $total2 > 0 ? round($m['c'] / $total2 * 100) : 0;
+        $cfg = $modeConfig[$rawMode] ?? ['color' => 'var(--primary)', 'bar' => '#1E5C42', 'icon' => 'book', 'label' => ucfirst($m['delivery_mode'])];
+    ?>
+    <div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:13px;font-weight:600;color:var(--text);display:inline-flex;align-items:center;gap:8px">
+                <span style="width:24px;height:24px;border-radius:6px;background:<?= $cfg['bar'] ?>18;display:inline-flex;align-items:center;justify-content:center;color:<?= $cfg['color'] ?>;font-size:11px">
+                    <i class="fas fa-<?= $cfg['icon'] ?>"></i>
+                </span>
+                <?= $cfg['label'] ?>
+            </span>
+            <span style="font-size:12px;font-weight:700;color:var(--text)">
+                <?= $m['c'] ?> <span style="font-weight:500;color:var(--text3)">topics (<?= $pct2 ?>%)</span>
+            </span>
         </div>
-        <div class="progress-bar"><div class="progress-fill" style="width:<?= $pct2 ?>%;background:<?= $col ?>"></div></div>
+        <div class="progress-bar" style="height:9px;background:#e2e8f0;border-radius:99px;overflow:hidden">
+            <div class="progress-fill" style="width:<?= $pct2 ?>%;background:<?= $cfg['bar'] ?>;height:100%;border-radius:99px"></div>
+        </div>
     </div>
     <?php endforeach; ?>
     </div>
