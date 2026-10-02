@@ -345,3 +345,158 @@ function isAssessmentAnswerCorrect($studentAns, $correctAns, $optionsJson = null
     return false;
 }
 
+// ---------------------------------------------------------------------
+// Cascading Deletion Helpers (cleanly removes all related progress & child records)
+// ---------------------------------------------------------------------
+
+/**
+ * Deletes a single topic and all related student progress, learning materials, and logs.
+ */
+function deleteTopicCascade($topicId, $syllabusId = null) {
+    global $conn;
+    $topicId = (int)$topicId;
+    if ($topicId <= 0) return false;
+
+    if ($syllabusId !== null) {
+        $sylId = (int)$syllabusId;
+        $chk = $conn->query("SELECT id FROM syllabus_topics WHERE id = $topicId AND syllabus_id = $sylId")->fetch_assoc();
+        if (!$chk) return false;
+    }
+
+    // 1. Delete student reading & completion progress for this topic
+    $conn->query("DELETE FROM topic_progress WHERE syllabus_topic_id = $topicId");
+
+    // 2. Delete teacher week done markers for this topic
+    $conn->query("DELETE FROM topic_week_done WHERE topic_id = $topicId");
+
+    // 3. Delete learning materials for this topic
+    $conn->query("DELETE FROM learning_materials WHERE syllabus_topic_id = $topicId");
+
+    // 4. Detach assessments linked to this topic
+    $conn->query("UPDATE assessments SET topic_id = NULL WHERE topic_id = $topicId");
+
+    // 5. Delete the topic itself
+    $conn->query("DELETE FROM syllabus_topics WHERE id = $topicId");
+
+    return true;
+}
+
+/**
+ * Deletes a student enrollment and removes all their progress and submissions for that syllabus.
+ */
+function deleteEnrollmentCascade($enrollmentId) {
+    global $conn;
+    $enrollmentId = (int)$enrollmentId;
+    if ($enrollmentId <= 0) return false;
+
+    $enr = $conn->query("SELECT student_id, syllabus_id FROM enrollments WHERE id = $enrollmentId")->fetch_assoc();
+    if (!$enr) return false;
+
+    $studentId = (int)$enr['student_id'];
+    $sylId = (int)$enr['syllabus_id'];
+
+    // 1. Delete student topic progress for this syllabus
+    $conn->query("
+        DELETE tp FROM topic_progress tp
+        JOIN syllabus_topics st ON tp.syllabus_topic_id = st.id
+        WHERE tp.student_id = $studentId AND st.syllabus_id = $sylId
+    ");
+
+    // 2. Delete student assessment submissions for this syllabus
+    $conn->query("
+        DELETE s FROM submissions s
+        JOIN assessments a ON s.assessment_id = a.id
+        WHERE s.student_id = $studentId AND a.syllabus_id = $sylId
+    ");
+
+    // 3. Delete the enrollment record
+    $conn->query("DELETE FROM enrollments WHERE id = $enrollmentId");
+
+    return true;
+}
+
+/**
+ * Completely deletes a syllabus, all topics, all learning materials, all assessments,
+ * all student enrollments, and all student progress records.
+ */
+function deleteSyllabusCascade($sylId) {
+    global $conn;
+    $sylId = (int)$sylId;
+    if ($sylId <= 0) return false;
+
+    // 1. Gather all topic IDs for this syllabus
+    $tRes = $conn->query("SELECT id FROM syllabus_topics WHERE syllabus_id = $sylId");
+    $topicIds = [];
+    if ($tRes) {
+        while ($row = $tRes->fetch_assoc()) {
+            $topicIds[] = (int)$row['id'];
+        }
+    }
+
+    if (!empty($topicIds)) {
+        $tList = implode(',', $topicIds);
+        $conn->query("DELETE FROM topic_progress WHERE syllabus_topic_id IN ($tList)");
+        $conn->query("DELETE FROM topic_week_done WHERE topic_id IN ($tList)");
+    }
+
+    // 2. Gather all assessment IDs for this syllabus
+    $aRes = $conn->query("SELECT id FROM assessments WHERE syllabus_id = $sylId");
+    $assIds = [];
+    if ($aRes) {
+        while ($row = $aRes->fetch_assoc()) {
+            $assIds[] = (int)$row['id'];
+        }
+    }
+
+    if (!empty($assIds)) {
+        $aList = implode(',', $assIds);
+        $conn->query("DELETE FROM assessment_questions WHERE assessment_id IN ($aList)");
+        $conn->query("DELETE FROM submissions WHERE assessment_id IN ($aList)");
+        $conn->query("DELETE FROM assessments WHERE id IN ($aList)");
+    }
+
+    // 3. Delete learning materials
+    $conn->query("DELETE FROM learning_materials WHERE syllabus_id = $sylId");
+    if (!empty($topicIds)) {
+        $conn->query("DELETE FROM learning_materials WHERE syllabus_topic_id IN ($tList)");
+    }
+
+    // 4. Delete enrollments
+    $conn->query("DELETE FROM enrollments WHERE syllabus_id = $sylId");
+
+    // 5. Delete topic done status
+    $conn->query("DELETE FROM topic_done_status WHERE syllabus_id = $sylId");
+
+    // 6. Delete syllabus assignments if present
+    $conn->query("DELETE FROM syllabus_assignments WHERE syllabus_id = $sylId");
+
+    // 7. Delete syllabus topics
+    $conn->query("DELETE FROM syllabus_topics WHERE syllabus_id = $sylId");
+
+    // 8. Delete the syllabus itself
+    $conn->query("DELETE FROM syllabi WHERE id = $sylId");
+
+    return true;
+}
+
+/**
+ * Completely deletes a course and all its syllabi, topics, materials, and student progress.
+ */
+function deleteCourseCascade($courseId) {
+    global $conn;
+    $courseId = (int)$courseId;
+    if ($courseId <= 0) return false;
+
+    // 1. Find all syllabi under this course and delete them with all cascades
+    $sRes = $conn->query("SELECT id FROM syllabi WHERE course_id = $courseId");
+    if ($sRes) {
+        while ($row = $sRes->fetch_assoc()) {
+            deleteSyllabusCascade((int)$row['id']);
+        }
+    }
+
+    // 2. Delete the course record
+    $conn->query("DELETE FROM courses WHERE id = $courseId");
+
+    return true;
+}

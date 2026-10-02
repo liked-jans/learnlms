@@ -20,9 +20,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param('sii',$status,$id,$tid); $stmt->execute();
         setFlash('success','Status updated.');
     } elseif ($action === 'delete') {
-        $id=(int)$_POST['id'];
-        $conn->query("DELETE FROM syllabi WHERE id=$id AND teacher_id=$tid");
-        setFlash('success','Deleted.');
+        $id = (int)$_POST['id'];
+        $chk = $conn->query("SELECT id FROM syllabi WHERE id=$id AND teacher_id=$tid")->fetch_assoc();
+        if ($chk) {
+            deleteSyllabusCascade($id);
+            if (function_exists('logActivity')) {
+                logActivity($tid, "Teacher deleted syllabus ID {$id} and all associated topics, materials, and student progress", 'Syllabus');
+            }
+            setFlash('success','Syllabus and all associated student progress deleted.');
+        } else {
+            setFlash('error','Unauthorized to delete this syllabus.');
+        }
     }
     redirect(BASE_URL.'teacher/syllabi.php');
 }

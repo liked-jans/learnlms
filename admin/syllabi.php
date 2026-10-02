@@ -14,9 +14,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         setFlash('success','Status updated.');
 
     } elseif ($action === 'delete') {
-        $id=(int)$_POST['id'];
-        $conn->query("DELETE FROM syllabi WHERE id=$id");
-        setFlash('success','Syllabus deleted.');
+        $id = (int)$_POST['id'];
+        deleteSyllabusCascade($id);
+        if (function_exists('logActivity')) {
+            logActivity($_SESSION['user_id'], "Admin deleted syllabus ID {$id} and all associated topics, materials, and student progress", 'Syllabus');
+        }
+        setFlash('success','Syllabus and all associated topics, materials, and student progress deleted.');
 
     } elseif ($action === 'add' || $action === 'edit') {
         $courseId      = (int)$_POST['course_id'];

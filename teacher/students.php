@@ -13,8 +13,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         setFlash('success','Student enrolled.');
     } elseif ($action === 'unenroll') {
         $id=(int)$_POST['id'];
-        $conn->query("DELETE FROM enrollments WHERE id=$id");
-        setFlash('success','Student removed.');
+        deleteEnrollmentCascade($id);
+        if (function_exists('logActivity')) {
+            logActivity($tid, "Teacher unenrolled student enrollment ID {$id} and cleared syllabus progress", 'Enrollment');
+        }
+        setFlash('success','Student removed and syllabus progress cleared.');
     }
     redirect(BASE_URL.'teacher/students.php');
 }

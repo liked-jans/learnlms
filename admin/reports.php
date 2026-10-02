@@ -4,11 +4,12 @@ requireRole('admin');
 $pageTitle = 'Reports & Analytics';
 
 $totalUsers = $conn->query("SELECT role, COUNT(*) c FROM users WHERE role!='admin' GROUP BY role")->fetch_all(MYSQLI_ASSOC);
-$syllabiByStatus = $conn->query("SELECT status, COUNT(*) c FROM syllabi GROUP BY status")->fetch_all(MYSQLI_ASSOC);
-$topicsByMode = $conn->query("SELECT delivery_mode, COUNT(*) c FROM syllabus_topics GROUP BY delivery_mode ORDER BY c DESC")->fetch_all(MYSQLI_ASSOC);
-$enrollStats = $conn->query("SELECT COUNT(*) c FROM enrollments WHERE status='enrolled'")->fetch_assoc()['c'];
-$completedTopics = $conn->query("SELECT COUNT(*) c FROM topic_progress WHERE status='completed'")->fetch_assoc()['c'];
-$totalTopics = $conn->query("SELECT COUNT(*) c FROM syllabus_topics")->fetch_assoc()['c'];
+$syllabiByStatus = $conn->query("SELECT s.status, COUNT(*) c FROM syllabi s JOIN courses c ON s.course_id=c.id GROUP BY s.status")->fetch_all(MYSQLI_ASSOC);
+$topicsByMode = $conn->query("SELECT st.delivery_mode, COUNT(*) c FROM syllabus_topics st JOIN syllabi s ON st.syllabus_id=s.id JOIN courses c ON s.course_id=c.id GROUP BY st.delivery_mode ORDER BY c DESC")->fetch_all(MYSQLI_ASSOC);
+$enrollStats = (int)($conn->query("SELECT COUNT(*) c FROM enrollments e JOIN syllabi s ON e.syllabus_id=s.id JOIN courses c ON s.course_id=c.id WHERE e.status='enrolled'")->fetch_assoc()['c'] ?? 0);
+$completedTopics = (int)($conn->query("SELECT COUNT(DISTINCT tp.id) c FROM topic_progress tp JOIN syllabus_topics st ON tp.syllabus_topic_id=st.id JOIN syllabi s ON st.syllabus_id=s.id JOIN courses c ON s.course_id=c.id JOIN enrollments e ON e.student_id=tp.student_id AND e.syllabus_id=s.id WHERE tp.status='completed' AND e.status='enrolled'")->fetch_assoc()['c'] ?? 0);
+$totalTopics = (int)($conn->query("SELECT COUNT(*) c FROM syllabus_topics st JOIN syllabi s ON st.syllabus_id=s.id JOIN courses c ON s.course_id=c.id")->fetch_assoc()['c'] ?? 0);
+$totalAssignedStudentTopics = (int)($conn->query("SELECT COUNT(*) c FROM enrollments e JOIN syllabi s ON e.syllabus_id=s.id JOIN courses c ON s.course_id=c.id JOIN syllabus_topics st ON st.syllabus_id=s.id WHERE e.status='enrolled'")->fetch_assoc()['c'] ?? 0);
 $topCourses = $conn->query("SELECT c.course_name, c.course_code, COUNT(e.id) enroll FROM courses c LEFT JOIN syllabi s ON s.course_id=c.id LEFT JOIN enrollments e ON e.syllabus_id=s.id GROUP BY c.id ORDER BY enroll DESC LIMIT 5");
 ?>
 <?php require_once '../includes/header.php'; ?>
@@ -29,7 +30,7 @@ $topCourses = $conn->query("SELECT c.course_name, c.course_code, COUNT(e.id) enr
     <div class="stat-card green"><div class="stat-icon green"><i class="fas fa-users"></i></div>
     <div class="stat-info"><div class="stat-num"><?= $enrollStats ?></div><div class="stat-label">Active Enrollments</div></div></div>
     <div class="stat-card blue"><div class="stat-icon blue"><i class="fas fa-check-circle"></i></div>
-    <div class="stat-info"><div class="stat-num"><?= $completedTopics ?></div><div class="stat-label">Topics Completed</div></div></div>
+    <div class="stat-info"><div class="stat-num"><?= $completedTopics ?></div><div class="stat-label">Student Topics Completed</div></div></div>
 </div>
 
 <div class="dash-grid">
@@ -90,15 +91,17 @@ $topCourses = $conn->query("SELECT c.course_name, c.course_code, COUNT(e.id) enr
 </div>
 
 <?php 
-$overallProgress = $totalTopics > 0 ? round($completedTopics/$totalTopics*100) : 0;
+$overallProgress = $totalAssignedStudentTopics > 0 ? min(100, round(($completedTopics / $totalAssignedStudentTopics) * 100)) : 0;
 ?>
 <div class="card" style="margin-top:20px">
     <div class="card-header"><span class="card-title">Overall Topic Completion</span></div>
     <div class="card-body" style="text-align:center">
         <div style="font-size:52px;font-weight:800;color:var(--primary);line-height:1"><?= $overallProgress ?>%</div>
-        <p style="color:var(--text3);margin:8px 0 20px">of all topics completed by students</p>
+        <p style="color:var(--text3);margin:8px 0 20px">of all assigned topics completed by active students</p>
         <div class="progress-bar" style="height:12px"><div class="progress-fill" style="width:<?= $overallProgress ?>%"></div></div>
-        <p style="font-size:12px;color:var(--text3);margin-top:8px"><?= $completedTopics ?> / <?= $totalTopics ?> topics</p>
+        <p style="font-size:12px;color:var(--text3);margin-top:8px">
+            <strong><?= number_format($completedTopics) ?></strong> of <strong><?= number_format($totalAssignedStudentTopics) ?></strong> student milestones completed (<?= $totalTopics ?> syllabus topics across <?= $enrollStats ?> enrollments)
+        </p>
     </div>
 </div>
 </div>

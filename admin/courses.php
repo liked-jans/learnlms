@@ -27,8 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'delete') {
         $id = (int)$_POST['id'];
-        $conn->query("DELETE FROM courses WHERE id=$id");
-        setFlash('success','Course deleted.');
+        deleteCourseCascade($id);
+        if (function_exists('logActivity')) {
+            logActivity($_SESSION['user_id'], "Admin deleted course ID {$id} and all associated syllabi, topics, and student progress", 'Courses');
+        }
+        setFlash('success','Course and all associated syllabi, topics, and student progress deleted.');
     } elseif ($action === 'toggle') {
         $id = (int)$_POST['id'];
         $conn->query("UPDATE courses SET status=IF(status='active','inactive','active') WHERE id=$id");

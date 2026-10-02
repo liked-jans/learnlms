@@ -11,11 +11,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = $_POST['action'] ?? '';
     if ($action === 'admin_delete_topic') {
         $topicId = (int)$_POST['topic_id'];
-        $conn->query("DELETE FROM syllabus_topics WHERE id=$topicId AND syllabus_id=$id");
+        deleteTopicCascade($topicId, $id);
         if (function_exists('logActivity')) {
-            logActivity($_SESSION['user_id'], "Admin permanently deleted topic ID {$topicId} from syllabus ID {$id}", 'Syllabus');
+            logActivity($_SESSION['user_id'], "Admin permanently deleted topic ID {$topicId} and associated student progress from syllabus ID {$id}", 'Syllabus');
         }
-        setFlash('success', 'Topic has been permanently deleted.');
+        setFlash('success', 'Topic and all associated student progress deleted.');
         redirect(BASE_URL . 'admin/syllabi_view.php?id=' . $id);
     } elseif ($action === 'admin_dismiss_delete_request') {
         $topicId = (int)$_POST['topic_id'];
