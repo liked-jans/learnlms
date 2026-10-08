@@ -344,33 +344,65 @@ if (isMaintenanceMode()) {
 // ---------------------------------------------------------------------
 function getAssessmentOptionDisplay($optionsJson, $val) {
     if ($val === null || $val === '') return '';
-    if (empty($optionsJson)) return (string)$val;
-    $opts = is_array($optionsJson) ? $optionsJson : (json_decode($optionsJson, true) ?: []);
-    if (empty($opts)) return (string)$val;
+    $valStr = trim((string)$val);
+    if (empty($optionsJson)) {
+        if (preg_match('/^([A-Z])[\.:]\s*(.+)$/i', $valStr, $m)) {
+            return strtoupper($m[1]) . ': ' . trim($m[2]);
+        }
+        return $valStr;
+    }
 
-    if (isset($opts[$val])) {
-        return trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$opts[$val]));
+    $opts = is_array($optionsJson) ? $optionsJson : (json_decode($optionsJson, true) ?: []);
+    if (empty($opts)) {
+        if (preg_match('/^([A-Z])[\.:]\s*(.+)$/i', $valStr, $m)) {
+            return strtoupper($m[1]) . ': ' . trim($m[2]);
+        }
+        return $valStr;
     }
 
     $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     $keys = array_keys($opts);
+    $cleanVal = trim(preg_replace('/^[A-Z][\.:]\s*/i', '', $valStr));
+
+    // 1. Direct key match (e.g. key is '0', '1', 'A', 'B')
+    if (isset($opts[$valStr])) {
+        $idx = is_numeric($valStr) ? (int)$valStr : array_search($valStr, $keys);
+        $letter = (is_string($valStr) && preg_match('/^[A-Z]$/i', $valStr)) ? strtoupper($valStr) : ($letters[$idx] ?? chr(65 + $idx));
+        $optText = (string)$opts[$valStr];
+        if (preg_match('/^([A-Z])[\.:]\s*/i', $optText, $lm)) {
+            $letter = strtoupper($lm[1]);
+        }
+        $cleanOpt = trim(preg_replace('/^[A-Z][\.:]\s*/i', '', $optText));
+        return "{$letter}: {$cleanOpt}";
+    }
+
+    // 2. Iterate keys to find match by key, letter, index, full text, or cleaned text
     foreach ($keys as $idx => $k) {
-        $letter = (is_string($k) && preg_match('/^[A-Z]$/i', $k)) ? strtoupper($k) : ($letters[$idx] ?? chr(65 + $idx));
-        if (strcasecmp((string)$val, (string)$k) === 0 || 
-            strcasecmp((string)$val, $letter) === 0 || 
-            (is_numeric($val) && (int)$val === $idx)) {
-            return trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$opts[$k]));
+        $assignedLetter = (is_string($k) && preg_match('/^[A-Z]$/i', $k)) ? strtoupper($k) : ($letters[$idx] ?? chr(65 + $idx));
+        $optVal = (string)($opts[$k] ?? '');
+        $letter = $assignedLetter;
+        if (preg_match('/^([A-Z])[\.:]\s*/i', $optVal, $lm)) {
+            $letter = strtoupper($lm[1]);
+        }
+        $cleanOpt = trim(preg_replace('/^[A-Z][\.:]\s*/i', '', $optVal));
+
+        if (
+            strcasecmp($valStr, (string)$k) === 0 || 
+            strcasecmp($valStr, $assignedLetter) === 0 || 
+            (is_numeric($valStr) && (int)$valStr === $idx) ||
+            strcasecmp($valStr, $optVal) === 0 ||
+            ($cleanVal !== '' && strcasecmp($cleanVal, $cleanOpt) === 0)
+        ) {
+            return "{$letter}: {$cleanOpt}";
         }
     }
 
-    foreach ($opts as $optVal) {
-        if (strcasecmp((string)$val, (string)$optVal) === 0 || 
-            strcasecmp(trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$val)), trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$optVal))) === 0) {
-            return trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$optVal));
-        }
+    // Fallback: if valStr had a letter prefix
+    if (preg_match('/^([A-Z])[\.:]\s*(.+)$/i', $valStr, $m)) {
+        return strtoupper($m[1]) . ': ' . trim($m[2]);
     }
 
-    return trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$val));
+    return $valStr;
 }
 
 function isAssessmentAnswerCorrect($studentAns, $correctAns, $optionsJson = null) {

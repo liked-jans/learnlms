@@ -1,12 +1,21 @@
+-- ========================================================
 -- LearnLMS Complete Database Backup & Sample Data
--- Exported: 2026-10-08 12:01:43
--- Railway Host: tramway.proxy.rlwy.net:11864 / Database: railway
+-- Generated: 2026-10-08 12:14:01
+-- Database: railway on localhost:3306
+-- Includes: Users, Syllabi, Topics, Materials, Assessments,
+--           Questions, Submissions, Grades, Progress, etc.
+-- Safe for direct import into any MySQL / MariaDB instance.
+-- ========================================================
+
 SET FOREIGN_KEY_CHECKS=0;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
+SET AUTOCOMMIT = 0;
+START TRANSACTION;
 SET time_zone = '+00:00';
+SET NAMES utf8mb4;
 
 -- --------------------------------------------------------
--- Structure and Data for table `activity_logs`
+-- Table structure & data for table `activity_logs` (468 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `activity_logs`;
@@ -20,7 +29,7 @@ CREATE TABLE `activity_logs` (
   KEY `idx_activity_user` (`user_id`),
   KEY `idx_activity_category` (`category`),
   KEY `idx_activity_created` (`created_at`)
-) ENGINE=MyISAM AUTO_INCREMENT=608 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=609 DEFAULT CHARSET=latin1;
 
 INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('1', '1', 'Logged out', 'Authentication', '2026-07-04 01:38:06'),
@@ -498,10 +507,11 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('604', '45', 'Logged in', 'Authentication', '2026-10-08 09:33:49'),
 ('605', '45', 'Logged out', 'Authentication', '2026-10-08 09:36:01'),
 ('606', '1', 'Logged in', 'Authentication', '2026-10-08 09:36:06'),
-('607', '45', 'Logged in', 'Authentication', '2026-10-08 09:48:01');
+('607', '45', 'Logged in', 'Authentication', '2026-10-08 09:48:01'),
+('608', '45', 'Logged in', 'Authentication', '2026-10-08 10:04:19');
 
 -- --------------------------------------------------------
--- Structure and Data for table `announcements`
+-- Table structure & data for table `announcements` (9 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `announcements`;
@@ -532,7 +542,7 @@ INSERT INTO `announcements` (`id`, `author_id`, `syllabus_id`, `title`, `content
 ('15', '45', NULL, 'ADV08: Hands-on Lab Session on Data Cleaning', 'Our next class will be a hands-on laboratory session in Computer Lab 4. Please review the lecture materials on z-score normalization and outlier detection before class.', 'student', '2026-10-08 08:49:12');
 
 -- --------------------------------------------------------
--- Structure and Data for table `assessment_questions`
+-- Table structure & data for table `assessment_questions` (8 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `assessment_questions`;
@@ -562,7 +572,7 @@ INSERT INTO `assessment_questions` (`id`, `assessment_id`, `question_text`, `que
 ('8', '25', 'In a 3-tier enterprise architecture, which layer executes business logic, security policies, and transactional workflows?', 'multiple_choice', '5.00', '[\"Presentation Layer\",\"Application \\/ Business Logic Layer\",\"Hardware Power Supply\",\"Physical Cabling Layer\"]', 'B. Application / Business Logic Layer', 'The Application / Business Logic tier contains the ERP software engines that enforce validation and workflows between client UI and database.', '4', '2026-10-08 08:47:25');
 
 -- --------------------------------------------------------
--- Structure and Data for table `assessments`
+-- Table structure & data for table `assessments` (18 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `assessments`;
@@ -613,7 +623,7 @@ INSERT INTO `assessments` (`id`, `syllabus_id`, `topic_id`, `teacher_id`, `title
 ('45', '70', '100', '45', 'Week 1: Enterprise Systems Fundamentals Quiz', 'Practical assessment evaluating understanding of ERP architecture, centralized data, and multi-tier systems.', 'quiz', '20.00', NULL, '0', 'online', NULL, '2026-10-08 08:47:24', '1', 'quiz_builder', NULL);
 
 -- --------------------------------------------------------
--- Structure and Data for table `courses`
+-- Table structure & data for table `courses` (25 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `courses`;
@@ -663,7 +673,7 @@ INSERT INTO `courses` (`id`, `department_id`, `course_code`, `course_name`, `des
 ('70', '5', 'ADV08', 'Data Mining', '', '3', 'None', '4', '1st', 'active', '2026-08-24 16:18:38');
 
 -- --------------------------------------------------------
--- Structure and Data for table `departments`
+-- Table structure & data for table `departments` (1 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `departments`;
@@ -681,7 +691,7 @@ INSERT INTO `departments` (`id`, `name`, `code`, `description`, `created_at`) VA
 ('5', 'Bachelor of Science and Information System', 'BSIS', '', '2026-03-12 01:57:14');
 
 -- --------------------------------------------------------
--- Structure and Data for table `enrollments`
+-- Table structure & data for table `enrollments` (233 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `enrollments`;
@@ -938,7 +948,7 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('324', '95', '14', '2026-10-08 09:32:19', 'enrolled');
 
 -- --------------------------------------------------------
--- Structure and Data for table `learning_materials`
+-- Table structure & data for table `learning_materials` (3 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `learning_materials`;
@@ -972,7 +982,7 @@ INSERT INTO `learning_materials` (`id`, `syllabus_topic_id`, `syllabus_id`, `tea
 ('33', '65', '34', '37', 'Introduction to Enterprise Systems & ERP Foundations', 'Foundational reading module covering enterprise architecture, 3-tier models, and business process integration.', 'module', NULL, NULL, 'both', '2026-10-08 08:47:25', '<h3>1. Overview of Enterprise Systems</h3>\n<p>An Enterprise System (ES), commonly realized as an Enterprise Resource Planning (ERP) system, is a comprehensive software platform designed to integrate all facets of an organization’s business processes—including finance, human resources, manufacturing, supply chain management, and customer relations—into a single unified computing environment.</p>\n\n<div style=\"background:#f8fafc;border-left:4px solid #2563eb;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0\">\n    <h4 style=\"margin-top:0;color:#1e40af\"><i class=\"fas fa-lightbulb\"></i> Core Principle: The Single Source of Truth</h4>\n    <p style=\"margin-bottom:0\">By utilizing a unified, centralized database repository, an Enterprise System eliminates redundant data silos and ensures that transaction updates in one department immediately reflect across the entire organization in real-time.</p>\n</div>\n\n<h3>2. Foundational Architecture (3-Tier Framework)</h3>\n<p>Modern enterprise platforms typically follow a multi-tier modular architecture:</p>\n<ul>\n    <li><strong>Presentation Layer (Client Tier):</strong> The web or desktop interface accessed by end-users across departments to input transactions, view dashboards, and monitor KPIs.</li>\n    <li><strong>Application Layer (Business Logic Tier):</strong> The functional logic and processing engine enforcing organizational rules, workflow approvals, authorization matrices, and transactional validation.</li>\n    <li><strong>Database Layer (Data Tier):</strong> High-performance relational database management system guaranteeing ACID compliance and referential integrity across all corporate records.</li>\n</ul>\n\n<h3>3. Comparison: Traditional Silos vs. Enterprise Systems</h3>\n<table style=\"width:100%;border-collapse:collapse;margin:16px 0;font-size:14px\">\n    <thead>\n        <tr style=\"background:#f1f5f9;text-align:left\">\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Attribute</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Traditional Functional Silos</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Enterprise System (ERP)</th>\n        </tr>\n    </thead>\n    <tbody>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Data Storage</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Disconnected, local spreadsheets & isolated department databases.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Centralized repository with relational consistency across all units.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Process Flow</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Manual data re-entry, delayed paper handoffs, high human error rates.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Automated event triggers, seamless inter-departmental handoffs.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Reporting Speed</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Weekly or monthly reconciliation required to balance metrics.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Instantaneous real-time institutional dashboards and analytics.</td>\n        </tr>\n    </tbody>\n</table>\n\n<h3>4. Key Takeaways for Assessment</h3>\n<p>As you prepare for the practical assessment, remember that successful enterprise adoption depends on strategic business process reengineering (BPR), clean data governance, and comprehensive user change management.</p>', '5', '0');
 
 -- --------------------------------------------------------
--- Structure and Data for table `query_logs`
+-- Table structure & data for table `query_logs` (3 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `query_logs`;
@@ -995,7 +1005,7 @@ INSERT INTO `query_logs` (`id`, `admin_id`, `admin_name`, `query_text`, `query_t
 ('3', '1', 'System Administrator', 'DESCRIBE users;', 'DESCRIBE', '1', '10', NULL, '2026-07-04 00:54:18');
 
 -- --------------------------------------------------------
--- Structure and Data for table `submission_answers`
+-- Table structure & data for table `submission_answers` (24 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `submission_answers`;
@@ -1040,7 +1050,7 @@ INSERT INTO `submission_answers` (`id`, `submission_id`, `question_id`, `student
 ('24', '42', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:22');
 
 -- --------------------------------------------------------
--- Structure and Data for table `submissions`
+-- Table structure & data for table `submissions` (7 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `submissions`;
@@ -1073,7 +1083,7 @@ INSERT INTO `submissions` (`id`, `assessment_id`, `student_id`, `file_path`, `te
 ('42', '45', '95', NULL, NULL, '15.00', 'Good effort! Remember that ERP systems connect and unify departments rather than keeping them isolated in silos.', '2026-10-08 07:32:22', '2026-10-08 08:32:22', 'graded', '1');
 
 -- --------------------------------------------------------
--- Structure and Data for table `syllabi`
+-- Table structure & data for table `syllabi` (22 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `syllabi`;
@@ -1125,7 +1135,7 @@ INSERT INTO `syllabi` (`id`, `course_id`, `teacher_id`, `academic_year`, `semest
 ('70', '53', '45', '2025-2026', '2nd', NULL, 'An Enterprise system is a large scale integrated software.', '1. Explain key concepts of Enterprise System.\n2. Apply Enterprise System principles to real-world scenarios.', NULL, 'published', NULL, NULL, NULL, '2026-10-08 08:44:51', '2026-10-08 08:44:51');
 
 -- --------------------------------------------------------
--- Structure and Data for table `syllabus_assignments`
+-- Table structure & data for table `syllabus_assignments` (0 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `syllabus_assignments`;
@@ -1151,7 +1161,7 @@ CREATE TABLE `syllabus_assignments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
--- Structure and Data for table `syllabus_template_topics`
+-- Table structure & data for table `syllabus_template_topics` (0 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `syllabus_template_topics`;
@@ -1170,7 +1180,7 @@ CREATE TABLE `syllabus_template_topics` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
--- Structure and Data for table `syllabus_templates`
+-- Table structure & data for table `syllabus_templates` (0 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `syllabus_templates`;
@@ -1192,7 +1202,7 @@ CREATE TABLE `syllabus_templates` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
--- Structure and Data for table `syllabus_topics`
+-- Table structure & data for table `syllabus_topics` (35 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `syllabus_topics`;
@@ -1259,7 +1269,7 @@ INSERT INTO `syllabus_topics` (`id`, `syllabus_id`, `week_number`, `topic_title`
 ('101', '70', '2', 'Core Concepts of Enterprise System', 'Deeper look into the main topics of the course.', 'Explain and apply the core concepts learned.', 'blended', 'Google Classroom', 'Reading materials, activity sheets', 'Activity', '1', '2026-10-08 08:44:52', '0', NULL, '0', NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
--- Structure and Data for table `system_settings`
+-- Table structure & data for table `system_settings` (1 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `system_settings`;
@@ -1274,7 +1284,7 @@ INSERT INTO `system_settings` (`id`, `maintenance_mode`, `updated_at`) VALUES
 ('1', '0', '2026-07-07 03:29:46');
 
 -- --------------------------------------------------------
--- Structure and Data for table `topic_done_status`
+-- Table structure & data for table `topic_done_status` (5 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `topic_done_status`;
@@ -1296,7 +1306,7 @@ INSERT INTO `topic_done_status` (`id`, `teacher_id`, `syllabus_id`, `status`, `d
 ('21', '2', '4', '0', '2026-04-10 18:09:11');
 
 -- --------------------------------------------------------
--- Structure and Data for table `topic_progress`
+-- Table structure & data for table `topic_progress` (7 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `topic_progress`;
@@ -1327,7 +1337,7 @@ INSERT INTO `topic_progress` (`id`, `student_id`, `syllabus_topic_id`, `status`,
 ('77', '95', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19');
 
 -- --------------------------------------------------------
--- Structure and Data for table `topic_week_done`
+-- Table structure & data for table `topic_week_done` (0 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `topic_week_done`;
@@ -1342,7 +1352,7 @@ CREATE TABLE `topic_week_done` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
--- Structure and Data for table `users`
+-- Table structure & data for table `users` (27 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `users`;
@@ -1391,4 +1401,5 @@ INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `email`, `role`,
 ('94', 'john.cruz', '$2y$10$5P.vaxbwRZkBdmRgCC1FQeTHEzFtTO45ZK8CFbGoDdxgsWgrUc/eq', 'John Kenneth Cruz', 'john.cruz@student.learnlms.edu', 'student', NULL, 'active', '2026-10-08 09:32:16', '2026-10-08 09:32:16'),
 ('95', 'alyssa.ramos', '$2y$10$5P.vaxbwRZkBdmRgCC1FQeTHEzFtTO45ZK8CFbGoDdxgsWgrUc/eq', 'Alyssa Mae Ramos', 'alyssa.ramos@student.learnlms.edu', 'student', NULL, 'active', '2026-10-08 09:32:17', '2026-10-08 09:32:17');
 
+COMMIT;
 SET FOREIGN_KEY_CHECKS=1;
