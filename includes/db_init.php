@@ -115,6 +115,8 @@ function ensureDatabaseSchemaReady($conn) {
     } catch (\Throwable $e) {}
 
     // 3. Ensure required modern columns exist
+    ensureDbColumn($conn, 'courses', 'prerequisite', "varchar(255) DEFAULT 'None'");
+
     ensureDbColumn($conn, 'syllabus_topics', 'is_completed', 'tinyint(1) NOT NULL DEFAULT 0');
     ensureDbColumn($conn, 'syllabus_topics', 'completion_notes', 'text DEFAULT NULL');
     ensureDbColumn($conn, 'syllabus_topics', 'deletion_requested', 'tinyint(1) NOT NULL DEFAULT 0');
@@ -127,6 +129,7 @@ function ensureDatabaseSchemaReady($conn) {
     ensureDbColumn($conn, 'learning_materials', 'content', 'longtext DEFAULT NULL');
     ensureDbColumn($conn, 'learning_materials', 'estimated_read_time', 'int(11) NOT NULL DEFAULT 5');
     ensureDbColumn($conn, 'learning_materials', 'delivery_mode', "varchar(50) NOT NULL DEFAULT 'both'");
+    ensureDbColumn($conn, 'learning_materials', 'view_count', 'int(11) DEFAULT 0');
 
     // Ensure learning_materials.type supports 'module'
     try {
@@ -138,8 +141,12 @@ function ensureDatabaseSchemaReady($conn) {
     ensureDbColumn($conn, 'assessments', 'shuffle_questions', 'tinyint(1) NOT NULL DEFAULT 1');
     ensureDbColumn($conn, 'assessments', 'is_closed', 'tinyint(1) NOT NULL DEFAULT 0');
     ensureDbColumn($conn, 'assessments', 'submission_type', "varchar(50) NOT NULL DEFAULT 'quiz_builder'");
+    ensureDbColumn($conn, 'assessments', 'time_limit', 'int(11) DEFAULT NULL');
 
     ensureDbColumn($conn, 'submissions', 'is_auto_graded', 'tinyint(1) NOT NULL DEFAULT 0');
+
+    ensureDbColumn($conn, 'topic_progress', 'read_percentage', 'decimal(5,2) NOT NULL DEFAULT 0.00');
+    ensureDbColumn($conn, 'topic_progress', 'last_read_at', 'datetime DEFAULT NULL');
 }
 
 function ensureDbColumn($conn, $table, $column, $definition) {
