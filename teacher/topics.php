@@ -850,7 +850,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
 
                                         <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
                                             <?php if (!$pastCheck['can_proceed']): ?>
-                                                <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                                                     <i class="fas fa-lock"></i> Add Material
                                                 </button>
                                             <?php else: ?>
@@ -860,7 +860,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                             <?php endif; ?>
                                             <?php if (!empty($unlinkedMaterials)): ?>
                                                 <?php if (!$pastCheck['can_proceed']): ?>
-                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75" onclick="showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                                                         <i class="fas fa-lock"></i> Link
                                                     </button>
                                                 <?php else: ?>
@@ -877,7 +877,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                             </span>
                                             <div style="display:flex;flex-wrap:wrap;gap:4px">
                                                 <?php if (!$pastCheck['can_proceed']): ?>
-                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                                                         <i class="fas fa-lock"></i> Add Learning Material
                                                     </button>
                                                 <?php else: ?>
@@ -887,7 +887,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                                 <?php endif; ?>
                                                 <?php if (!empty($unlinkedMaterials)): ?>
                                                     <?php if (!$pastCheck['can_proceed']): ?>
-                                                        <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                        <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75" onclick="showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                                                             <i class="fas fa-lock"></i> Link Material
                                                         </button>
                                                     <?php else: ?>
@@ -928,7 +928,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                         </div>
                                         <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
                                             <?php if (!$pastCheck['can_proceed']): ?>
-                                                <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                                                     <i class="fas fa-lock"></i> Add Assessment
                                                 </button>
                                             <?php else: ?>
@@ -938,7 +938,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                             <?php endif; ?>
                                             <?php if (!empty($unlinkedAssessments)): ?>
                                                 <?php if (!$pastCheck['can_proceed']): ?>
-                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75" onclick="showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                                                         <i class="fas fa-lock"></i> Link
                                                     </button>
                                                 <?php else: ?>
@@ -955,7 +955,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                             </span>
                                             <div style="display:flex;flex-wrap:wrap;gap:4px">
                                                 <?php if (!$pastCheck['can_proceed']): ?>
-                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                                                         <i class="fas fa-lock"></i> Add Assessment
                                                     </button>
                                                 <?php else: ?>
@@ -965,7 +965,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                                 <?php endif; ?>
                                                 <?php if (!empty($unlinkedAssessments)): ?>
                                                     <?php if (!$pastCheck['can_proceed']): ?>
-                                                        <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                        <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75" onclick="showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                                                             <i class="fas fa-lock"></i> Link Quiz
                                                         </button>
                                                     <?php else: ?>

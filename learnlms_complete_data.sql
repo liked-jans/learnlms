@@ -1,13 +1,9 @@
--- ========================================================
--- BlendEd LMS - Complete Database Dump with Sample Data   
--- Generated: 2026-10-08 10:54:36
--- Includes all modern tables, BSIS curriculum, Enterprise 
--- Systems, assessments, questions, users & enrollments   
--- ========================================================
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET FOREIGN_KEY_CHECKS = 0;
-SET time_zone = "+00:00";
+-- LearnLMS Complete Database Backup & Sample Data
+-- Exported: 2026-10-08 11:23:14
+-- Railway Host: tramway.proxy.rlwy.net:11864 / Database: railway
+SET FOREIGN_KEY_CHECKS=0;
+SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
+SET time_zone = '+00:00';
 
 -- --------------------------------------------------------
 -- Structure and Data for table `activity_logs`
@@ -24,7 +20,7 @@ CREATE TABLE `activity_logs` (
   KEY `idx_activity_user` (`user_id`),
   KEY `idx_activity_category` (`category`),
   KEY `idx_activity_created` (`created_at`)
-) ENGINE=MyISAM AUTO_INCREMENT=599 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=603 DEFAULT CHARSET=latin1;
 
 INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('1', '1', 'Logged out', 'Authentication', '2026-07-04 01:38:06'),
@@ -484,7 +480,11 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('595', '59', 'Logged in', 'Authentication', '2026-09-12 05:10:08'),
 ('596', '59', 'Logged out', 'Authentication', '2026-09-12 05:52:44'),
 ('597', '1', 'Logged in', 'Authentication', '2026-09-13 06:27:50'),
-('598', '45', 'Logged in', 'Authentication', '2026-09-13 15:58:24');
+('598', '45', 'Logged in', 'Authentication', '2026-09-13 15:58:24'),
+('599', '45', 'Logged in', 'Authentication', '2026-10-08 09:01:27'),
+('600', '1', 'Logged in', 'Authentication', '2026-10-08 09:11:51'),
+('601', '1', 'Logged out', 'Authentication', '2026-10-08 09:19:47'),
+('602', '45', 'Logged in', 'Authentication', '2026-10-08 09:19:53');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `announcements`
@@ -567,6 +567,7 @@ CREATE TABLE `assessments` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `shuffle_questions` tinyint(1) NOT NULL DEFAULT '1',
   `submission_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'quiz_builder',
+  `time_limit` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `syllabus_id` (`syllabus_id`),
   KEY `topic_id` (`topic_id`),
@@ -576,25 +577,25 @@ CREATE TABLE `assessments` (
   CONSTRAINT `assessments_ibfk_3` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `assessments` (`id`, `syllabus_id`, `topic_id`, `teacher_id`, `title`, `description`, `type`, `max_score`, `due_date`, `is_closed`, `delivery_mode`, `created_at`, `shuffle_questions`, `submission_type`) VALUES
-('3', '6', NULL, '17', 'Manage', 'Network Management', 'activity', '100.00', '2026-03-28 07:19:00', '0', 'both', '2026-03-27 23:19:56', '1', 'quiz_builder'),
-('10', '19', '35', '2', 'BSIS101 Quiz 1', 'Overview of IS concepts and applications', 'quiz', '100.00', '2026-09-15 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('11', '20', '37', '17', 'BSIS104 Assignment 1', 'Object-oriented programming', 'assignment', '100.00', '2026-09-16 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('12', '21', '39', '35', 'BSIS105 Exam 1', 'IS development methodologies', 'exam', '100.00', '2026-09-17 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('13', '22', '41', '37', 'BSIS106 Project 1', 'Relational databases and SQL', 'project', '100.00', '2026-09-18 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('14', '23', '43', '2', 'BSIS107 Activity 1', 'Web development for IS', 'activity', '100.00', '2026-09-19 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('15', '24', '45', '17', 'BSIS108 Quiz 1', 'Building enterprise applications', 'quiz', '100.00', '2026-09-20 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('16', '25', '47', '35', 'BSIS109 Assignment 1', 'Data and information resource management', 'assignment', '100.00', '2026-09-21 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('17', '26', '49', '37', 'BSIS111 Exam 1', 'Strategic planning for IS', 'exam', '100.00', '2026-09-22 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('18', '27', '51', '2', 'BSIS112 Project 1', 'UI/UX design principles', 'project', '100.00', '2026-09-23 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('19', '28', '53', '17', 'BSIS113 Activity 1', 'Cybersecurity in IS environments', 'activity', '100.00', '2026-09-24 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('20', '29', '55', '35', 'BSIS114 Quiz 1', 'Ethics and professionalism in IS', 'quiz', '100.00', '2026-09-25 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('21', '30', '57', '37', 'BSIS115 Assignment 1', 'Enterprise systems integration', 'assignment', '100.00', '2026-09-26 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('22', '31', '59', '2', 'BSIS116 Exam 1', 'IS research and project proposal', 'exam', '100.00', '2026-09-27 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('23', '32', '61', '17', 'BSIS117 Project 1', 'IS project implementation and defense', 'project', '100.00', '2026-09-28 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('24', '33', '63', '35', 'BSIS118 Activity 1', 'On-the-job training in IS field', 'activity', '100.00', '2026-09-29 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('25', '34', '65', '37', 'ENT123 Quiz 1', 'An Enterprise system is a large scale integrated software.', 'quiz', '100.00', '2026-09-30 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder'),
-('45', '70', '100', '45', 'Week 1: Enterprise Systems Fundamentals Quiz', 'Practical assessment evaluating understanding of ERP architecture, centralized data, and multi-tier systems.', 'quiz', '20.00', NULL, '0', 'online', '2026-10-08 08:47:24', '1', 'quiz_builder');
+INSERT INTO `assessments` (`id`, `syllabus_id`, `topic_id`, `teacher_id`, `title`, `description`, `type`, `max_score`, `due_date`, `is_closed`, `delivery_mode`, `created_at`, `shuffle_questions`, `submission_type`, `time_limit`) VALUES
+('3', '6', NULL, '17', 'Manage', 'Network Management', 'activity', '100.00', '2026-03-28 07:19:00', '0', 'both', '2026-03-27 23:19:56', '1', 'quiz_builder', NULL),
+('10', '19', '35', '2', 'BSIS101 Quiz 1', 'Overview of IS concepts and applications', 'quiz', '100.00', '2026-09-15 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('11', '20', '37', '17', 'BSIS104 Assignment 1', 'Object-oriented programming', 'assignment', '100.00', '2026-09-16 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('12', '21', '39', '35', 'BSIS105 Exam 1', 'IS development methodologies', 'exam', '100.00', '2026-09-17 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('13', '22', '41', '37', 'BSIS106 Project 1', 'Relational databases and SQL', 'project', '100.00', '2026-09-18 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('14', '23', '43', '2', 'BSIS107 Activity 1', 'Web development for IS', 'activity', '100.00', '2026-09-19 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('15', '24', '45', '17', 'BSIS108 Quiz 1', 'Building enterprise applications', 'quiz', '100.00', '2026-09-20 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('16', '25', '47', '35', 'BSIS109 Assignment 1', 'Data and information resource management', 'assignment', '100.00', '2026-09-21 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('17', '26', '49', '37', 'BSIS111 Exam 1', 'Strategic planning for IS', 'exam', '100.00', '2026-09-22 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('18', '27', '51', '2', 'BSIS112 Project 1', 'UI/UX design principles', 'project', '100.00', '2026-09-23 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('19', '28', '53', '17', 'BSIS113 Activity 1', 'Cybersecurity in IS environments', 'activity', '100.00', '2026-09-24 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('20', '29', '55', '35', 'BSIS114 Quiz 1', 'Ethics and professionalism in IS', 'quiz', '100.00', '2026-09-25 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('21', '30', '57', '37', 'BSIS115 Assignment 1', 'Enterprise systems integration', 'assignment', '100.00', '2026-09-26 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('22', '31', '59', '2', 'BSIS116 Exam 1', 'IS research and project proposal', 'exam', '100.00', '2026-09-27 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('23', '32', '61', '17', 'BSIS117 Project 1', 'IS project implementation and defense', 'project', '100.00', '2026-09-28 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('24', '33', '63', '35', 'BSIS118 Activity 1', 'On-the-job training in IS field', 'activity', '100.00', '2026-09-29 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('25', '34', '65', '37', 'ENT123 Quiz 1', 'An Enterprise system is a large scale integrated software.', 'quiz', '100.00', '2026-09-30 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('45', '70', '100', '45', 'Week 1: Enterprise Systems Fundamentals Quiz', 'Practical assessment evaluating understanding of ERP architecture, centralized data, and multi-tier systems.', 'quiz', '20.00', NULL, '0', 'online', '2026-10-08 08:47:24', '1', 'quiz_builder', NULL);
 
 -- --------------------------------------------------------
 -- Structure and Data for table `courses`
@@ -608,6 +609,7 @@ CREATE TABLE `courses` (
   `course_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text COLLATE utf8mb4_unicode_ci,
   `units` int DEFAULT '3',
+  `prerequisite` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT 'None',
   `year_level` int DEFAULT '1',
   `semester` enum('1st','2nd','Summer') COLLATE utf8mb4_unicode_ci DEFAULT '1st',
   `status` enum('active','inactive') COLLATE utf8mb4_unicode_ci DEFAULT 'active',
@@ -618,32 +620,32 @@ CREATE TABLE `courses` (
   CONSTRAINT `courses_ibfk_1` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `courses` (`id`, `department_id`, `course_code`, `course_name`, `description`, `units`, `year_level`, `semester`, `status`, `created_at`) VALUES
-('35', '5', 'BSIS101', 'Introduction to Information Systems', 'Overview of IS concepts and applications', '3', '2', '2nd', 'active', '2026-03-12 02:04:42'),
-('36', '5', 'BSIS102', 'Computer Programming 1', 'Fundamentals of programming', '3', '1', '1st', 'active', '2026-03-12 02:04:42'),
-('37', '5', 'BSIS103', 'Mathematics in the Modern World', 'Applied mathematics for IS students', '3', '1', '1st', 'active', '2026-03-12 02:04:42'),
-('38', '5', 'BSIS104', 'Computer Programming 2', 'Object-oriented programming', '3', '1', '2nd', 'active', '2026-03-12 02:04:42'),
-('39', '5', 'BSIS105', 'Systems Analysis and Design', 'IS development methodologies', '3', '2', '1st', 'active', '2026-03-12 02:04:42'),
-('40', '5', 'BSIS106', 'Database Management Systems', 'Relational databases and SQL', '3', '2', '1st', 'active', '2026-03-12 02:04:42'),
-('41', '5', 'BSIS107', 'Web Systems and Technologies', 'Web development for IS', '3', '2', '1st', 'active', '2026-03-12 02:04:43'),
-('42', '5', 'BSIS108', 'Application Development', 'Building enterprise applications', '3', '2', '2nd', 'active', '2026-03-12 02:04:43'),
-('43', '5', 'BSIS109', 'Information Management', 'Data and information resource management', '3', '2', '2nd', 'active', '2026-03-12 02:04:43'),
-('44', '5', 'BSIS110', 'Network Management', 'Network design and administration', '3', '3', '1st', 'active', '2026-03-12 02:04:43'),
-('45', '5', 'BSIS111', 'IS Strategy Management and Acquisition', 'Strategic planning for IS', '3', '3', '1st', 'active', '2026-03-12 02:04:43'),
-('46', '5', 'BSIS112', 'Human Computer Interaction', 'UI/UX design principles', '3', '3', '1st', 'active', '2026-03-12 02:04:43'),
-('47', '5', 'BSIS113', 'Information Assurance and Security', 'Cybersecurity in IS environments', '3', '3', '2nd', 'active', '2026-03-12 02:04:43'),
-('48', '5', 'BSIS114', 'Social and Professional Issues in IS', 'Ethics and professionalism in IS', '3', '3', '2nd', 'active', '2026-03-12 02:04:43'),
-('49', '5', 'BSIS115', 'Systems Integration and Architecture', 'Enterprise systems integration', '3', '4', '1st', 'active', '2026-03-12 02:04:43'),
-('50', '5', 'BSIS116', 'Capstone Project 1', 'IS research and project proposal', '3', '4', '1st', 'active', '2026-03-12 02:04:43'),
-('51', '5', 'BSIS117', 'Capstone Project 2', 'IS project implementation and defense', '3', '4', '2nd', 'active', '2026-03-12 02:04:43'),
-('52', '5', 'BSIS118', 'Practicum / OJT', 'On-the-job training in IS field', '6', '4', '2nd', 'active', '2026-03-12 02:04:43'),
-('53', '5', 'ENT123', 'ENTERPRISE SYSTEM', 'An Enterprise system is a large scale integrated software.', '3', '3', '2nd', 'active', '2026-03-28 06:00:33'),
-('54', '5', 'ISSMA413', 'IS Strategy,Management And Acquisition', '', '3', '4', '1st', 'active', '2026-08-24 08:19:15'),
-('59', '5', 'ADET413', 'Application Development and Emerging Technologies', '', '3', '4', '1st', 'active', '2026-08-24 16:14:55'),
-('60', '5', 'HCI413', 'HUMAN COMPUTER INTERACTION', '', '3', '4', '1st', 'active', '2026-08-24 16:16:19'),
-('65', '5', 'PROMAN413', 'IS Project Management2', '', '3', '4', '1st', 'active', '2026-08-24 16:17:29'),
-('66', '5', 'CAP413', 'Capstone2', '', '2', '4', '1st', 'active', '2026-08-24 16:18:03'),
-('70', '5', 'ADV08', 'Data Mining', '', '3', '4', '1st', 'active', '2026-08-24 16:18:38');
+INSERT INTO `courses` (`id`, `department_id`, `course_code`, `course_name`, `description`, `units`, `prerequisite`, `year_level`, `semester`, `status`, `created_at`) VALUES
+('35', '5', 'BSIS101', 'Introduction to Information Systems', 'Overview of IS concepts and applications', '3', 'None', '2', '2nd', 'active', '2026-03-12 02:04:42'),
+('36', '5', 'BSIS102', 'Computer Programming 1', 'Fundamentals of programming', '3', 'BSIS 101', '1', '1st', 'active', '2026-03-12 02:04:42'),
+('37', '5', 'BSIS103', 'Mathematics in the Modern World', 'Applied mathematics for IS students', '3', 'None', '1', '1st', 'active', '2026-03-12 02:04:42'),
+('38', '5', 'BSIS104', 'Computer Programming 2', 'Object-oriented programming', '3', 'BSIS 102', '1', '2nd', 'active', '2026-03-12 02:04:42'),
+('39', '5', 'BSIS105', 'Systems Analysis and Design', 'IS development methodologies', '3', 'None', '2', '1st', 'active', '2026-03-12 02:04:42'),
+('40', '5', 'BSIS106', 'Database Management Systems', 'Relational databases and SQL', '3', 'None', '2', '1st', 'active', '2026-03-12 02:04:42'),
+('41', '5', 'BSIS107', 'Web Systems and Technologies', 'Web development for IS', '3', 'None', '2', '1st', 'active', '2026-03-12 02:04:43'),
+('42', '5', 'BSIS108', 'Application Development', 'Building enterprise applications', '3', 'None', '2', '2nd', 'active', '2026-03-12 02:04:43'),
+('43', '5', 'BSIS109', 'Information Management', 'Data and information resource management', '3', 'None', '2', '2nd', 'active', '2026-03-12 02:04:43'),
+('44', '5', 'BSIS110', 'Network Management', 'Network design and administration', '3', 'None', '3', '1st', 'active', '2026-03-12 02:04:43'),
+('45', '5', 'BSIS111', 'IS Strategy Management and Acquisition', 'Strategic planning for IS', '3', 'None', '3', '1st', 'active', '2026-03-12 02:04:43'),
+('46', '5', 'BSIS112', 'Human Computer Interaction', 'UI/UX design principles', '3', 'None', '3', '1st', 'active', '2026-03-12 02:04:43'),
+('47', '5', 'BSIS113', 'Information Assurance and Security', 'Cybersecurity in IS environments', '3', 'None', '3', '2nd', 'active', '2026-03-12 02:04:43'),
+('48', '5', 'BSIS114', 'Social and Professional Issues in IS', 'Ethics and professionalism in IS', '3', 'None', '3', '2nd', 'active', '2026-03-12 02:04:43'),
+('49', '5', 'BSIS115', 'Systems Integration and Architecture', 'Enterprise systems integration', '3', 'None', '4', '1st', 'active', '2026-03-12 02:04:43'),
+('50', '5', 'BSIS116', 'Capstone Project 1', 'IS research and project proposal', '3', 'None', '4', '1st', 'active', '2026-03-12 02:04:43'),
+('51', '5', 'BSIS117', 'Capstone Project 2', 'IS project implementation and defense', '3', 'None', '4', '2nd', 'active', '2026-03-12 02:04:43'),
+('52', '5', 'BSIS118', 'Practicum / OJT', 'On-the-job training in IS field', '6', 'None', '4', '2nd', 'active', '2026-03-12 02:04:43'),
+('53', '5', 'ENT123', 'ENTERPRISE SYSTEM', 'An Enterprise system is a large scale integrated software.', '3', 'BSIS 101', '3', '2nd', 'active', '2026-03-28 06:00:33'),
+('54', '5', 'ISSMA413', 'IS Strategy,Management And Acquisition', '', '3', 'None', '4', '1st', 'active', '2026-08-24 08:19:15'),
+('59', '5', 'ADET413', 'Application Development and Emerging Technologies', '', '3', 'None', '4', '1st', 'active', '2026-08-24 16:14:55'),
+('60', '5', 'HCI413', 'HUMAN COMPUTER INTERACTION', '', '3', 'None', '4', '1st', 'active', '2026-08-24 16:16:19'),
+('65', '5', 'PROMAN413', 'IS Project Management2', '', '3', 'None', '4', '1st', 'active', '2026-08-24 16:17:29'),
+('66', '5', 'CAP413', 'Capstone2', '', '2', 'None', '4', '1st', 'active', '2026-08-24 16:18:03'),
+('70', '5', 'ADV08', 'Data Mining', '', '3', 'None', '4', '1st', 'active', '2026-08-24 16:18:38');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `departments`
@@ -915,6 +917,7 @@ CREATE TABLE `learning_materials` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `content` longtext COLLATE utf8mb4_unicode_ci,
   `estimated_read_time` int NOT NULL DEFAULT '5',
+  `view_count` int DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `syllabus_topic_id` (`syllabus_topic_id`),
   KEY `syllabus_id` (`syllabus_id`),
@@ -924,10 +927,10 @@ CREATE TABLE `learning_materials` (
   CONSTRAINT `learning_materials_ibfk_3` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `learning_materials` (`id`, `syllabus_topic_id`, `syllabus_id`, `teacher_id`, `title`, `description`, `type`, `file_path`, `external_url`, `delivery_mode`, `created_at`, `content`, `estimated_read_time`) VALUES
-('5', '8', '6', '17', 'test', 'dwewfgetgrht', 'document', 'mat_6a4792806c992.pdf', '', 'both', '2026-07-03 10:44:16', NULL, '5'),
-('32', '100', '70', '45', 'Introduction to Enterprise Systems & ERP Foundations', 'Foundational reading module covering enterprise architecture, 3-tier models, and business process integration.', 'module', NULL, NULL, 'both', '2026-10-08 08:47:24', '<h3>1. Overview of Enterprise Systems</h3>\n<p>An Enterprise System (ES), commonly realized as an Enterprise Resource Planning (ERP) system, is a comprehensive software platform designed to integrate all facets of an organization’s business processes—including finance, human resources, manufacturing, supply chain management, and customer relations—into a single unified computing environment.</p>\n\n<div style=\"background:#f8fafc;border-left:4px solid #2563eb;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0\">\n    <h4 style=\"margin-top:0;color:#1e40af\"><i class=\"fas fa-lightbulb\"></i> Core Principle: The Single Source of Truth</h4>\n    <p style=\"margin-bottom:0\">By utilizing a unified, centralized database repository, an Enterprise System eliminates redundant data silos and ensures that transaction updates in one department immediately reflect across the entire organization in real-time.</p>\n</div>\n\n<h3>2. Foundational Architecture (3-Tier Framework)</h3>\n<p>Modern enterprise platforms typically follow a multi-tier modular architecture:</p>\n<ul>\n    <li><strong>Presentation Layer (Client Tier):</strong> The web or desktop interface accessed by end-users across departments to input transactions, view dashboards, and monitor KPIs.</li>\n    <li><strong>Application Layer (Business Logic Tier):</strong> The functional logic and processing engine enforcing organizational rules, workflow approvals, authorization matrices, and transactional validation.</li>\n    <li><strong>Database Layer (Data Tier):</strong> High-performance relational database management system guaranteeing ACID compliance and referential integrity across all corporate records.</li>\n</ul>\n\n<h3>3. Comparison: Traditional Silos vs. Enterprise Systems</h3>\n<table style=\"width:100%;border-collapse:collapse;margin:16px 0;font-size:14px\">\n    <thead>\n        <tr style=\"background:#f1f5f9;text-align:left\">\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Attribute</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Traditional Functional Silos</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Enterprise System (ERP)</th>\n        </tr>\n    </thead>\n    <tbody>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Data Storage</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Disconnected, local spreadsheets & isolated department databases.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Centralized repository with relational consistency across all units.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Process Flow</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Manual data re-entry, delayed paper handoffs, high human error rates.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Automated event triggers, seamless inter-departmental handoffs.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Reporting Speed</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Weekly or monthly reconciliation required to balance metrics.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Instantaneous real-time institutional dashboards and analytics.</td>\n        </tr>\n    </tbody>\n</table>\n\n<h3>4. Key Takeaways for Assessment</h3>\n<p>As you prepare for the practical assessment, remember that successful enterprise adoption depends on strategic business process reengineering (BPR), clean data governance, and comprehensive user change management.</p>', '5'),
-('33', '65', '34', '37', 'Introduction to Enterprise Systems & ERP Foundations', 'Foundational reading module covering enterprise architecture, 3-tier models, and business process integration.', 'module', NULL, NULL, 'both', '2026-10-08 08:47:25', '<h3>1. Overview of Enterprise Systems</h3>\n<p>An Enterprise System (ES), commonly realized as an Enterprise Resource Planning (ERP) system, is a comprehensive software platform designed to integrate all facets of an organization’s business processes—including finance, human resources, manufacturing, supply chain management, and customer relations—into a single unified computing environment.</p>\n\n<div style=\"background:#f8fafc;border-left:4px solid #2563eb;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0\">\n    <h4 style=\"margin-top:0;color:#1e40af\"><i class=\"fas fa-lightbulb\"></i> Core Principle: The Single Source of Truth</h4>\n    <p style=\"margin-bottom:0\">By utilizing a unified, centralized database repository, an Enterprise System eliminates redundant data silos and ensures that transaction updates in one department immediately reflect across the entire organization in real-time.</p>\n</div>\n\n<h3>2. Foundational Architecture (3-Tier Framework)</h3>\n<p>Modern enterprise platforms typically follow a multi-tier modular architecture:</p>\n<ul>\n    <li><strong>Presentation Layer (Client Tier):</strong> The web or desktop interface accessed by end-users across departments to input transactions, view dashboards, and monitor KPIs.</li>\n    <li><strong>Application Layer (Business Logic Tier):</strong> The functional logic and processing engine enforcing organizational rules, workflow approvals, authorization matrices, and transactional validation.</li>\n    <li><strong>Database Layer (Data Tier):</strong> High-performance relational database management system guaranteeing ACID compliance and referential integrity across all corporate records.</li>\n</ul>\n\n<h3>3. Comparison: Traditional Silos vs. Enterprise Systems</h3>\n<table style=\"width:100%;border-collapse:collapse;margin:16px 0;font-size:14px\">\n    <thead>\n        <tr style=\"background:#f1f5f9;text-align:left\">\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Attribute</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Traditional Functional Silos</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Enterprise System (ERP)</th>\n        </tr>\n    </thead>\n    <tbody>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Data Storage</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Disconnected, local spreadsheets & isolated department databases.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Centralized repository with relational consistency across all units.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Process Flow</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Manual data re-entry, delayed paper handoffs, high human error rates.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Automated event triggers, seamless inter-departmental handoffs.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Reporting Speed</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Weekly or monthly reconciliation required to balance metrics.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Instantaneous real-time institutional dashboards and analytics.</td>\n        </tr>\n    </tbody>\n</table>\n\n<h3>4. Key Takeaways for Assessment</h3>\n<p>As you prepare for the practical assessment, remember that successful enterprise adoption depends on strategic business process reengineering (BPR), clean data governance, and comprehensive user change management.</p>', '5');
+INSERT INTO `learning_materials` (`id`, `syllabus_topic_id`, `syllabus_id`, `teacher_id`, `title`, `description`, `type`, `file_path`, `external_url`, `delivery_mode`, `created_at`, `content`, `estimated_read_time`, `view_count`) VALUES
+('5', '8', '6', '17', 'test', 'dwewfgetgrht', 'document', 'mat_6a4792806c992.pdf', '', 'both', '2026-07-03 10:44:16', NULL, '5', '0'),
+('32', '100', '70', '45', 'Introduction to Enterprise Systems & ERP Foundations', 'Foundational reading module covering enterprise architecture, 3-tier models, and business process integration.', 'module', NULL, NULL, 'both', '2026-10-08 08:47:24', '<h3>1. Overview of Enterprise Systems</h3>\n<p>An Enterprise System (ES), commonly realized as an Enterprise Resource Planning (ERP) system, is a comprehensive software platform designed to integrate all facets of an organization’s business processes—including finance, human resources, manufacturing, supply chain management, and customer relations—into a single unified computing environment.</p>\n\n<div style=\"background:#f8fafc;border-left:4px solid #2563eb;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0\">\n    <h4 style=\"margin-top:0;color:#1e40af\"><i class=\"fas fa-lightbulb\"></i> Core Principle: The Single Source of Truth</h4>\n    <p style=\"margin-bottom:0\">By utilizing a unified, centralized database repository, an Enterprise System eliminates redundant data silos and ensures that transaction updates in one department immediately reflect across the entire organization in real-time.</p>\n</div>\n\n<h3>2. Foundational Architecture (3-Tier Framework)</h3>\n<p>Modern enterprise platforms typically follow a multi-tier modular architecture:</p>\n<ul>\n    <li><strong>Presentation Layer (Client Tier):</strong> The web or desktop interface accessed by end-users across departments to input transactions, view dashboards, and monitor KPIs.</li>\n    <li><strong>Application Layer (Business Logic Tier):</strong> The functional logic and processing engine enforcing organizational rules, workflow approvals, authorization matrices, and transactional validation.</li>\n    <li><strong>Database Layer (Data Tier):</strong> High-performance relational database management system guaranteeing ACID compliance and referential integrity across all corporate records.</li>\n</ul>\n\n<h3>3. Comparison: Traditional Silos vs. Enterprise Systems</h3>\n<table style=\"width:100%;border-collapse:collapse;margin:16px 0;font-size:14px\">\n    <thead>\n        <tr style=\"background:#f1f5f9;text-align:left\">\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Attribute</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Traditional Functional Silos</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Enterprise System (ERP)</th>\n        </tr>\n    </thead>\n    <tbody>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Data Storage</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Disconnected, local spreadsheets & isolated department databases.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Centralized repository with relational consistency across all units.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Process Flow</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Manual data re-entry, delayed paper handoffs, high human error rates.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Automated event triggers, seamless inter-departmental handoffs.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Reporting Speed</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Weekly or monthly reconciliation required to balance metrics.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Instantaneous real-time institutional dashboards and analytics.</td>\n        </tr>\n    </tbody>\n</table>\n\n<h3>4. Key Takeaways for Assessment</h3>\n<p>As you prepare for the practical assessment, remember that successful enterprise adoption depends on strategic business process reengineering (BPR), clean data governance, and comprehensive user change management.</p>', '5', '0'),
+('33', '65', '34', '37', 'Introduction to Enterprise Systems & ERP Foundations', 'Foundational reading module covering enterprise architecture, 3-tier models, and business process integration.', 'module', NULL, NULL, 'both', '2026-10-08 08:47:25', '<h3>1. Overview of Enterprise Systems</h3>\n<p>An Enterprise System (ES), commonly realized as an Enterprise Resource Planning (ERP) system, is a comprehensive software platform designed to integrate all facets of an organization’s business processes—including finance, human resources, manufacturing, supply chain management, and customer relations—into a single unified computing environment.</p>\n\n<div style=\"background:#f8fafc;border-left:4px solid #2563eb;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0\">\n    <h4 style=\"margin-top:0;color:#1e40af\"><i class=\"fas fa-lightbulb\"></i> Core Principle: The Single Source of Truth</h4>\n    <p style=\"margin-bottom:0\">By utilizing a unified, centralized database repository, an Enterprise System eliminates redundant data silos and ensures that transaction updates in one department immediately reflect across the entire organization in real-time.</p>\n</div>\n\n<h3>2. Foundational Architecture (3-Tier Framework)</h3>\n<p>Modern enterprise platforms typically follow a multi-tier modular architecture:</p>\n<ul>\n    <li><strong>Presentation Layer (Client Tier):</strong> The web or desktop interface accessed by end-users across departments to input transactions, view dashboards, and monitor KPIs.</li>\n    <li><strong>Application Layer (Business Logic Tier):</strong> The functional logic and processing engine enforcing organizational rules, workflow approvals, authorization matrices, and transactional validation.</li>\n    <li><strong>Database Layer (Data Tier):</strong> High-performance relational database management system guaranteeing ACID compliance and referential integrity across all corporate records.</li>\n</ul>\n\n<h3>3. Comparison: Traditional Silos vs. Enterprise Systems</h3>\n<table style=\"width:100%;border-collapse:collapse;margin:16px 0;font-size:14px\">\n    <thead>\n        <tr style=\"background:#f1f5f9;text-align:left\">\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Attribute</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Traditional Functional Silos</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Enterprise System (ERP)</th>\n        </tr>\n    </thead>\n    <tbody>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Data Storage</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Disconnected, local spreadsheets & isolated department databases.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Centralized repository with relational consistency across all units.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Process Flow</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Manual data re-entry, delayed paper handoffs, high human error rates.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Automated event triggers, seamless inter-departmental handoffs.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Reporting Speed</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Weekly or monthly reconciliation required to balance metrics.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Instantaneous real-time institutional dashboards and analytics.</td>\n        </tr>\n    </tbody>\n</table>\n\n<h3>4. Key Takeaways for Assessment</h3>\n<p>As you prepare for the practical assessment, remember that successful enterprise adoption depends on strategic business process reengineering (BPR), clean data governance, and comprehensive user change management.</p>', '5', '0');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `query_logs`
@@ -1232,15 +1235,18 @@ CREATE TABLE `topic_progress` (
   `status` enum('not_started','in_progress','completed') COLLATE utf8mb4_unicode_ci DEFAULT 'not_started',
   `completed_at` timestamp NULL DEFAULT NULL,
   `notes` text COLLATE utf8mb4_unicode_ci,
+  `read_percentage` decimal(5,2) NOT NULL DEFAULT '0.00',
+  `last_read_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_progress` (`student_id`,`syllabus_topic_id`),
+  UNIQUE KEY `unique_student_topic` (`student_id`,`syllabus_topic_id`),
   KEY `syllabus_topic_id` (`syllabus_topic_id`),
   CONSTRAINT `topic_progress_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `topic_progress_ibfk_2` FOREIGN KEY (`syllabus_topic_id`) REFERENCES `syllabus_topics` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=72 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `topic_progress` (`id`, `student_id`, `syllabus_topic_id`, `status`, `completed_at`, `notes`) VALUES
-('21', '3', '8', 'completed', '2026-07-02 16:38:16', NULL);
+INSERT INTO `topic_progress` (`id`, `student_id`, `syllabus_topic_id`, `status`, `completed_at`, `notes`, `read_percentage`, `last_read_at`) VALUES
+('21', '3', '8', 'completed', '2026-07-02 16:38:16', NULL, '0.00', NULL);
 
 -- --------------------------------------------------------
 -- Structure and Data for table `topic_week_done`
@@ -1302,4 +1308,4 @@ INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `email`, `role`,
 ('44', 'Redgie', '$2y$10$WxzrlaFrph1K9YdGw/OByuVrR9NW5sNakr82shyAtpyZrev0mSzu6', 'Redgie Pomario', 'redgiepomario@gmail.com', 'teacher', NULL, 'active', '2026-10-08 08:44:51', '2026-10-08 08:44:51'),
 ('45', 'Jeffred', '$2y$10$JuJWhrEYay1Pss4UiJyoyOXA9PEQG7fWZHKcdWvErpxrd9R82jCRi', 'Jeffred Lim', 'jeffredlim@gmail.com', 'teacher', NULL, 'active', '2026-10-08 08:44:51', '2026-10-08 08:44:51');
 
-SET FOREIGN_KEY_CHECKS = 1;
+SET FOREIGN_KEY_CHECKS=1;

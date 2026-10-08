@@ -308,7 +308,7 @@ function loadTopics2(sylId, selectedTopicId){
             sel.appendChild(opt);
         });
 
-        sel.onchange = function() {
+        sel.onchange = function(e) {
             const selectedOpt = sel.options[sel.selectedIndex];
             const canProceed = selectedOpt ? selectedOpt.getAttribute('data-can-proceed') !== '0' : true;
             const lockMsg = selectedOpt ? selectedOpt.getAttribute('data-lock-msg') : '';
@@ -318,6 +318,9 @@ function loadTopics2(sylId, selectedTopicId){
                     noticeEl.style.display = 'block';
                 }
                 if (submitBtn) submitBtn.disabled = true;
+                if (e && e.isTrusted && window.showWeeklyLockAlert) {
+                    window.showWeeklyLockAlert(lockMsg);
+                }
             } else {
                 if (noticeEl) noticeEl.style.display = 'none';
                 if (submitBtn) submitBtn.disabled = false;

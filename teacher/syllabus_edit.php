@@ -574,7 +574,7 @@ $pastCheck = checkPastWeeklySyllabiDone($sid, $t['id'], (int)$t['week_number']);
                     <i class="fas fa-tasks" style="color:var(--primary)"></i> Week <?= $t['week_number'] ?> Assessments & Quizzes
                 </strong>
                 <?php if (!$pastCheck['can_proceed']): ?>
-                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                         <i class="fas fa-lock"></i> Add Assessment
                     </button>
                 <?php else: ?>
@@ -606,7 +606,7 @@ $pastCheck = checkPastWeeklySyllabiDone($sid, $t['id'], (int)$t['week_number']);
                 <i class="fas fa-tasks" style="color:var(--text3);margin-right:5px"></i> Planned Assessment: <strong><?= htmlspecialchars($t['assessment_type']) ?></strong>
             </span>
             <?php if (!$pastCheck['can_proceed']): ?>
-                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 9px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 9px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                     <i class="fas fa-lock"></i> Create Assessment
                 </button>
             <?php else: ?>
@@ -625,7 +625,7 @@ $pastCheck = checkPastWeeklySyllabiDone($sid, $t['id'], (int)$t['week_number']);
                     <i class="fas fa-folder-open" style="color:var(--success)"></i> Learning Materials (<?= count($topicMaterials) ?>)
                 </strong>
                 <?php if (!$pastCheck['can_proceed']): ?>
-                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                         <i class="fas fa-lock"></i> Add Material
                     </button>
                 <?php else: ?>
@@ -675,7 +675,7 @@ $pastCheck = checkPastWeeklySyllabiDone($sid, $t['id'], (int)$t['week_number']);
                 <i class="fas fa-folder-open" style="margin-right:5px"></i> No learning materials attached yet.
             </span>
             <?php if (!$pastCheck['can_proceed']): ?>
-                <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); showWeeklyLockAlert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
                     <i class="fas fa-lock"></i> Add Material
                 </button>
             <?php else: ?>
