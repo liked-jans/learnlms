@@ -1,5 +1,5 @@
 -- LearnLMS Complete Database Backup & Sample Data
--- Exported: 2026-10-08 11:32:22
+-- Exported: 2026-10-08 11:45:55
 -- Railway Host: tramway.proxy.rlwy.net:11864 / Database: railway
 SET FOREIGN_KEY_CHECKS=0;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
@@ -20,7 +20,7 @@ CREATE TABLE `activity_logs` (
   KEY `idx_activity_user` (`user_id`),
   KEY `idx_activity_category` (`category`),
   KEY `idx_activity_created` (`created_at`)
-) ENGINE=MyISAM AUTO_INCREMENT=604 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=607 DEFAULT CHARSET=latin1;
 
 INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('1', '1', 'Logged out', 'Authentication', '2026-07-04 01:38:06'),
@@ -485,7 +485,10 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('600', '1', 'Logged in', 'Authentication', '2026-10-08 09:11:51'),
 ('601', '1', 'Logged out', 'Authentication', '2026-10-08 09:19:47'),
 ('602', '45', 'Logged in', 'Authentication', '2026-10-08 09:19:53'),
-('603', '45', 'Logged in', 'Authentication', '2026-10-08 09:25:39');
+('603', '45', 'Logged in', 'Authentication', '2026-10-08 09:25:39'),
+('604', '45', 'Logged in', 'Authentication', '2026-10-08 09:33:49'),
+('605', '45', 'Logged out', 'Authentication', '2026-10-08 09:36:01'),
+('606', '1', 'Logged in', 'Authentication', '2026-10-08 09:36:06');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `announcements`
@@ -565,6 +568,7 @@ CREATE TABLE `assessments` (
   `due_date` datetime DEFAULT NULL,
   `is_closed` tinyint(1) NOT NULL DEFAULT '0',
   `delivery_mode` enum('online','offline','both') COLLATE utf8mb4_unicode_ci DEFAULT 'both',
+  `attachment_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `shuffle_questions` tinyint(1) NOT NULL DEFAULT '1',
   `submission_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'quiz_builder',
@@ -578,25 +582,25 @@ CREATE TABLE `assessments` (
   CONSTRAINT `assessments_ibfk_3` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `assessments` (`id`, `syllabus_id`, `topic_id`, `teacher_id`, `title`, `description`, `type`, `max_score`, `due_date`, `is_closed`, `delivery_mode`, `created_at`, `shuffle_questions`, `submission_type`, `time_limit`) VALUES
-('3', '6', NULL, '17', 'Manage', 'Network Management', 'activity', '100.00', '2026-03-28 07:19:00', '0', 'both', '2026-03-27 23:19:56', '1', 'quiz_builder', NULL),
-('10', '19', '35', '2', 'BSIS101 Quiz 1', 'Overview of IS concepts and applications', 'quiz', '100.00', '2026-09-15 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('11', '20', '37', '17', 'BSIS104 Assignment 1', 'Object-oriented programming', 'assignment', '100.00', '2026-09-16 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('12', '21', '39', '35', 'BSIS105 Exam 1', 'IS development methodologies', 'exam', '100.00', '2026-09-17 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('13', '22', '41', '37', 'BSIS106 Project 1', 'Relational databases and SQL', 'project', '100.00', '2026-09-18 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('14', '23', '43', '2', 'BSIS107 Activity 1', 'Web development for IS', 'activity', '100.00', '2026-09-19 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('15', '24', '45', '17', 'BSIS108 Quiz 1', 'Building enterprise applications', 'quiz', '100.00', '2026-09-20 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('16', '25', '47', '35', 'BSIS109 Assignment 1', 'Data and information resource management', 'assignment', '100.00', '2026-09-21 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('17', '26', '49', '37', 'BSIS111 Exam 1', 'Strategic planning for IS', 'exam', '100.00', '2026-09-22 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('18', '27', '51', '2', 'BSIS112 Project 1', 'UI/UX design principles', 'project', '100.00', '2026-09-23 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('19', '28', '53', '17', 'BSIS113 Activity 1', 'Cybersecurity in IS environments', 'activity', '100.00', '2026-09-24 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('20', '29', '55', '35', 'BSIS114 Quiz 1', 'Ethics and professionalism in IS', 'quiz', '100.00', '2026-09-25 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('21', '30', '57', '37', 'BSIS115 Assignment 1', 'Enterprise systems integration', 'assignment', '100.00', '2026-09-26 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('22', '31', '59', '2', 'BSIS116 Exam 1', 'IS research and project proposal', 'exam', '100.00', '2026-09-27 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('23', '32', '61', '17', 'BSIS117 Project 1', 'IS project implementation and defense', 'project', '100.00', '2026-09-28 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('24', '33', '63', '35', 'BSIS118 Activity 1', 'On-the-job training in IS field', 'activity', '100.00', '2026-09-29 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('25', '34', '65', '37', 'ENT123 Quiz 1', 'An Enterprise system is a large scale integrated software.', 'quiz', '100.00', '2026-09-30 23:59:00', '0', 'both', '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('45', '70', '100', '45', 'Week 1: Enterprise Systems Fundamentals Quiz', 'Practical assessment evaluating understanding of ERP architecture, centralized data, and multi-tier systems.', 'quiz', '20.00', NULL, '0', 'online', '2026-10-08 08:47:24', '1', 'quiz_builder', NULL);
+INSERT INTO `assessments` (`id`, `syllabus_id`, `topic_id`, `teacher_id`, `title`, `description`, `type`, `max_score`, `due_date`, `is_closed`, `delivery_mode`, `attachment_path`, `created_at`, `shuffle_questions`, `submission_type`, `time_limit`) VALUES
+('3', '6', NULL, '17', 'Manage', 'Network Management', 'activity', '100.00', '2026-03-28 07:19:00', '0', 'both', NULL, '2026-03-27 23:19:56', '1', 'quiz_builder', NULL),
+('10', '19', '35', '2', 'BSIS101 Quiz 1', 'Overview of IS concepts and applications', 'quiz', '100.00', '2026-09-15 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('11', '20', '37', '17', 'BSIS104 Assignment 1', 'Object-oriented programming', 'assignment', '100.00', '2026-09-16 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('12', '21', '39', '35', 'BSIS105 Exam 1', 'IS development methodologies', 'exam', '100.00', '2026-09-17 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('13', '22', '41', '37', 'BSIS106 Project 1', 'Relational databases and SQL', 'project', '100.00', '2026-09-18 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('14', '23', '43', '2', 'BSIS107 Activity 1', 'Web development for IS', 'activity', '100.00', '2026-09-19 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('15', '24', '45', '17', 'BSIS108 Quiz 1', 'Building enterprise applications', 'quiz', '100.00', '2026-09-20 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('16', '25', '47', '35', 'BSIS109 Assignment 1', 'Data and information resource management', 'assignment', '100.00', '2026-09-21 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('17', '26', '49', '37', 'BSIS111 Exam 1', 'Strategic planning for IS', 'exam', '100.00', '2026-09-22 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('18', '27', '51', '2', 'BSIS112 Project 1', 'UI/UX design principles', 'project', '100.00', '2026-09-23 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('19', '28', '53', '17', 'BSIS113 Activity 1', 'Cybersecurity in IS environments', 'activity', '100.00', '2026-09-24 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('20', '29', '55', '35', 'BSIS114 Quiz 1', 'Ethics and professionalism in IS', 'quiz', '100.00', '2026-09-25 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('21', '30', '57', '37', 'BSIS115 Assignment 1', 'Enterprise systems integration', 'assignment', '100.00', '2026-09-26 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('22', '31', '59', '2', 'BSIS116 Exam 1', 'IS research and project proposal', 'exam', '100.00', '2026-09-27 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('23', '32', '61', '17', 'BSIS117 Project 1', 'IS project implementation and defense', 'project', '100.00', '2026-09-28 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('24', '33', '63', '35', 'BSIS118 Activity 1', 'On-the-job training in IS field', 'activity', '100.00', '2026-09-29 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('25', '34', '65', '37', 'ENT123 Quiz 1', 'An Enterprise system is a large scale integrated software.', 'quiz', '100.00', '2026-09-30 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('45', '70', '100', '45', 'Week 1: Enterprise Systems Fundamentals Quiz', 'Practical assessment evaluating understanding of ERP architecture, centralized data, and multi-tier systems.', 'quiz', '20.00', NULL, '0', 'online', NULL, '2026-10-08 08:47:24', '1', 'quiz_builder', NULL);
 
 -- --------------------------------------------------------
 -- Structure and Data for table `courses`
@@ -1071,6 +1075,7 @@ CREATE TABLE `syllabi` (
   `grading_system` text COLLATE utf8mb4_unicode_ci,
   `status` enum('draft','published','archived') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
   `image_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `syllabus_file` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `external_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -1081,29 +1086,29 @@ CREATE TABLE `syllabi` (
   CONSTRAINT `syllabi_ibfk_2` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `syllabi` (`id`, `course_id`, `teacher_id`, `academic_year`, `semester`, `section_name`, `course_description`, `course_outcomes`, `grading_system`, `status`, `image_path`, `external_url`, `created_at`, `updated_at`) VALUES
-('6', '44', '17', '2025-2026', '1st', NULL, 'Network', '1.Identify', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-03-22 11:16:19', '2026-07-05 06:06:18'),
-('11', '37', '35', '2025-2026', '1st', NULL, 'sdf', 'qwe', '', 'published', NULL, NULL, '2026-08-06 18:05:24', '2026-08-06 18:06:43'),
-('12', '37', '35', '2025-2026', '1st', NULL, 'sdf', 'qwe', '', 'draft', NULL, NULL, '2026-08-06 18:05:24', '2026-08-06 18:05:24'),
-('13', '37', '35', '2025-2026', '1st', NULL, 'sdf', 'qwe', 'wqeqwe', 'published', NULL, NULL, '2026-08-06 18:05:27', '2026-08-06 18:06:40'),
-('14', '36', '37', '2025-2026', '1st', NULL, '123', '123', '', 'published', 'syl_6a74d0c1d93ff.png', '', '2026-08-06 18:18:12', '2026-08-08 08:34:27'),
-('19', '35', '2', '2025-2026', '2nd', NULL, 'Overview of IS concepts and applications', '1. Explain key concepts of Introduction to Information Systems. 2. Apply Introduction to Information Systems principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('20', '38', '17', '2025-2026', '2nd', NULL, 'Object-oriented programming', '1. Explain key concepts of Computer Programming 2. 2. Apply Computer Programming 2 principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('21', '39', '35', '2025-2026', '1st', NULL, 'IS development methodologies', '1. Explain key concepts of Systems Analysis and Design. 2. Apply Systems Analysis and Design principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('22', '40', '37', '2025-2026', '1st', NULL, 'Relational databases and SQL', '1. Explain key concepts of Database Management Systems. 2. Apply Database Management Systems principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('23', '41', '2', '2025-2026', '1st', NULL, 'Web development for IS', '1. Explain key concepts of Web Systems and Technologies. 2. Apply Web Systems and Technologies principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('24', '42', '17', '2025-2026', '2nd', NULL, 'Building enterprise applications', '1. Explain key concepts of Application Development. 2. Apply Application Development principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('25', '43', '35', '2025-2026', '2nd', NULL, 'Data and information resource management', '1. Explain key concepts of Information Management. 2. Apply Information Management principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('26', '45', '37', '2025-2026', '1st', NULL, 'Strategic planning for IS', '1. Explain key concepts of IS Strategy Management and Acquisition. 2. Apply IS Strategy Management and Acquisition principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('27', '46', '2', '2025-2026', '1st', NULL, 'UI/UX design principles', '1. Explain key concepts of Human Computer Interaction. 2. Apply Human Computer Interaction principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('28', '47', '17', '2025-2026', '2nd', NULL, 'Cybersecurity in IS environments', '1. Explain key concepts of Information Assurance and Security. 2. Apply Information Assurance and Security principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('29', '48', '35', '2025-2026', '2nd', NULL, 'Ethics and professionalism in IS', '1. Explain key concepts of Social and Professional Issues in IS. 2. Apply Social and Professional Issues in IS principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('30', '49', '37', '2025-2026', '1st', NULL, 'Enterprise systems integration', '1. Explain key concepts of Systems Integration and Architecture. 2. Apply Systems Integration and Architecture principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('31', '50', '2', '2025-2026', '1st', NULL, 'IS research and project proposal', '1. Explain key concepts of Capstone Project 1. 2. Apply Capstone Project 1 principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('32', '51', '17', '2025-2026', '2nd', NULL, 'IS project implementation and defense', '1. Explain key concepts of Capstone Project 2. 2. Apply Capstone Project 2 principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('33', '52', '35', '2025-2026', '2nd', NULL, 'On-the-job training in IS field', '1. Explain key concepts of Practicum / OJT. 2. Apply Practicum / OJT principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('34', '53', '37', '2025-2026', '2nd', NULL, 'An Enterprise system is a large scale integrated software.', '1. Explain key concepts of Enterprise System. 2. Apply Enterprise System principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
-('70', '53', '45', '2025-2026', '2nd', NULL, 'An Enterprise system is a large scale integrated software.', '1. Explain key concepts of Enterprise System.\n2. Apply Enterprise System principles to real-world scenarios.', NULL, 'published', NULL, NULL, '2026-10-08 08:44:51', '2026-10-08 08:44:51');
+INSERT INTO `syllabi` (`id`, `course_id`, `teacher_id`, `academic_year`, `semester`, `section_name`, `course_description`, `course_outcomes`, `grading_system`, `status`, `image_path`, `syllabus_file`, `external_url`, `created_at`, `updated_at`) VALUES
+('6', '44', '17', '2025-2026', '1st', NULL, 'Network', '1.Identify', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-03-22 11:16:19', '2026-07-05 06:06:18'),
+('11', '37', '35', '2025-2026', '1st', NULL, 'sdf', 'qwe', '', 'published', NULL, NULL, NULL, '2026-08-06 18:05:24', '2026-08-06 18:06:43'),
+('12', '37', '35', '2025-2026', '1st', NULL, 'sdf', 'qwe', '', 'draft', NULL, NULL, NULL, '2026-08-06 18:05:24', '2026-08-06 18:05:24'),
+('13', '37', '35', '2025-2026', '1st', NULL, 'sdf', 'qwe', 'wqeqwe', 'published', NULL, NULL, NULL, '2026-08-06 18:05:27', '2026-08-06 18:06:40'),
+('14', '36', '37', '2025-2026', '1st', NULL, '123', '123', '', 'published', 'syl_6a74d0c1d93ff.png', NULL, '', '2026-08-06 18:18:12', '2026-08-08 08:34:27'),
+('19', '35', '2', '2025-2026', '2nd', NULL, 'Overview of IS concepts and applications', '1. Explain key concepts of Introduction to Information Systems. 2. Apply Introduction to Information Systems principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('20', '38', '17', '2025-2026', '2nd', NULL, 'Object-oriented programming', '1. Explain key concepts of Computer Programming 2. 2. Apply Computer Programming 2 principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('21', '39', '35', '2025-2026', '1st', NULL, 'IS development methodologies', '1. Explain key concepts of Systems Analysis and Design. 2. Apply Systems Analysis and Design principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('22', '40', '37', '2025-2026', '1st', NULL, 'Relational databases and SQL', '1. Explain key concepts of Database Management Systems. 2. Apply Database Management Systems principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('23', '41', '2', '2025-2026', '1st', NULL, 'Web development for IS', '1. Explain key concepts of Web Systems and Technologies. 2. Apply Web Systems and Technologies principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('24', '42', '17', '2025-2026', '2nd', NULL, 'Building enterprise applications', '1. Explain key concepts of Application Development. 2. Apply Application Development principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('25', '43', '35', '2025-2026', '2nd', NULL, 'Data and information resource management', '1. Explain key concepts of Information Management. 2. Apply Information Management principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('26', '45', '37', '2025-2026', '1st', NULL, 'Strategic planning for IS', '1. Explain key concepts of IS Strategy Management and Acquisition. 2. Apply IS Strategy Management and Acquisition principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('27', '46', '2', '2025-2026', '1st', NULL, 'UI/UX design principles', '1. Explain key concepts of Human Computer Interaction. 2. Apply Human Computer Interaction principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('28', '47', '17', '2025-2026', '2nd', NULL, 'Cybersecurity in IS environments', '1. Explain key concepts of Information Assurance and Security. 2. Apply Information Assurance and Security principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('29', '48', '35', '2025-2026', '2nd', NULL, 'Ethics and professionalism in IS', '1. Explain key concepts of Social and Professional Issues in IS. 2. Apply Social and Professional Issues in IS principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('30', '49', '37', '2025-2026', '1st', NULL, 'Enterprise systems integration', '1. Explain key concepts of Systems Integration and Architecture. 2. Apply Systems Integration and Architecture principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('31', '50', '2', '2025-2026', '1st', NULL, 'IS research and project proposal', '1. Explain key concepts of Capstone Project 1. 2. Apply Capstone Project 1 principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('32', '51', '17', '2025-2026', '2nd', NULL, 'IS project implementation and defense', '1. Explain key concepts of Capstone Project 2. 2. Apply Capstone Project 2 principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('33', '52', '35', '2025-2026', '2nd', NULL, 'On-the-job training in IS field', '1. Explain key concepts of Practicum / OJT. 2. Apply Practicum / OJT principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('34', '53', '37', '2025-2026', '2nd', NULL, 'An Enterprise system is a large scale integrated software.', '1. Explain key concepts of Enterprise System. 2. Apply Enterprise System principles to real-world scenarios.', 'quiz20% \\r\\nactivity30%\\r\\nexams50%', 'published', NULL, NULL, '', '2026-08-09 00:00:00', '2026-08-09 00:00:00'),
+('70', '53', '45', '2025-2026', '2nd', NULL, 'An Enterprise system is a large scale integrated software.', '1. Explain key concepts of Enterprise System.\n2. Apply Enterprise System principles to real-world scenarios.', NULL, 'published', NULL, NULL, NULL, '2026-10-08 08:44:51', '2026-10-08 08:44:51');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `syllabus_assignments`

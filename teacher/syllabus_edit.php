@@ -96,6 +96,24 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $status  = sanitize($_POST['status'] ?? '');
         $notes   = sanitize($_POST['notes'] ?? '');
         $isCompleted = $status === 'completed' ? 1 : 0;
+
+        if ($isCompleted === 1) {
+            $mCnt = (int)$conn->query("SELECT COUNT(*) c FROM learning_materials WHERE syllabus_topic_id = $topicId")->fetch_assoc()['c'];
+            $aCnt = (int)$conn->query("SELECT COUNT(*) c FROM assessments WHERE topic_id = $topicId")->fetch_assoc()['c'];
+            if ($mCnt === 0 || $aCnt === 0) {
+                $missing = [];
+                if ($mCnt === 0) $missing[] = 'learning material';
+                if ($aCnt === 0) $missing[] = 'assessment task';
+                $tRow = $conn->query("SELECT week_number FROM syllabus_topics WHERE id = $topicId")->fetch_assoc();
+                $wkNum = $tRow ? $tRow['week_number'] : '';
+                echo json_encode([
+                    'success' => false,
+                    'message' => "Cannot mark Week {$wkNum} as done: This topic has no " . implode(' and no ', $missing) . " attached. Please attach at least one " . implode(' and ', $missing) . " first."
+                ]);
+                exit;
+            }
+        }
+
         $stmt = $conn->prepare("UPDATE syllabus_topics SET is_completed=?, completion_notes=? WHERE id=? AND syllabus_id=?");
         $stmt->bind_param('isii', $isCompleted, $notes, $topicId, $sid);
         $stmt->execute();
@@ -492,9 +510,23 @@ $pastCheck = checkPastWeeklySyllabiDone($sid, $t['id'], (int)$t['week_number']);
                 <?php endif; ?>
             </div>
             <div style="display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
+                <?php 
+                    $canMarkDoneThisTopic = (!empty($topicMaterials) && !empty($topicAssessments));
+                    $missingItemsThisTopic = [];
+                    if (empty($topicMaterials)) $missingItemsThisTopic[] = 'learning material';
+                    if (empty($topicAssessments)) $missingItemsThisTopic[] = 'assessment task';
+                    $cannotDoneMsgThisTopic = "Cannot mark Week {$t['week_number']} as done: This topic has no " . implode(' and no ', $missingItemsThisTopic) . " attached. Please attach at least one " . implode(' and ', $missingItemsThisTopic) . " first.";
+                ?>
                 <?php if($isDone): ?>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); updateStatus(<?= $t['id'] ?>, 'not_started')" title="Undo completed teaching status">
                         <i class="fas fa-undo"></i> Undo
+                    </button>
+                <?php elseif (!$canMarkDoneThisTopic): ?>
+                    <button type="button" class="btn btn-sm" 
+                        style="font-size:11px;font-weight:600;padding:4px 9px;background:#f8fafc;border:1px solid #cbd5e1;color:#64748b;border-radius:6px;cursor:pointer"
+                        onclick="event.stopPropagation(); showCannotMarkDoneAlert('<?= htmlspecialchars(addslashes($cannotDoneMsgThisTopic), ENT_QUOTES) ?>')"
+                        title="<?= htmlspecialchars($cannotDoneMsgThisTopic) ?>">
+                        <i class="fas fa-lock" style="font-size:10px;color:#94a3b8"></i> Mark Done
                     </button>
                 <?php else: ?>
                     <button type="button" class="btn btn-success btn-sm" 
@@ -1284,7 +1316,17 @@ function submitStatus(topicId, status, notes) {
             + '&notes=' + encodeURIComponent(notes || '')
     })
     .then(function(r){ return r.json(); })
-    .then(function(d){ if (d.success) location.reload(); });
+    .then(function(d){ 
+        if (d.success) {
+            location.reload(); 
+        } else {
+            if (window.showCannotMarkDoneAlert) {
+                window.showCannotMarkDoneAlert(d.message || 'Cannot mark topic as done.');
+            } else {
+                alert(d.message || 'Cannot mark topic as done.');
+            }
+        }
+    });
 }
 var currentStudentStatusFilter = 'all';
 

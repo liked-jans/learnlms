@@ -36,6 +36,23 @@ window.showWeeklyLockAlert = function(msg) {
         alert(msg);
     }
 };
+
+window.showCannotMarkDoneAlert = function(msg) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Deliverables Incomplete',
+            html: '<div style="font-size:14.5px;color:#334155;margin-top:8px;line-height:1.55;font-weight:500">' + msg + '</div>',
+            confirmButtonColor: '#2563eb',
+            confirmButtonText: '<i class="fas fa-check" style="margin-right:6px"></i> Understood',
+            customClass: {
+                popup: 'swal2-modern-modal'
+            }
+        });
+    } else {
+        alert(msg);
+    }
+};
 </script>
 </head>
 <body>

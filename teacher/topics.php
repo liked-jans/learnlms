@@ -222,6 +222,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         // Verify syllabus belongs to this teacher
         $chkSyl = $conn->query("SELECT id FROM syllabi WHERE id=$sylId AND teacher_id=$tid")->fetch_assoc();
         if ($chkSyl) {
+            // Cannot mark as done if topic has no materials and/or no assessments
+            if ($isCompleted === 1) {
+                $mCnt = (int)$conn->query("SELECT COUNT(*) c FROM learning_materials WHERE syllabus_topic_id = $topicId")->fetch_assoc()['c'];
+                $aCnt = (int)$conn->query("SELECT COUNT(*) c FROM assessments WHERE topic_id = $topicId")->fetch_assoc()['c'];
+                if ($mCnt === 0 || $aCnt === 0) {
+                    $missing = [];
+                    if ($mCnt === 0) $missing[] = 'learning material';
+                    if ($aCnt === 0) $missing[] = 'assessment task';
+                    $tRow = $conn->query("SELECT week_number FROM syllabus_topics WHERE id = $topicId")->fetch_assoc();
+                    $wkNum = $tRow ? $tRow['week_number'] : '';
+                    $errMsg = "Cannot mark Week {$wkNum} as done: Please attach at least one " . implode(' and ', $missing) . " first.";
+                    if (!empty($_POST['ajax'])) {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'message' => $errMsg]);
+                        exit;
+                    }
+                    setFlash('error', $errMsg);
+                    redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+                }
+            }
+
             $stmt = $conn->prepare("UPDATE syllabus_topics SET is_completed=?, completion_notes=? WHERE id=? AND syllabus_id=?");
             $stmt->bind_param('isii', $isCompleted, $notes, $topicId, $sylId);
             $stmt->execute();
@@ -1013,9 +1034,26 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                 </td>
                                 <td style="text-align:center;white-space:nowrap">
                                     <div style="display:inline-flex;align-items:center;gap:6px">
+                                        <?php 
+                                            $matsArr = !empty($row['materials_list']) ? explode('||', $row['materials_list']) : [];
+                                            $assesArr = !empty($row['assessments_data']) ? explode('||', $row['assessments_data']) : [];
+                                            $mCount = count($matsArr);
+                                            $aCount = count($assesArr);
+                                            $canMarkDone = ($mCount > 0 && $aCount > 0);
+
+                                            $missingItems = [];
+                                            if ($mCount === 0) $missingItems[] = 'learning material';
+                                            if ($aCount === 0) $missingItems[] = 'assessment task';
+                                            $missingText = implode(' and ', $missingItems);
+                                            $cannotDoneMsg = "Cannot mark Week {$row['week_number']} as done: This topic has no {$missingText} attached. Please attach at least one {$missingText} first.";
+                                        ?>
                                         <?php if (!empty($row['is_completed'])): ?>
                                             <button type="button" class="btn btn-sm" onclick="toggleTopicDone(<?= $row['id'] ?>, 0, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')" style="padding:4px 9px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;background:#ecfdf5;border:1px solid #10b981;color:#047857;border-radius:6px;cursor:pointer" title="Marked as Completed (Click to Undo / Revert to Pending)">
                                                 <i class="fas fa-check-circle" style="color:#10b981"></i> Done
+                                            </button>
+                                        <?php elseif (!$canMarkDone): ?>
+                                            <button type="button" class="btn btn-sm" onclick="showCannotMarkDoneAlert('<?= htmlspecialchars(addslashes($cannotDoneMsg), ENT_QUOTES) ?>')" style="padding:4px 9px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px;background:#f8fafc;border:1px solid #cbd5e1;color:#64748b;border-radius:6px;cursor:pointer;opacity:0.85" title="<?= htmlspecialchars($cannotDoneMsg) ?>">
+                                                <i class="fas fa-lock" style="font-size:10px;color:#94a3b8"></i> Mark Done
                                             </button>
                                         <?php else: ?>
                                             <button type="button" class="btn btn-sm" onclick="toggleTopicDone(<?= $row['id'] ?>, 1, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')" style="padding:4px 9px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;background:#10b981;border:1px solid #059669;color:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(16,185,129,0.25);cursor:pointer" title="Mark Week <?= $row['week_number'] ?> as Done to complete teaching and unlock subsequent weeks">

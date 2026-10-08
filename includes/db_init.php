@@ -136,6 +136,8 @@ function ensureDatabaseSchemaReady($conn) {
         $conn->query("ALTER TABLE `learning_materials` MODIFY COLUMN `type` VARCHAR(50) NOT NULL DEFAULT 'module'");
     } catch (\Throwable $e) {}
 
+    ensureDbColumn($conn, 'syllabi', 'syllabus_file', 'varchar(255) DEFAULT NULL');
+    ensureDbColumn($conn, 'assessments', 'attachment_path', 'varchar(255) DEFAULT NULL');
     ensureDbColumn($conn, 'assessments', 'topic_id', 'int(11) DEFAULT NULL');
     ensureDbColumn($conn, 'assessments', 'delivery_mode', "varchar(50) NOT NULL DEFAULT 'online'");
     ensureDbColumn($conn, 'assessments', 'shuffle_questions', 'tinyint(1) NOT NULL DEFAULT 1');
