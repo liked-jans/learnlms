@@ -49,7 +49,12 @@ if ($_dbUrl) {
     if (!empty($_parsed['path'])) $_urlDb   = ltrim($_parsed['path'], '/');
 }
 
-define('DB_HOST', getenv('DB_HOST') ?: (getenv('MYSQLHOST') ?: ($_urlHost ?: 'localhost')));
+// In Railway production, MySQL is accessible via private network at mysql.railway.internal or mysql.
+// On local development, 127.0.0.1 is used. NEVER default to 'localhost' on Linux as it forces unix domain socket.
+$_isRailwayEnv = (!empty(getenv('RAILWAY_ENVIRONMENT')) || !empty(getenv('RAILWAY_PROJECT_ID')) || !empty(getenv('RAILWAY_SERVICE_ID')) || !empty($_SERVER['HTTP_X_FORWARDED_PROTO']) || ($_SERVER['DOCUMENT_ROOT'] ?? '') === '/var/www/html');
+$_defaultHost = $_isRailwayEnv ? 'mysql.railway.internal' : '127.0.0.1';
+
+define('DB_HOST', getenv('DB_HOST') ?: (getenv('MYSQLHOST') ?: ($_urlHost ?: $_defaultHost)));
 define('DB_USER', getenv('DB_USER') ?: (getenv('MYSQLUSER') ?: ($_urlUser ?: 'root')));
 define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : (getenv('MYSQLPASSWORD') !== false ? getenv('MYSQLPASSWORD') : (isset($_urlPass) ? $_urlPass : 'ckhkOQcXPVQrKkXRgEDURJfUtHmHrLOa')));
 define('DB_NAME', getenv('DB_NAME') ?: (getenv('MYSQLDATABASE') ?: ($_urlDb ?: 'railway')));
@@ -105,9 +110,34 @@ if (getenv('APP_URL')) {
 }
 define('UPLOAD_PATH', __DIR__ . '/../uploads/');
 
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
-if ($conn->connect_error) {
-    die("Database connection failed: " . $conn->connect_error . " (Target: " . DB_HOST . ":" . DB_PORT . " / DB: " . DB_NAME . ")");
+// Resilient multi-tier database connection
+$conn = null;
+$_connCandidates = [
+    // 1. Primary configured settings
+    ['host' => (DB_HOST === 'localhost' ? '127.0.0.1' : DB_HOST), 'port' => DB_PORT, 'user' => DB_USER, 'pass' => DB_PASS, 'name' => DB_NAME],
+    // 2. Railway private network domain
+    ['host' => 'mysql.railway.internal', 'port' => 3306, 'user' => 'root', 'pass' => 'ckhkOQcXPVQrKkXRgEDURJfUtHmHrLOa', 'name' => 'railway'],
+    // 3. Railway private service name
+    ['host' => 'mysql', 'port' => 3306, 'user' => 'root', 'pass' => 'ckhkOQcXPVQrKkXRgEDURJfUtHmHrLOa', 'name' => 'railway'],
+    // 4. Railway public TCP proxy
+    ['host' => 'tramway.proxy.rlwy.net', 'port' => 11864, 'user' => 'root', 'pass' => 'ckhkOQcXPVQrKkXRgEDURJfUtHmHrLOa', 'name' => 'railway'],
+    // 5. Localhost TCP
+    ['host' => '127.0.0.1', 'port' => 3306, 'user' => 'root', 'pass' => '', 'name' => 'railway']
+];
+
+foreach ($_connCandidates as $_candidate) {
+    if (empty($_candidate['host'])) continue;
+    try {
+        $_testConn = @new mysqli($_candidate['host'], $_candidate['user'], $_candidate['pass'], $_candidate['name'], (int)$_candidate['port']);
+        if (!$_testConn->connect_error) {
+            $conn = $_testConn;
+            break;
+        }
+    } catch (\Throwable $e) {}
+}
+
+if (!$conn || $conn->connect_error) {
+    die("Database connection failed. Please ensure the Railway MySQL service is online.");
 }
 $conn->set_charset("utf8mb4");
 $conn->query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");

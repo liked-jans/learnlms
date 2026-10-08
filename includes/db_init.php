@@ -15,8 +15,9 @@ function ensureDatabaseSchemaReady($conn) {
     $isFresh = (!$chk || $chk->num_rows === 0);
 
     if ($isFresh) {
-        // 1. Load initial dump from databasecode.sql or if0_42325974_learnlms.sql
+        // 1. Load initial dump from learnlms_complete_data.sql, databasecode.sql, or if0_42325974_learnlms.sql
         $sqlFiles = [
+            dirname(__DIR__) . '/learnlms_complete_data.sql',
             dirname(__DIR__) . '/databasecode.sql',
             dirname(__DIR__) . '/if0_42325974_learnlms.sql'
         ];
@@ -52,12 +53,9 @@ function ensureDatabaseSchemaReady($conn) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
         "CREATE TABLE IF NOT EXISTS `system_settings` (
-            `id` int(11) NOT NULL,
-            `system_name` varchar(100) NOT NULL DEFAULT 'BlendEd LMS',
+            `id` int(11) NOT NULL DEFAULT 1,
             `maintenance_mode` tinyint(1) NOT NULL DEFAULT 0,
-            `allow_registration` tinyint(1) NOT NULL DEFAULT 1,
-            `academic_year` varchar(20) NOT NULL DEFAULT '2025-2026',
-            `semester` varchar(20) NOT NULL DEFAULT '1st',
+            `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
             PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
@@ -106,11 +104,15 @@ function ensureDatabaseSchemaReady($conn) {
     ];
 
     foreach ($tables as $tSql) {
-        $conn->query($tSql);
+        try {
+            $conn->query($tSql);
+        } catch (\Throwable $e) {}
     }
 
     // Ensure default system_settings row exists
-    $conn->query("INSERT IGNORE INTO `system_settings` (`id`, `system_name`, `maintenance_mode`) VALUES (1, 'BlendEd LMS', 0)");
+    try {
+        $conn->query("INSERT IGNORE INTO `system_settings` (`id`, `maintenance_mode`) VALUES (1, 0)");
+    } catch (\Throwable $e) {}
 
     // 3. Ensure required modern columns exist
     ensureDbColumn($conn, 'syllabus_topics', 'is_completed', 'tinyint(1) NOT NULL DEFAULT 0');
@@ -126,6 +128,11 @@ function ensureDatabaseSchemaReady($conn) {
     ensureDbColumn($conn, 'learning_materials', 'estimated_read_time', 'int(11) NOT NULL DEFAULT 5');
     ensureDbColumn($conn, 'learning_materials', 'delivery_mode', "varchar(50) NOT NULL DEFAULT 'both'");
 
+    // Ensure learning_materials.type supports 'module'
+    try {
+        $conn->query("ALTER TABLE `learning_materials` MODIFY COLUMN `type` VARCHAR(50) NOT NULL DEFAULT 'module'");
+    } catch (\Throwable $e) {}
+
     ensureDbColumn($conn, 'assessments', 'topic_id', 'int(11) DEFAULT NULL');
     ensureDbColumn($conn, 'assessments', 'delivery_mode', "varchar(50) NOT NULL DEFAULT 'online'");
     ensureDbColumn($conn, 'assessments', 'shuffle_questions', 'tinyint(1) NOT NULL DEFAULT 1');
@@ -133,29 +140,16 @@ function ensureDatabaseSchemaReady($conn) {
     ensureDbColumn($conn, 'assessments', 'submission_type', "varchar(50) NOT NULL DEFAULT 'quiz_builder'");
 
     ensureDbColumn($conn, 'submissions', 'is_auto_graded', 'tinyint(1) NOT NULL DEFAULT 0');
-
-    // 4. If syllabus topics are empty, run the seed data
-    $checkTopics = $conn->query("SELECT COUNT(*) as c FROM syllabus_topics");
-    $count = ($checkTopics && $r = $checkTopics->fetch_assoc()) ? (int)$r['c'] : 0;
-    if ($count === 0 && file_exists(dirname(__DIR__) . '/seed_data.php')) {
-        try {
-            // Buffer output from seed_data.php so it doesn't pollute HTML responses
-            ob_start();
-            include_once dirname(__DIR__) . '/seed_data.php';
-            ob_end_clean();
-        } catch (\Throwable $e) {
-            // Silently continue
-        }
-    }
 }
 
 function ensureDbColumn($conn, $table, $column, $definition) {
-    // Check if table exists first
-    $tableChk = $conn->query("SHOW TABLES LIKE '$table'");
-    if (!$tableChk || $tableChk->num_rows === 0) return;
+    try {
+        $tableChk = $conn->query("SHOW TABLES LIKE '$table'");
+        if (!$tableChk || $tableChk->num_rows === 0) return;
 
-    $chk = $conn->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
-    if ($chk && $chk->num_rows === 0) {
-        $conn->query("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
-    }
+        $chk = $conn->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
+        if ($chk && $chk->num_rows === 0) {
+            $conn->query("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
+        }
+    } catch (\Throwable $e) {}
 }
