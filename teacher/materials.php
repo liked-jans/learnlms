@@ -18,6 +18,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add') {
         $sylId = (int)$_POST['syllabus_id'];
         $topicId = !empty($_POST['topic_id']) ? (int)$_POST['topic_id'] : null;
+
+        if ($topicId) {
+            $pastCheck = checkPastWeeklySyllabiDone($sylId, $topicId);
+            if (!$pastCheck['can_proceed']) {
+                setFlash('error', $pastCheck['message']);
+                redirect(BASE_URL . 'teacher/materials.php' . ($sylId ? '?syl=' . $sylId : ''));
+            }
+        }
         $title = sanitize($_POST['title']);
         $desc = sanitize($_POST['description']);
         $type = sanitize($_POST['type']);
@@ -79,6 +87,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int)$_POST['id'];
         $sylId = (int)$_POST['syllabus_id'];
         $topicId = !empty($_POST['topic_id']) ? (int)$_POST['topic_id'] : null;
+
+        if ($topicId) {
+            $pastCheck = checkPastWeeklySyllabiDone($sylId, $topicId);
+            if (!$pastCheck['can_proceed']) {
+                setFlash('error', $pastCheck['message']);
+                redirect(BASE_URL . 'teacher/materials.php' . ($sylId ? '?syl=' . $sylId : ''));
+            }
+        }
         $title = sanitize($_POST['title']);
         $desc = sanitize($_POST['description']);
         $type = sanitize($_POST['type']);
@@ -486,7 +502,9 @@ $docxExts = ['docx'];
                                 <?php foreach($sylArr as $s): ?><option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['course_code'].' - '.$s['course_name']) ?></option><?php endforeach; ?>
                             </select></div>
                             <div class="form-group"><label>Topic (optional)</label>
-                            <select name="topic_id" id="matTopic" class="form-control"><option value="">General / Not linked to a topic</option></select></div>
+                            <select name="topic_id" id="matTopic" class="form-control"><option value="">General / Not linked to a topic</option></select>
+                            <div id="matTopicLockNotice" style="display:none;margin-top:8px;padding:8px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:#92400e"><i class="fas fa-lock"></i> <span id="matTopicLockMsg"></span></div>
+                            </div>
                             <div class="form-group"><label>Title</label><input type="text" name="title" class="form-control" required></div>
                             <div class="form-group"><label>Description</label><textarea name="description" class="form-control" rows="2"></textarea></div>
                             <div class="form-row">
@@ -580,7 +598,9 @@ $docxExts = ['docx'];
                                 <?php foreach($sylArr as $s): ?><option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['course_code'].' - '.$s['course_name']) ?></option><?php endforeach; ?>
                             </select></div>
                             <div class="form-group"><label>Topic (optional)</label>
-                            <select name="topic_id" id="editTopic" class="form-control"><option value="">General / Not linked to a topic</option></select></div>
+                            <select name="topic_id" id="editTopic" class="form-control"><option value="">General / Not linked to a topic</option></select>
+                            <div id="editTopicLockNotice" style="display:none;margin-top:8px;padding:8px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:#92400e"><i class="fas fa-lock"></i> <span id="editTopicLockMsg"></span></div>
+                            </div>
                             <div class="form-group"><label>Title</label><input type="text" name="title" id="editTitle" class="form-control" required></div>
                             <div class="form-group"><label>Description</label><textarea name="description" id="editDesc" class="form-control" rows="2"></textarea></div>
                             <div class="form-row">
@@ -957,16 +977,43 @@ function openAddMaterialModal() {
 
 function loadTopics(sylId, targetSelectId, selectedTopicId){
     const sel = document.getElementById(targetSelectId);
+    const noticeEl = document.getElementById(targetSelectId === 'matTopic' ? 'matTopicLockNotice' : 'editTopicLockNotice');
+    const msgEl = document.getElementById(targetSelectId === 'matTopic' ? 'matTopicLockMsg' : 'editTopicLockMsg');
+    const formEl = sel ? sel.closest('form') : null;
+    const submitBtn = formEl ? formEl.querySelector('button[type="submit"]') : null;
+
+    if (noticeEl) noticeEl.style.display = 'none';
+    if (submitBtn) submitBtn.disabled = false;
+
     if(!sylId){ sel.innerHTML = '<option value="">General / Not linked to a topic</option>'; return; }
     fetch('../teacher/get_topics.php?syl='+sylId).then(r=>r.json()).then(data=>{
         sel.innerHTML = '<option value="">General / Not linked to a topic</option>';
         data.forEach(t => {
             const opt = document.createElement('option');
             opt.value = t.id;
-            opt.textContent = `Week ${t.week_number}: ${t.topic_title}`;
+            opt.textContent = (t.can_proceed ? '' : '🔒 ') + `Week ${t.week_number}: ${t.topic_title}` + (t.can_proceed ? '' : ' (Past week not marked done)');
+            opt.setAttribute('data-can-proceed', t.can_proceed ? '1' : '0');
+            opt.setAttribute('data-lock-msg', t.lock_message || '');
             if (selectedTopicId && String(t.id) === String(selectedTopicId)) opt.selected = true;
             sel.appendChild(opt);
         });
+
+        sel.onchange = function() {
+            const selectedOpt = sel.options[sel.selectedIndex];
+            const canProceed = selectedOpt ? selectedOpt.getAttribute('data-can-proceed') !== '0' : true;
+            const lockMsg = selectedOpt ? selectedOpt.getAttribute('data-lock-msg') : '';
+            if (!canProceed && lockMsg) {
+                if (noticeEl && msgEl) {
+                    msgEl.textContent = lockMsg;
+                    noticeEl.style.display = 'block';
+                }
+                if (submitBtn) submitBtn.disabled = true;
+            } else {
+                if (noticeEl) noticeEl.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        };
+        sel.onchange();
     });
 }
 

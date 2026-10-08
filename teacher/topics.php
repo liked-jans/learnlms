@@ -75,6 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         // Optional quick assessment link
         $assTitle = sanitize($_POST['assessment_title'] ?? '');
         if (!empty($assTitle)) {
+            $pastCheck = checkPastWeeklySyllabiDone($sylId, $newTopicId, $week);
+            if (!$pastCheck['can_proceed']) {
+                setFlash('error', $pastCheck['message']);
+                redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+            }
             $assType = sanitize($_POST['assessment_type'] ?? 'quiz');
             $assMax = (float)($_POST['assessment_max'] ?? 10);
             $stmtAss = $conn->prepare("INSERT INTO assessments (syllabus_id, topic_id, teacher_id, title, type, max_score, submission_type) VALUES (?, ?, ?, ?, ?, ?, 'quiz_builder')");
@@ -92,6 +97,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $sylId = (int)$_POST['syllabus_id'];
 
         if ($assessmentId > 0 && $topicId > 0) {
+            $pastCheck = checkPastWeeklySyllabiDone($sylId, $topicId);
+            if (!$pastCheck['can_proceed']) {
+                setFlash('error', $pastCheck['message']);
+                redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+            }
             $stmtLink = $conn->prepare("UPDATE assessments SET topic_id = ? WHERE id = ? AND teacher_id = ?");
             $stmtLink->bind_param('iii', $topicId, $assessmentId, $tid);
             $stmtLink->execute();
@@ -105,6 +115,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $sylId = (int)$_POST['syllabus_id'];
 
         if ($materialId > 0 && $topicId > 0) {
+            $pastCheck = checkPastWeeklySyllabiDone($sylId, $topicId);
+            if (!$pastCheck['can_proceed']) {
+                setFlash('error', $pastCheck['message']);
+                redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+            }
             $stmtLinkM = $conn->prepare("UPDATE learning_materials SET syllabus_topic_id = ? WHERE id = ? AND teacher_id = ?");
             $stmtLinkM->bind_param('iii', $topicId, $materialId, $tid);
             $stmtLinkM->execute();
@@ -129,6 +144,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
         }
 
+        $pastCheck = checkPastWeeklySyllabiDone($sylId, $topicId);
+        if (!$pastCheck['can_proceed']) {
+            setFlash('error', $pastCheck['message']);
+            redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+        }
+
         $stmt = $conn->prepare("INSERT INTO assessments (syllabus_id, topic_id, teacher_id, title, description, type, max_score, due_date, delivery_mode, submission_type, shuffle_questions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param('iiisssdsssi', $sylId, $topicId, $tid, $title, $desc, $type, $max, $due, $dm, $subType, $shuffle);
 
@@ -146,6 +167,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $topicId = (int)$_POST['topic_id'];
         $sylId = (int)$_POST['syllabus_id'];
         $title = sanitize($_POST['title']);
+
+        $pastCheck = checkPastWeeklySyllabiDone($sylId, $topicId);
+        if (!$pastCheck['can_proceed']) {
+            setFlash('error', $pastCheck['message']);
+            redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+        }
+
         $type = sanitize($_POST['material_type'] ?? 'module');
         $desc = sanitize($_POST['description'] ?? '');
         if ($type !== 'module') {
@@ -749,6 +777,7 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                             </tr>
                         <?php else: ?>
                             <?php foreach($mappingRows as $idx => $row): 
+                                $pastCheck = checkPastWeeklySyllabiDone($selectedSylId, $row['id'], (int)$row['week_number']);
                                 $materials = !empty($row['materials_list']) ? explode('||', $row['materials_list']) : [];
                                 $assessments = !empty($row['assessments_data']) ? explode('||', $row['assessments_data']) : [];
                                 $iloCode = !empty($row['ilo_code']) ? $row['ilo_code'] : 'CILO ' . ($idx + 1);
@@ -772,18 +801,25 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                     <span class="badge <?= $row['delivery_mode']==='online'?'badge-blue':($row['delivery_mode']==='blended'?'badge-purple':'badge-orange') ?>" style="font-size:10px;margin-top:4px">
                                         <?= ucfirst($row['delivery_mode'] ?: 'Face-to-Face') ?>
                                     </span>
+                                    <?php if (!$pastCheck['can_proceed']): ?>
+                                        <div style="margin-top:4px">
+                                            <span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:10px" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                <i class="fas fa-lock"></i> Prior Weeks Incomplete
+                                            </span>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if (!empty($materials)): ?>
                                         <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px">
                                         <?php foreach($materials as $m): 
-                                            $mParts = explode('::', $m);
-                                            $mId = (int)($mParts[0] ?? 0);
-                                            $mTitle = $mParts[1] ?? 'Material';
-                                            $mType = $mParts[2] ?? 'module';
-                                            $mTime = (int)($mParts[3] ?? 5);
-                                            $mFile = $mParts[4] ?? '';
-                                            $icon = ($mType === 'module') ? 'fa-book-reader' : (($mType === 'presentation') ? 'fa-file-powerpoint' : (($mType === 'link') ? 'fa-link' : (($mType === 'video') ? 'fa-play-circle' : 'fa-file-alt')));
+                                             $mParts = explode('::', $m);
+                                             $mId = (int)($mParts[0] ?? 0);
+                                             $mTitle = $mParts[1] ?? 'Material';
+                                             $mType = $mParts[2] ?? 'module';
+                                             $mTime = (int)($mParts[3] ?? 5);
+                                             $mFile = $mParts[4] ?? '';
+                                             $icon = ($mType === 'module') ? 'fa-book-reader' : (($mType === 'presentation') ? 'fa-file-powerpoint' : (($mType === 'link') ? 'fa-link' : (($mType === 'video') ? 'fa-play-circle' : 'fa-file-alt')));
                                         ?>
                                             <div style="display:flex;align-items:center;gap:4px">
                                                 <a href="<?= BASE_URL ?>student/read_material.php?id=<?= $mId ?>" target="_blank" class="interactive-mat-link" title="Preview Material in Reader">
@@ -813,13 +849,25 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                         <?php endif; ?>
 
                                         <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-                                            <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="openAttachMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
-                                                <i class="fas fa-plus"></i> Add Material
-                                            </button>
-                                            <?php if (!empty($unlinkedMaterials)): ?>
-                                                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px" onclick="openLinkMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)" title="Link existing material to this topic">
-                                                    <i class="fas fa-link"></i> Link
+                                            <?php if (!$pastCheck['can_proceed']): ?>
+                                                <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                    <i class="fas fa-lock"></i> Add Material
                                                 </button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="openAttachMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
+                                                    <i class="fas fa-plus"></i> Add Material
+                                                </button>
+                                            <?php endif; ?>
+                                            <?php if (!empty($unlinkedMaterials)): ?>
+                                                <?php if (!$pastCheck['can_proceed']): ?>
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                        <i class="fas fa-lock"></i> Link
+                                                    </button>
+                                                <?php else: ?>
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px" onclick="openLinkMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)" title="Link existing material to this topic">
+                                                        <i class="fas fa-link"></i> Link
+                                                    </button>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </div>
                                     <?php else: ?>
@@ -828,13 +876,25 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                                 <i class="fas fa-file-alt"></i> No Materials
                                             </span>
                                             <div style="display:flex;flex-wrap:wrap;gap:4px">
-                                                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px" onclick="openAttachMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
-                                                    <i class="fas fa-plus"></i> Add Learning Material
-                                                </button>
-                                                <?php if (!empty($unlinkedMaterials)): ?>
-                                                    <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px" onclick="openLinkMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)">
-                                                        <i class="fas fa-link"></i> Link Material
+                                                <?php if (!$pastCheck['can_proceed']): ?>
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                        <i class="fas fa-lock"></i> Add Learning Material
                                                     </button>
+                                                <?php else: ?>
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px" onclick="openAttachMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
+                                                        <i class="fas fa-plus"></i> Add Learning Material
+                                                    </button>
+                                                <?php endif; ?>
+                                                <?php if (!empty($unlinkedMaterials)): ?>
+                                                    <?php if (!$pastCheck['can_proceed']): ?>
+                                                        <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                            <i class="fas fa-lock"></i> Link Material
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px" onclick="openLinkMaterialModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)">
+                                                            <i class="fas fa-link"></i> Link Material
+                                                        </button>
+                                                    <?php endif; ?>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
@@ -867,13 +927,25 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                         <?php endforeach; ?>
                                         </div>
                                         <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-                                            <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="openAddAssessmentModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
-                                                <i class="fas fa-plus"></i> Add Assessment
-                                            </button>
-                                            <?php if (!empty($unlinkedAssessments)): ?>
-                                                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px" onclick="openLinkModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)" title="Link existing unassigned assessment">
-                                                    <i class="fas fa-link"></i> Link
+                                            <?php if (!$pastCheck['can_proceed']): ?>
+                                                <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                    <i class="fas fa-lock"></i> Add Assessment
                                                 </button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:2px 8px" onclick="openAddAssessmentModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
+                                                    <i class="fas fa-plus"></i> Add Assessment
+                                                </button>
+                                            <?php endif; ?>
+                                            <?php if (!empty($unlinkedAssessments)): ?>
+                                                <?php if (!$pastCheck['can_proceed']): ?>
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px;opacity:0.75" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                        <i class="fas fa-lock"></i> Link
+                                                    </button>
+                                                <?php else: ?>
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:2px 8px" onclick="openLinkModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)" title="Link existing unassigned assessment">
+                                                        <i class="fas fa-link"></i> Link
+                                                    </button>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </div>
                                     <?php else: ?>
@@ -882,13 +954,25 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                                 <i class="fas fa-exclamation-triangle"></i> Unassessed
                                             </span>
                                             <div style="display:flex;flex-wrap:wrap;gap:4px">
-                                                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px" onclick="openAddAssessmentModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
-                                                    <i class="fas fa-plus"></i> Add Assessment
-                                                </button>
-                                                <?php if (!empty($unlinkedAssessments)): ?>
-                                                    <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px" onclick="openLinkModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)">
-                                                        <i class="fas fa-link"></i> Link Quiz
+                                                <?php if (!$pastCheck['can_proceed']): ?>
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                        <i class="fas fa-lock"></i> Add Assessment
                                                     </button>
+                                                <?php else: ?>
+                                                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px" onclick="openAddAssessmentModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')">
+                                                        <i class="fas fa-plus"></i> Add Assessment
+                                                    </button>
+                                                <?php endif; ?>
+                                                <?php if (!empty($unlinkedAssessments)): ?>
+                                                    <?php if (!$pastCheck['can_proceed']): ?>
+                                                        <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;opacity:0.75" onclick="alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                                                            <i class="fas fa-lock"></i> Link Quiz
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <button type="button" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px" onclick="openLinkModal(<?= $row['id'] ?>, <?= $row['week_number'] ?>)">
+                                                            <i class="fas fa-link"></i> Link Quiz
+                                                        </button>
+                                                    <?php endif; ?>
                                                 <?php endif; ?>
                                             </div>
                                         </div>

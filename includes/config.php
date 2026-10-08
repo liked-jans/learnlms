@@ -500,3 +500,62 @@ function deleteCourseCascade($courseId) {
 
     return true;
 }
+
+/**
+ * Checks whether all previous weekly topics in the syllabus before a given topic/week
+ * have been marked as done (is_completed = 1).
+ *
+ * @param int $syllabusId The syllabus ID
+ * @param int|null $topicId The target topic ID (optional if targetWeek given)
+ * @param int|null $targetWeek The target week number (optional if topicId given)
+ * @return array ['can_proceed' => bool, 'target_week' => int, 'missing_weeks' => array, 'message' => string]
+ */
+function checkPastWeeklySyllabiDone($syllabusId, $topicId = null, $targetWeek = null) {
+    global $conn;
+    $syllabusId = (int)$syllabusId;
+    if ($syllabusId <= 0) {
+        return ['can_proceed' => true, 'target_week' => 1, 'missing_weeks' => [], 'message' => ''];
+    }
+
+    // Determine target week number from topicId if not provided
+    if ($targetWeek === null && $topicId) {
+        $stmtT = $conn->prepare("SELECT week_number FROM syllabus_topics WHERE id = ? AND syllabus_id = ?");
+        $stmtT->bind_param('ii', $topicId, $syllabusId);
+        $stmtT->execute();
+        $tRow = $stmtT->get_result()->fetch_assoc();
+        if ($tRow) {
+            $targetWeek = (int)$tRow['week_number'];
+        }
+    }
+
+    // Week 1 or undefined: Week 1 has no previous weeks, so it can always proceed!
+    if ($targetWeek === null || $targetWeek <= 1) {
+        return ['can_proceed' => true, 'target_week' => $targetWeek ?: 1, 'missing_weeks' => [], 'message' => ''];
+    }
+
+    // Find all topics in the same syllabus with week_number < targetWeek that are NOT marked as done
+    $stmt = $conn->prepare("
+        SELECT DISTINCT week_number 
+        FROM syllabus_topics 
+        WHERE syllabus_id = ? 
+          AND week_number < ? 
+          AND (is_completed = 0 OR is_completed IS NULL)
+        ORDER BY week_number ASC
+    ");
+    $stmt->bind_param('ii', $syllabusId, $targetWeek);
+    $stmt->execute();
+    $missingRes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    if (!empty($missingRes)) {
+        $missingWeeks = array_unique(array_map('intval', array_column($missingRes, 'week_number')));
+        $missingText = 'Week ' . implode(', Week ', $missingWeeks);
+        return [
+            'can_proceed' => false,
+            'target_week' => $targetWeek,
+            'missing_weeks' => $missingWeeks,
+            'message' => "Cannot create materials or assessments for Week {$targetWeek}: The past weekly syllabi ({$missingText}) must be marked as done first."
+        ];
+    }
+
+    return ['can_proceed' => true, 'target_week' => $targetWeek, 'missing_weeks' => [], 'message' => ''];
+}

@@ -108,35 +108,42 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $topic = $conn->query("SELECT id, delivery_mode FROM syllabus_topics WHERE id=$topicId AND syllabus_id=$sid")->fetch_assoc();
         if (!$topic) {
             setFlash('error','Topic not found.');
-        } elseif (empty($_FILES['lesson_file']['name']) && empty($_POST['external_url'])) {
-            setFlash('error','Please upload a file or add a lesson link.');
         } else {
-            $uploadDir = '../uploads/materials/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-            $allowedExt = ['pdf','doc','docx','ppt','pptx','jpg','jpeg','png','zip'];
-            $filePath = null;
-            $type = 'document';
-            if (!empty($_FILES['lesson_file']['name'])) {
-                $ext = strtolower(pathinfo($_FILES['lesson_file']['name'], PATHINFO_EXTENSION));
-                if (!in_array($ext, $allowedExt) || $_FILES['lesson_file']['error'] !== UPLOAD_ERR_OK) {
-                    setFlash('error','Invalid lesson file. Allowed: PDF, DOC/DOCX, PPT/PPTX, images, ZIP.');
-                    redirect(BASE_URL.'teacher/syllabus_edit.php?id='.$sid);
-                }
-                $type = in_array($ext, ['ppt','pptx']) ? 'presentation' : 'document';
-                $filePath = uniqid('mat_') . '.' . $ext;
-                if (!move_uploaded_file($_FILES['lesson_file']['tmp_name'], $uploadDir . $filePath)) {
-                    setFlash('error','Lesson file upload failed.');
-                    redirect(BASE_URL.'teacher/syllabus_edit.php?id='.$sid);
-                }
-            } elseif (!empty($_POST['external_url'])) {
-                $type = 'link';
+            $pastCheck = checkPastWeeklySyllabiDone($sid, $topicId);
+            if (!$pastCheck['can_proceed']) {
+                setFlash('error', $pastCheck['message']);
+                redirect(BASE_URL.'teacher/syllabus_edit.php?id='.$sid);
             }
-            $url = trim($_POST['external_url'] ?? '');
-            $dm = in_array($topic['delivery_mode'], ['online','asynchronous','synchronous']) ? 'online' : ($topic['delivery_mode'] === 'face-to-face' ? 'offline' : 'both');
-            $stmt=$conn->prepare("INSERT INTO learning_materials (syllabus_topic_id,syllabus_id,teacher_id,title,description,type,file_path,external_url,delivery_mode) VALUES (?,?,?,?,?,?,?,?,?)");
-            $stmt->bind_param('iiissssss',$topicId,$sid,$tid,$title,$desc,$type,$filePath,$url,$dm);
-            $stmt->execute();
-            setFlash('success','Weekly lesson file uploaded.');
+            if (empty($_FILES['lesson_file']['name']) && empty($_POST['external_url'])) {
+                setFlash('error','Please upload a file or add a lesson link.');
+            } else {
+                $uploadDir = '../uploads/materials/';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                $allowedExt = ['pdf','doc','docx','ppt','pptx','jpg','jpeg','png','zip'];
+                $filePath = null;
+                $type = 'document';
+                if (!empty($_FILES['lesson_file']['name'])) {
+                    $ext = strtolower(pathinfo($_FILES['lesson_file']['name'], PATHINFO_EXTENSION));
+                    if (!in_array($ext, $allowedExt) || $_FILES['lesson_file']['error'] !== UPLOAD_ERR_OK) {
+                        setFlash('error','Invalid lesson file. Allowed: PDF, DOC/DOCX, PPT/PPTX, images, ZIP.');
+                        redirect(BASE_URL.'teacher/syllabus_edit.php?id='.$sid);
+                    }
+                    $type = in_array($ext, ['ppt','pptx']) ? 'presentation' : 'document';
+                    $filePath = uniqid('mat_') . '.' . $ext;
+                    if (!move_uploaded_file($_FILES['lesson_file']['tmp_name'], $uploadDir . $filePath)) {
+                        setFlash('error','Lesson file upload failed.');
+                        redirect(BASE_URL.'teacher/syllabus_edit.php?id='.$sid);
+                    }
+                } elseif (!empty($_POST['external_url'])) {
+                    $type = 'link';
+                }
+                $url = trim($_POST['external_url'] ?? '');
+                $dm = in_array($topic['delivery_mode'], ['online','asynchronous','synchronous']) ? 'online' : ($topic['delivery_mode'] === 'face-to-face' ? 'offline' : 'both');
+                $stmt=$conn->prepare("INSERT INTO learning_materials (syllabus_topic_id,syllabus_id,teacher_id,title,description,type,file_path,external_url,delivery_mode) VALUES (?,?,?,?,?,?,?,?,?)");
+                $stmt->bind_param('iiissssss',$topicId,$sid,$tid,$title,$desc,$type,$filePath,$url,$dm);
+                $stmt->execute();
+                setFlash('success','Weekly lesson file uploaded.');
+            }
         }
     }
     redirect(BASE_URL.'teacher/syllabus_edit.php?id='.$sid);
@@ -457,6 +464,7 @@ $topicDoneCount = count($completedStudentsThisTopic);
 $topicPendingCount = count($pendingStudentsThisTopic);
 $topicDonePct = $enrolledCount > 0 ? round(($topicDoneCount / $enrolledCount) * 100) : 0;
 $isDone = !empty($t['is_completed']);
+$pastCheck = checkPastWeeklySyllabiDone($sid, $t['id'], (int)$t['week_number']);
 ?>
 <div class="week-item" id="topic-<?= $t['id'] ?>">
     <div class="week-dot <?= $isDone ? 'completed' : $modeClass ?>"></div>
@@ -466,6 +474,11 @@ $isDone = !empty($t['is_completed']);
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <span class="week-num">Week <?= $t['week_number'] ?></span>
                 <span class="mode-pill mode-<?= $modeClass ?>"><?= ucfirst($t['delivery_mode']) ?></span>
+                <?php if (!$pastCheck['can_proceed']): ?>
+                    <span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;font-size:11px;font-weight:700" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                        <i class="fas fa-lock"></i> Prior Weeks Incomplete
+                    </span>
+                <?php endif; ?>
                 <span class="badge badge-gray" style="font-size:11px;font-weight:600">
                     <i class="fas fa-folder-open" style="margin-right:3px"></i> <?= count($topicMaterials) ?> File<?= count($topicMaterials) != 1 ? 's' : '' ?>
                 </span>
@@ -560,9 +573,15 @@ $isDone = !empty($t['is_completed']);
                 <strong style="font-size:11px;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:5px">
                     <i class="fas fa-tasks" style="color:var(--primary)"></i> Week <?= $t['week_number'] ?> Assessments & Quizzes
                 </strong>
-                <a href="assessments.php?syllabus_id=<?= $sid ?>" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px">
-                    <i class="fas fa-plus"></i> Add Assessment
-                </a>
+                <?php if (!$pastCheck['can_proceed']): ?>
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                        <i class="fas fa-lock"></i> Add Assessment
+                    </button>
+                <?php else: ?>
+                    <a href="assessments.php?syllabus_id=<?= $sid ?>&topic_id=<?= $t['id'] ?>" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px">
+                        <i class="fas fa-plus"></i> Add Assessment
+                    </a>
+                <?php endif; ?>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <?php foreach ($topicAssessments as $ass): 
@@ -586,9 +605,15 @@ $isDone = !empty($t['is_completed']);
             <span style="font-size:12px;color:var(--text2)">
                 <i class="fas fa-tasks" style="color:var(--text3);margin-right:5px"></i> Planned Assessment: <strong><?= htmlspecialchars($t['assessment_type']) ?></strong>
             </span>
-            <a href="assessments.php?syllabus_id=<?= $sid ?>" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 9px">
-                <i class="fas fa-plus"></i> Create Assessment
-            </a>
+            <?php if (!$pastCheck['can_proceed']): ?>
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 9px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                    <i class="fas fa-lock"></i> Create Assessment
+                </button>
+            <?php else: ?>
+                <a href="assessments.php?syllabus_id=<?= $sid ?>&topic_id=<?= $t['id'] ?>" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 9px">
+                    <i class="fas fa-plus"></i> Create Assessment
+                </a>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 
@@ -599,9 +624,15 @@ $isDone = !empty($t['is_completed']);
                 <strong style="font-size:11px;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:5px">
                     <i class="fas fa-folder-open" style="color:var(--success)"></i> Learning Materials (<?= count($topicMaterials) ?>)
                 </strong>
-                <a href="materials.php?syl=<?= $sid ?>&topic_id=<?= $t['id'] ?>&add=1" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px">
-                    <i class="fas fa-plus"></i> Add Material
-                </a>
+                <?php if (!$pastCheck['can_proceed']): ?>
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                        <i class="fas fa-lock"></i> Add Material
+                    </button>
+                <?php else: ?>
+                    <a href="materials.php?syl=<?= $sid ?>&topic_id=<?= $t['id'] ?>&add=1" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px">
+                        <i class="fas fa-plus"></i> Add Material
+                    </a>
+                <?php endif; ?>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <?php foreach($topicMaterials as $m):
@@ -643,9 +674,15 @@ $isDone = !empty($t['is_completed']);
             <span style="font-size:12px;color:var(--text3)">
                 <i class="fas fa-folder-open" style="margin-right:5px"></i> No learning materials attached yet.
             </span>
-            <a href="materials.php?syl=<?= $sid ?>&topic_id=<?= $t['id'] ?>&add=1" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px">
-                <i class="fas fa-plus"></i> Add Material
-            </a>
+            <?php if (!$pastCheck['can_proceed']): ?>
+                <button type="button" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px;opacity:0.75;background:#fef2f2;border-color:#fca5a5;color:#991b1b" onclick="event.stopPropagation(); alert('<?= htmlspecialchars(addslashes($pastCheck['message']), ENT_QUOTES) ?>')" title="<?= htmlspecialchars($pastCheck['message']) ?>">
+                    <i class="fas fa-lock"></i> Add Material
+                </button>
+            <?php else: ?>
+                <a href="materials.php?syl=<?= $sid ?>&topic_id=<?= $t['id'] ?>&add=1" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 8px">
+                    <i class="fas fa-plus"></i> Add Material
+                </a>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 

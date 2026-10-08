@@ -26,6 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(BASE_URL.'teacher/assessments.php');
         }
 
+        if ($topicId) {
+            $pastCheck = checkPastWeeklySyllabiDone($sylId, $topicId);
+            if (!$pastCheck['can_proceed']) {
+                setFlash('error', $pastCheck['message']);
+                redirect(BASE_URL.'teacher/assessments.php?syllabus_id='.$sylId);
+            }
+        }
+
         // Optional attachment
         $attachmentPath = null;
         if (!empty($_FILES['attachment']['name'])) {
@@ -210,6 +218,7 @@ $assessments = $conn->query("
             <select name="topic_id" id="assTopic" class="form-control">
                 <option value="">Not linked to specific topic</option>
             </select>
+            <div id="assTopicLockNotice" style="display:none;margin-top:8px;padding:8px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:#92400e"><i class="fas fa-lock"></i> <span id="assTopicLockMsg"></span></div>
         </div>
     </div>
 
@@ -277,17 +286,44 @@ $assessments = $conn->query("
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function loadTopics2(sylId, selectedTopicId){
-    if(!sylId)return;
+    const sel=document.getElementById('assTopic');
+    const noticeEl=document.getElementById('assTopicLockNotice');
+    const msgEl=document.getElementById('assTopicLockMsg');
+    const formEl=sel ? sel.closest('form') : null;
+    const submitBtn=formEl ? formEl.querySelector('button[type="submit"]') : null;
+
+    if (noticeEl) noticeEl.style.display = 'none';
+    if (submitBtn) submitBtn.disabled = false;
+    if(!sylId){ sel.innerHTML='<option value="">Not linked to specific topic</option>'; return; }
+
     fetch('get_topics.php?syl='+sylId).then(r=>r.json()).then(data=>{
-        const sel=document.getElementById('assTopic');
         sel.innerHTML='<option value="">Not linked to specific topic</option>';
         data.forEach(t=>{
             const opt = document.createElement('option');
             opt.value = t.id;
-            opt.textContent = `Week ${t.week_number}: ${t.topic_title}`;
+            opt.textContent = (t.can_proceed ? '' : '🔒 ') + `Week ${t.week_number}: ${t.topic_title}` + (t.can_proceed ? '' : ' (Past week not marked done)');
+            opt.setAttribute('data-can-proceed', t.can_proceed ? '1' : '0');
+            opt.setAttribute('data-lock-msg', t.lock_message || '');
             if(selectedTopicId && String(t.id) === String(selectedTopicId)) opt.selected = true;
             sel.appendChild(opt);
         });
+
+        sel.onchange = function() {
+            const selectedOpt = sel.options[sel.selectedIndex];
+            const canProceed = selectedOpt ? selectedOpt.getAttribute('data-can-proceed') !== '0' : true;
+            const lockMsg = selectedOpt ? selectedOpt.getAttribute('data-lock-msg') : '';
+            if (!canProceed && lockMsg) {
+                if (noticeEl && msgEl) {
+                    msgEl.textContent = lockMsg;
+                    noticeEl.style.display = 'block';
+                }
+                if (submitBtn) submitBtn.disabled = true;
+            } else {
+                if (noticeEl) noticeEl.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        };
+        sel.onchange();
     });
 }
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
