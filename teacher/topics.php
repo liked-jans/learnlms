@@ -213,6 +213,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             setFlash('error', 'Failed to attach material. Please check inputs and try again.');
         }
         redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
+    } elseif ($action === 'toggle_topic_done') {
+        $topicId = (int)$_POST['topic_id'];
+        $sylId = (int)$_POST['syllabus_id'];
+        $isCompleted = !empty($_POST['is_completed']) ? 1 : 0;
+        $notes = sanitize($_POST['notes'] ?? '');
+
+        // Verify syllabus belongs to this teacher
+        $chkSyl = $conn->query("SELECT id FROM syllabi WHERE id=$sylId AND teacher_id=$tid")->fetch_assoc();
+        if ($chkSyl) {
+            $stmt = $conn->prepare("UPDATE syllabus_topics SET is_completed=?, completion_notes=? WHERE id=? AND syllabus_id=?");
+            $stmt->bind_param('isii', $isCompleted, $notes, $topicId, $sylId);
+            $stmt->execute();
+            logActivity($tid, ($isCompleted ? "Marked topic ID $topicId as done" : "Marked topic ID $topicId as pending"), 'Curriculum');
+
+            if (!empty($_POST['ajax'])) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'is_completed' => $isCompleted,
+                    'message' => $isCompleted ? 'Topic marked as completed!' : 'Topic marked as pending.'
+                ]);
+                exit;
+            }
+            setFlash('success', $isCompleted ? 'Topic marked as completed!' : 'Topic marked as pending.');
+        } else {
+            if (!empty($_POST['ajax'])) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Unauthorized or syllabus not found.']);
+                exit;
+            }
+            setFlash('error', 'Unauthorized.');
+        }
+        redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
     }
 }
 
@@ -978,10 +1011,22 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                         </div>
                                     <?php endif; ?>
                                 </td>
-                                <td style="text-align:center">
-                                    <a href="syllabus_edit.php?id=<?= $selectedSylId ?>#topic-<?= $row['id'] ?>" class="btn btn-secondary btn-sm" style="padding:4px 8px" title="View Full Topic Details, Materials & Assessments in Syllabus Editor">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
+                                <td style="text-align:center;white-space:nowrap">
+                                    <div style="display:inline-flex;align-items:center;gap:6px">
+                                        <?php if (!empty($row['is_completed'])): ?>
+                                            <button type="button" class="btn btn-sm" onclick="toggleTopicDone(<?= $row['id'] ?>, 0, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')" style="padding:4px 9px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;background:#ecfdf5;border:1px solid #10b981;color:#047857;border-radius:6px;cursor:pointer" title="Marked as Completed (Click to Undo / Revert to Pending)">
+                                                <i class="fas fa-check-circle" style="color:#10b981"></i> Done
+                                            </button>
+                                        <?php else: ?>
+                                            <button type="button" class="btn btn-sm" onclick="toggleTopicDone(<?= $row['id'] ?>, 1, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')" style="padding:4px 9px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;background:#10b981;border:1px solid #059669;color:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(16,185,129,0.25);cursor:pointer" title="Mark Week <?= $row['week_number'] ?> as Done to complete teaching and unlock subsequent weeks">
+                                                <i class="fas fa-check"></i> Mark Done
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <a href="syllabus_edit.php?id=<?= $selectedSylId ?>#topic-<?= $row['id'] ?>" class="btn btn-secondary btn-sm" style="padding:4px 8px" title="View Full Topic Details, Materials & Assessments in Syllabus Editor">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -1858,6 +1903,77 @@ function viewTopicModal(t) {
     `;
     document.getElementById('viewBody').innerHTML = html;
     openModal('viewModal');
+}
+
+function toggleTopicDone(topicId, markDone, weekNum, topicTitle) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: markDone ? 'Mark Week ' + weekNum + ' as Done?' : 'Revert Week ' + weekNum + ' to Pending?',
+            html: '<div style="font-size:14px;color:#475569;margin-top:6px;line-height:1.5">' 
+                + (markDone ? 'Marking this week as done confirms the lesson has been taught and <strong>unlocks materials & assessments for subsequent weeks</strong>.' : 'Reverting this week to pending will restrict downstream materials until re-completed.') 
+                + '</div>',
+            icon: markDone ? 'question' : 'warning',
+            showCancelButton: true,
+            confirmButtonColor: markDone ? '#10b981' : '#64748b',
+            cancelButtonColor: '#94a3b8',
+            confirmButtonText: markDone ? '<i class="fas fa-check" style="margin-right:5px"></i> Yes, Mark Done' : '<i class="fas fa-undo" style="margin-right:5px"></i> Yes, Revert',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.showLoading();
+                const form = new FormData();
+                form.append('action', 'toggle_topic_done');
+                form.append('syllabus_id', '<?= $selectedSylId ?>');
+                form.append('topic_id', topicId);
+                form.append('is_completed', markDone ? '1' : '0');
+                form.append('ajax', '1');
+
+                fetch('topics.php?syl_id=<?= $selectedSylId ?>', {
+                    method: 'POST',
+                    body: form
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: markDone ? 'Week Marked as Done!' : 'Status Reverted',
+                            text: markDone ? 'Week ' + weekNum + ' is now completed. Subsequent weeks are unlocked!' : 'Topic status reverted to pending.',
+                            timer: 1300,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Operation Failed',
+                            text: data.message || 'Could not update status.'
+                        });
+                    }
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Network Error',
+                        text: 'Failed to communicate with server.'
+                    });
+                });
+            }
+        });
+    } else {
+        if (confirm(markDone ? 'Mark Week ' + weekNum + ' as Done?' : 'Revert to Pending?')) {
+            const f = document.createElement('form');
+            f.method = 'POST';
+            f.innerHTML = '<input type="hidden" name="action" value="toggle_topic_done">'
+                + '<input type="hidden" name="syllabus_id" value="<?= $selectedSylId ?>">'
+                + '<input type="hidden" name="topic_id" value="' + topicId + '">'
+                + '<input type="hidden" name="is_completed" value="' + (markDone ? '1' : '0') + '">';
+            document.body.appendChild(f);
+            f.submit();
+        }
+    }
 }
 
 if (new URLSearchParams(window.location.search).get('add') === '1') {

@@ -1,5 +1,5 @@
 -- LearnLMS Complete Database Backup & Sample Data
--- Exported: 2026-10-08 11:23:14
+-- Exported: 2026-10-08 11:32:22
 -- Railway Host: tramway.proxy.rlwy.net:11864 / Database: railway
 SET FOREIGN_KEY_CHECKS=0;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
@@ -20,7 +20,7 @@ CREATE TABLE `activity_logs` (
   KEY `idx_activity_user` (`user_id`),
   KEY `idx_activity_category` (`category`),
   KEY `idx_activity_created` (`created_at`)
-) ENGINE=MyISAM AUTO_INCREMENT=603 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=604 DEFAULT CHARSET=latin1;
 
 INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('1', '1', 'Logged out', 'Authentication', '2026-07-04 01:38:06'),
@@ -484,7 +484,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('599', '45', 'Logged in', 'Authentication', '2026-10-08 09:01:27'),
 ('600', '1', 'Logged in', 'Authentication', '2026-10-08 09:11:51'),
 ('601', '1', 'Logged out', 'Authentication', '2026-10-08 09:19:47'),
-('602', '45', 'Logged in', 'Authentication', '2026-10-08 09:19:53');
+('602', '45', 'Logged in', 'Authentication', '2026-10-08 09:19:53'),
+('603', '45', 'Logged in', 'Authentication', '2026-10-08 09:25:39');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `announcements`
@@ -681,7 +682,7 @@ CREATE TABLE `enrollments` (
   KEY `syllabus_id` (`syllabus_id`),
   CONSTRAINT `enrollments_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `enrollments_ibfk_2` FOREIGN KEY (`syllabus_id`) REFERENCES `syllabi` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=305 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=325 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
 ('15', '3', '6', '2026-03-27 23:18:33', 'enrolled'),
@@ -896,7 +897,27 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('301', '38', '31', '2026-10-08 08:49:11', 'enrolled'),
 ('302', '38', '32', '2026-10-08 08:49:11', 'enrolled'),
 ('303', '38', '33', '2026-10-08 08:49:11', 'enrolled'),
-('304', '38', '70', '2026-10-08 08:49:11', 'enrolled');
+('304', '38', '70', '2026-10-08 08:49:11', 'enrolled'),
+('305', '91', '70', '2026-10-08 09:32:17', 'enrolled'),
+('306', '92', '70', '2026-10-08 09:32:17', 'enrolled'),
+('307', '93', '70', '2026-10-08 09:32:17', 'enrolled'),
+('308', '94', '70', '2026-10-08 09:32:17', 'enrolled'),
+('309', '95', '70', '2026-10-08 09:32:17', 'enrolled'),
+('310', '91', '34', '2026-10-08 09:32:17', 'enrolled'),
+('311', '92', '34', '2026-10-08 09:32:17', 'enrolled'),
+('312', '93', '34', '2026-10-08 09:32:17', 'enrolled'),
+('313', '94', '34', '2026-10-08 09:32:18', 'enrolled'),
+('314', '95', '34', '2026-10-08 09:32:18', 'enrolled'),
+('315', '91', '22', '2026-10-08 09:32:18', 'enrolled'),
+('316', '92', '22', '2026-10-08 09:32:18', 'enrolled'),
+('317', '93', '22', '2026-10-08 09:32:18', 'enrolled'),
+('318', '94', '22', '2026-10-08 09:32:18', 'enrolled'),
+('319', '95', '22', '2026-10-08 09:32:18', 'enrolled'),
+('320', '91', '14', '2026-10-08 09:32:18', 'enrolled'),
+('321', '92', '14', '2026-10-08 09:32:19', 'enrolled'),
+('322', '93', '14', '2026-10-08 09:32:19', 'enrolled'),
+('323', '94', '14', '2026-10-08 09:32:19', 'enrolled'),
+('324', '95', '14', '2026-10-08 09:32:19', 'enrolled');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `learning_materials`
@@ -972,7 +993,33 @@ CREATE TABLE `submission_answers` (
   PRIMARY KEY (`id`),
   KEY `idx_sa_sub` (`submission_id`),
   KEY `idx_sa_q` (`question_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO `submission_answers` (`id`, `submission_id`, `question_id`, `student_answer`, `is_correct`, `points_awarded`, `feedback`, `created_at`) VALUES
+('1', '37', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:19'),
+('2', '37', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:20'),
+('3', '37', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:20'),
+('4', '37', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:20'),
+('5', '38', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:20'),
+('6', '38', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:20'),
+('7', '38', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:20'),
+('8', '38', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:20'),
+('9', '39', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:20'),
+('10', '39', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:21'),
+('11', '39', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:21'),
+('12', '39', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:21'),
+('13', '40', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:21'),
+('14', '40', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:21'),
+('15', '40', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:21'),
+('16', '40', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:21'),
+('17', '41', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:21'),
+('18', '41', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:22'),
+('19', '41', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:22'),
+('20', '41', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:22'),
+('21', '42', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:22'),
+('22', '42', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:22'),
+('23', '42', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:22'),
+('24', '42', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:22');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `submissions`
@@ -996,10 +1043,16 @@ CREATE TABLE `submissions` (
   KEY `student_id` (`student_id`),
   CONSTRAINT `submissions_ibfk_1` FOREIGN KEY (`assessment_id`) REFERENCES `assessments` (`id`) ON DELETE CASCADE,
   CONSTRAINT `submissions_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `submissions` (`id`, `assessment_id`, `student_id`, `file_path`, `text_answer`, `score`, `feedback`, `submitted_at`, `graded_at`, `status`, `is_auto_graded`) VALUES
-('9', '3', '3', NULL, '', '50.00', '', '2026-03-27 23:20:29', '2026-07-30 10:57:20', 'graded', '0');
+('9', '3', '3', NULL, '', '50.00', '', '2026-03-27 23:20:29', '2026-07-30 10:57:20', 'graded', '0'),
+('37', '45', '3', NULL, NULL, '20.00', 'Outstanding work! Demonstrated comprehensive understanding of enterprise ERP architecture.', '2026-10-08 07:32:19', '2026-10-08 08:32:19', 'graded', '1'),
+('38', '45', '91', NULL, NULL, '19.00', 'Great responses! Very accurate breakdown of ERP modules and core business processes.', '2026-10-08 07:32:20', '2026-10-08 08:32:20', 'graded', '1'),
+('39', '45', '92', NULL, NULL, '18.00', 'Well done. Solid answers on supply chain and CRM integration.', '2026-10-08 07:32:20', '2026-10-08 08:32:20', 'graded', '1'),
+('40', '45', '93', NULL, NULL, '17.00', 'Good performance. Review the distinction between transactional data and master data.', '2026-10-08 07:32:21', '2026-10-08 08:32:21', 'graded', '1'),
+('41', '45', '94', NULL, NULL, '20.00', 'Perfect score! Flawless grasp of institutional systems.', '2026-10-08 07:32:21', '2026-10-08 08:32:21', 'graded', '1'),
+('42', '45', '95', NULL, NULL, '16.00', 'Satisfactory score. Good effort on foundational concepts.', '2026-10-08 07:32:22', '2026-10-08 08:32:22', 'graded', '1');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `syllabi`
@@ -1243,10 +1296,16 @@ CREATE TABLE `topic_progress` (
   KEY `syllabus_topic_id` (`syllabus_topic_id`),
   CONSTRAINT `topic_progress_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `topic_progress_ibfk_2` FOREIGN KEY (`syllabus_topic_id`) REFERENCES `syllabus_topics` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=72 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=78 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `topic_progress` (`id`, `student_id`, `syllabus_topic_id`, `status`, `completed_at`, `notes`, `read_percentage`, `last_read_at`) VALUES
-('21', '3', '8', 'completed', '2026-07-02 16:38:16', NULL, '0.00', NULL);
+('21', '3', '8', 'completed', '2026-07-02 16:38:16', NULL, '0.00', NULL),
+('72', '3', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19'),
+('73', '91', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19'),
+('74', '92', '100', 'completed', '2026-10-08 09:32:19', NULL, '95.00', '2026-10-08 09:32:19'),
+('75', '93', '100', 'in_progress', NULL, NULL, '85.00', '2026-10-08 09:32:19'),
+('76', '94', '100', 'completed', '2026-10-08 09:32:19', NULL, '90.00', '2026-10-08 09:32:19'),
+('77', '95', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `topic_week_done`
@@ -1282,7 +1341,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=91 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=96 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `email`, `role`, `profile_pic`, `status`, `created_at`, `updated_at`) VALUES
 ('1', 'admin', '$2y$10$DTdHhUtuWmxnJNKILABxeuHoCM4xNur3cbw41o6ZcrX5XulV/BbTq', 'System Administrator', 'jeff.lim111@gmail.com\r\n', 'admin', NULL, 'active', '2026-03-12 01:29:03', '2026-03-27 17:08:41'),
@@ -1306,6 +1365,11 @@ INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `email`, `role`,
 ('40', 'Eazylle Conception', '$2y$10$HLnjO6eXIq.H/urasgfao.VGlm3eRfcYal4.XxqpBsnCRPOO5etUK', 'Eazylle Conception', 'eazylleconception@gmail.com', 'teacher', NULL, 'active', '2026-10-08 08:44:51', '2026-10-08 08:44:51'),
 ('43', 'Famie', '$2y$10$A3zO0NdSuv4uMFmgn8tPE.OvRYeRWM1jMwuBOPENbfnbRKk1QzAKW', 'Famie Rose Bilbao', 'famierose@gmail.com', 'teacher', NULL, 'active', '2026-10-08 08:44:51', '2026-10-08 08:44:51'),
 ('44', 'Redgie', '$2y$10$WxzrlaFrph1K9YdGw/OByuVrR9NW5sNakr82shyAtpyZrev0mSzu6', 'Redgie Pomario', 'redgiepomario@gmail.com', 'teacher', NULL, 'active', '2026-10-08 08:44:51', '2026-10-08 08:44:51'),
-('45', 'Jeffred', '$2y$10$JuJWhrEYay1Pss4UiJyoyOXA9PEQG7fWZHKcdWvErpxrd9R82jCRi', 'Jeffred Lim', 'jeffredlim@gmail.com', 'teacher', NULL, 'active', '2026-10-08 08:44:51', '2026-10-08 08:44:51');
+('45', 'Jeffred', '$2y$10$JuJWhrEYay1Pss4UiJyoyOXA9PEQG7fWZHKcdWvErpxrd9R82jCRi', 'Jeffred Lim', 'jeffredlim@gmail.com', 'teacher', NULL, 'active', '2026-10-08 08:44:51', '2026-10-08 08:44:51'),
+('91', 'maria.santos', '$2y$10$5P.vaxbwRZkBdmRgCC1FQeTHEzFtTO45ZK8CFbGoDdxgsWgrUc/eq', 'Maria Angelica Santos', 'maria.santos@student.learnlms.edu', 'student', NULL, 'active', '2026-10-08 09:32:16', '2026-10-08 09:32:16'),
+('92', 'joshua.garcia', '$2y$10$5P.vaxbwRZkBdmRgCC1FQeTHEzFtTO45ZK8CFbGoDdxgsWgrUc/eq', 'Joshua Miguel Garcia', 'joshua.garcia@student.learnlms.edu', 'student', NULL, 'active', '2026-10-08 09:32:16', '2026-10-08 09:32:16'),
+('93', 'bea.reyes', '$2y$10$5P.vaxbwRZkBdmRgCC1FQeTHEzFtTO45ZK8CFbGoDdxgsWgrUc/eq', 'Bea Louise Reyes', 'bea.reyes@student.learnlms.edu', 'student', NULL, 'active', '2026-10-08 09:32:16', '2026-10-08 09:32:16'),
+('94', 'john.cruz', '$2y$10$5P.vaxbwRZkBdmRgCC1FQeTHEzFtTO45ZK8CFbGoDdxgsWgrUc/eq', 'John Kenneth Cruz', 'john.cruz@student.learnlms.edu', 'student', NULL, 'active', '2026-10-08 09:32:16', '2026-10-08 09:32:16'),
+('95', 'alyssa.ramos', '$2y$10$5P.vaxbwRZkBdmRgCC1FQeTHEzFtTO45ZK8CFbGoDdxgsWgrUc/eq', 'Alyssa Mae Ramos', 'alyssa.ramos@student.learnlms.edu', 'student', NULL, 'active', '2026-10-08 09:32:17', '2026-10-08 09:32:17');
 
 SET FOREIGN_KEY_CHECKS=1;
