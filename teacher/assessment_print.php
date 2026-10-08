@@ -647,17 +647,21 @@ $pageTitle = 'Print Assessment - ' . $assessment['course_code'] . ' ' . $assessm
                 <!-- Multiple Choice Options -->
                 <?php if ($qType === 'multiple_choice'): 
                     $opts = json_decode($q['options'], true) ?: [];
-                    $rawCorrect = (string)($q['correct_answer'] ?? '');
+                    $rawCorrect = trim((string)($q['correct_answer'] ?? ''));
+                    $cleanRawCorrect = trim(preg_replace('/^[A-Z]\.\s*/i', '', $rawCorrect));
                     $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
                     $optIdx = 0;
                 ?>
                 <div class="mc-options-grid">
                     <?php foreach ($opts as $oKey => $optText): 
+                        $cleanedText = trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$optText));
                         $letter = (is_string($oKey) && preg_match('/^[A-Z]$/i', $oKey)) ? strtoupper($oKey) : ($letters[$optIdx] ?? chr(65 + $optIdx));
                         $isCorrect = (
                             strcasecmp((string)$oKey, $rawCorrect) === 0 ||
                             strcasecmp($letter, $rawCorrect) === 0 ||
-                            (is_numeric($rawCorrect) && (int)$rawCorrect === $optIdx)
+                            (is_numeric($rawCorrect) && (int)$rawCorrect === $optIdx) ||
+                            strcasecmp(trim((string)$optText), $rawCorrect) === 0 ||
+                            ($cleanRawCorrect !== '' && strcasecmp($cleanedText, $cleanRawCorrect) === 0)
                         );
                         $highlight = ($viewMode === 'key' && $isCorrect);
                         $optIdx++;
@@ -665,7 +669,7 @@ $pageTitle = 'Print Assessment - ' . $assessment['course_code'] . ' ' . $assessm
                     <div class="mc-option <?= $highlight ? 'is-correct-answer' : '' ?>">
                         <span class="mc-circle"></span>
                         <span class="mc-letter"><?= $letter ?>.</span>
-                        <span><?= safeHtml($optText) ?></span>
+                        <span><?= safeHtml($cleanedText) ?></span>
                         <?php if ($highlight): ?>
                             <span class="key-badge"><i class="fas fa-check"></i> Correct</span>
                         <?php endif; ?>

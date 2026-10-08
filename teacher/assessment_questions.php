@@ -391,24 +391,28 @@ foreach ($questions as $q) {
             <!-- Options Display -->
             <?php if ($q['question_type'] === 'multiple_choice'): 
                 $opts = json_decode($q['options'], true) ?: [];
-                $rawCorrect = (string)($q['correct_answer'] ?? '');
+                $rawCorrect = trim((string)($q['correct_answer'] ?? ''));
+                $cleanRawCorrect = trim(preg_replace('/^[A-Z]\.\s*/i', '', $rawCorrect));
                 $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
                 $optIdx = 0;
             ?>
             <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:8px">
                 <?php foreach ($opts as $oKey => $optText): 
+                    $cleanedText = trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$optText));
                     $letter = (is_string($oKey) && preg_match('/^[A-Z]$/i', $oKey)) ? strtoupper($oKey) : ($letters[$optIdx] ?? chr(65 + $optIdx));
                     $isCorrect = (
                         strcasecmp((string)$oKey, $rawCorrect) === 0 ||
                         strcasecmp($letter, $rawCorrect) === 0 ||
-                        (is_numeric($rawCorrect) && (int)$rawCorrect === $optIdx)
+                        (is_numeric($rawCorrect) && (int)$rawCorrect === $optIdx) ||
+                        strcasecmp(trim((string)$optText), $rawCorrect) === 0 ||
+                        ($cleanRawCorrect !== '' && strcasecmp($cleanedText, $cleanRawCorrect) === 0)
                     );
                     $optIdx++;
                 ?>
                 <div style="padding:10px 14px;border-radius:6px;border:1px solid <?= $isCorrect ? '#10b981' : 'var(--border)' ?>;background:<?= $isCorrect ? '#ecfdf5' : '#fff' ?>;display:flex;align-items:center;justify-content:space-between;gap:8px">
                     <div style="display:flex;align-items:center;gap:10px">
                         <strong style="color:<?= $isCorrect ? '#065f46' : 'var(--text3)' ?>"><?= $letter ?>.</strong>
-                        <span style="font-size:13px;color:<?= $isCorrect ? '#065f46;font-weight:600' : 'var(--text)' ?>"><?= safeHtml($optText) ?></span>
+                        <span style="font-size:13px;color:<?= $isCorrect ? '#065f46;font-weight:600' : 'var(--text)' ?>"><?= safeHtml($cleanedText) ?></span>
                     </div>
                     <?php if ($isCorrect): ?>
                         <span style="font-size:11px;font-weight:700;color:#059669;display:inline-flex;align-items:center;gap:4px">

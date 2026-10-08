@@ -349,7 +349,7 @@ function getAssessmentOptionDisplay($optionsJson, $val) {
     if (empty($opts)) return (string)$val;
 
     if (isset($opts[$val])) {
-        return $opts[$val];
+        return trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$opts[$val]));
     }
 
     $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -359,10 +359,18 @@ function getAssessmentOptionDisplay($optionsJson, $val) {
         if (strcasecmp((string)$val, (string)$k) === 0 || 
             strcasecmp((string)$val, $letter) === 0 || 
             (is_numeric($val) && (int)$val === $idx)) {
-            return $opts[$k];
+            return trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$opts[$k]));
         }
     }
-    return (string)$val;
+
+    foreach ($opts as $optVal) {
+        if (strcasecmp((string)$val, (string)$optVal) === 0 || 
+            strcasecmp(trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$val)), trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$optVal))) === 0) {
+            return trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$optVal));
+        }
+    }
+
+    return trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$val));
 }
 
 function isAssessmentAnswerCorrect($studentAns, $correctAns, $optionsJson = null) {
@@ -376,14 +384,37 @@ function isAssessmentAnswerCorrect($studentAns, $correctAns, $optionsJson = null
         return true;
     }
 
+    $cleanStudent = trim(preg_replace('/^[A-Z]\.\s*/i', '', $studentAns));
+    $cleanCorrect = trim(preg_replace('/^[A-Z]\.\s*/i', '', $correctAns));
+    if ($cleanStudent !== '' && strcasecmp($cleanStudent, $cleanCorrect) === 0) {
+        return true;
+    }
+
     if (!empty($optionsJson)) {
         $opts = is_array($optionsJson) ? $optionsJson : (json_decode($optionsJson, true) ?: []);
         $letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
         $keys = array_keys($opts);
         foreach ($keys as $idx => $k) {
             $letter = (is_string($k) && preg_match('/^[A-Z]$/i', $k)) ? strtoupper($k) : ($letters[$idx] ?? chr(65 + $idx));
-            $isStudent = (strcasecmp($studentAns, (string)$k) === 0 || strcasecmp($studentAns, $letter) === 0 || (is_numeric($studentAns) && (int)$studentAns === $idx));
-            $isCorrect = (strcasecmp($correctAns, (string)$k) === 0 || strcasecmp($correctAns, $letter) === 0 || (is_numeric($correctAns) && (int)$correctAns === $idx));
+            $optVal = trim((string)($opts[$k] ?? ''));
+            $cleanOpt = trim(preg_replace('/^[A-Z]\.\s*/i', '', $optVal));
+
+            $isStudent = (
+                strcasecmp($studentAns, (string)$k) === 0 || 
+                strcasecmp($studentAns, $letter) === 0 || 
+                (is_numeric($studentAns) && (int)$studentAns === $idx) ||
+                strcasecmp($studentAns, $optVal) === 0 ||
+                ($cleanStudent !== '' && strcasecmp($cleanStudent, $cleanOpt) === 0)
+            );
+
+            $isCorrect = (
+                strcasecmp($correctAns, (string)$k) === 0 || 
+                strcasecmp($correctAns, $letter) === 0 || 
+                (is_numeric($correctAns) && (int)$correctAns === $idx) ||
+                strcasecmp($correctAns, $optVal) === 0 ||
+                ($cleanCorrect !== '' && strcasecmp($cleanCorrect, $cleanOpt) === 0)
+            );
+
             if ($isStudent && $isCorrect) {
                 return true;
             }

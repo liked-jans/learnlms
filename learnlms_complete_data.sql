@@ -1,5 +1,5 @@
 -- LearnLMS Complete Database Backup & Sample Data
--- Exported: 2026-10-08 11:45:55
+-- Exported: 2026-10-08 12:01:43
 -- Railway Host: tramway.proxy.rlwy.net:11864 / Database: railway
 SET FOREIGN_KEY_CHECKS=0;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
@@ -20,7 +20,7 @@ CREATE TABLE `activity_logs` (
   KEY `idx_activity_user` (`user_id`),
   KEY `idx_activity_category` (`category`),
   KEY `idx_activity_created` (`created_at`)
-) ENGINE=MyISAM AUTO_INCREMENT=607 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=608 DEFAULT CHARSET=latin1;
 
 INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('1', '1', 'Logged out', 'Authentication', '2026-07-04 01:38:06'),
@@ -72,7 +72,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('47', '1', 'Logged out', 'Authentication', '2026-07-05 06:01:21'),
 ('48', '3', 'Logged in', 'Authentication', '2026-07-05 06:01:35'),
 ('49', '3', 'Logged out', 'Authentication', '2026-07-05 06:03:11'),
-('50', '2', 'Logged in', 'Authentication', '2026-07-05 06:03:22'),
+('50', '2', 'Logged in', 'Authentication', '2026-07-05 06:03:22');
+INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('51', '2', 'Logged out', 'Authentication', '2026-07-05 06:05:12'),
 ('52', '17', 'Logged in', 'Authentication', '2026-07-05 06:05:26'),
 ('53', '17', 'Logged out', 'Authentication', '2026-07-05 06:07:02'),
@@ -122,7 +123,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('97', '35', 'Logged out', 'Authentication', '2026-08-06 02:00:13'),
 ('98', '36', 'Logged in', 'Authentication', '2026-08-06 02:00:50'),
 ('99', '2', 'Logged out', 'Authentication', '2026-08-06 02:02:00'),
-('100', '3', 'Logged in', 'Authentication', '2026-08-06 02:02:10'),
+('100', '3', 'Logged in', 'Authentication', '2026-08-06 02:02:10');
+INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('101', '36', 'Logged out', 'Authentication', '2026-08-06 02:03:00'),
 ('102', '36', 'Logged in', 'Authentication', '2026-08-06 02:05:10'),
 ('103', '3', 'Logged in', 'Authentication', '2026-08-06 02:08:58'),
@@ -172,7 +174,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('147', '1', 'Logged in', 'Authentication', '2026-08-08 03:23:29'),
 ('148', '1', 'Logged out', 'Authentication', '2026-08-08 03:30:30'),
 ('149', '2', 'Logged in', 'Authentication', '2026-08-08 03:30:56'),
-('150', '2', 'Logged out', 'Authentication', '2026-08-08 03:42:32'),
+('150', '2', 'Logged out', 'Authentication', '2026-08-08 03:42:32');
+INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('151', '3', 'Logged in', 'Authentication', '2026-08-08 03:42:47'),
 ('152', '3', 'Logged out', 'Authentication', '2026-08-08 03:49:03'),
 ('153', '1', 'Logged in', 'Authentication', '2026-08-08 03:50:00'),
@@ -222,7 +225,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('337', '3', 'Logged in', 'Authentication', '2026-09-04 05:44:30'),
 ('338', '3', 'Logged out', 'Authentication', '2026-09-04 05:45:00'),
 ('339', '1', 'Logged in', 'Authentication', '2026-09-04 05:45:08'),
-('340', '1', 'Logged out', 'Authentication', '2026-09-04 06:16:18'),
+('340', '1', 'Logged out', 'Authentication', '2026-09-04 06:16:18');
+INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('341', '2', 'Logged in', 'Authentication', '2026-09-04 06:16:25'),
 ('342', '2', 'Logged out', 'Authentication', '2026-09-04 06:25:13'),
 ('343', '1', 'Logged in', 'Authentication', '2026-09-04 06:25:22'),
@@ -272,7 +276,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('387', '2', 'Logged in', 'Authentication', '2026-09-11 06:44:34'),
 ('388', '2', 'Logged out', 'Authentication', '2026-09-11 07:24:54'),
 ('389', '1', 'Logged in', 'Authentication', '2026-09-11 07:25:00'),
-('390', '1', 'Logged out', 'Authentication', '2026-09-11 09:01:52'),
+('390', '1', 'Logged out', 'Authentication', '2026-09-11 09:01:52');
+INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('391', '1', 'Logged in', 'Authentication', '2026-09-11 09:02:07'),
 ('392', '1', 'Logged out', 'Authentication', '2026-09-11 09:04:57'),
 ('393', '2', 'Logged in', 'Authentication', '2026-09-11 09:05:16'),
@@ -322,7 +327,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('437', '1', 'Logged in', 'Authentication', '2026-09-11 15:56:52'),
 ('438', '1', 'Logged out', 'Authentication', '2026-09-11 16:16:34'),
 ('439', '45', 'Logged in', 'Authentication', '2026-09-11 16:16:49'),
-('440', '59', 'Logged out', 'Authentication', '2026-09-11 16:59:17'),
+('440', '59', 'Logged out', 'Authentication', '2026-09-11 16:59:17');
+INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('441', '1', 'Logged in', 'Authentication', '2026-09-11 16:59:31'),
 ('442', '45', 'Logged out', 'Authentication', '2026-09-11 17:03:53'),
 ('443', '59', 'Logged in', 'Authentication', '2026-09-11 17:04:08'),
@@ -372,7 +378,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('487', '59', 'Logged out', 'Authentication', '2026-09-11 19:21:00'),
 ('488', '39', 'Logged in', 'Authentication', '2026-09-11 19:21:11'),
 ('489', '39', 'Logged out', 'Authentication', '2026-09-11 19:25:26'),
-('490', '1', 'Logged in', 'Authentication', '2026-09-11 19:25:36'),
+('490', '1', 'Logged in', 'Authentication', '2026-09-11 19:25:36');
+INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('491', '1', 'Logged out', 'Authentication', '2026-09-11 19:29:57'),
 ('492', '39', 'Logged in', 'Authentication', '2026-09-11 19:31:52'),
 ('493', '39', 'Logged out', 'Authentication', '2026-09-11 19:32:38'),
@@ -422,7 +429,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('537', '45', 'Logged out', 'Authentication', '2026-09-11 22:59:52'),
 ('538', '1', 'Logged in', 'Authentication', '2026-09-11 23:00:24'),
 ('539', '90', 'Logged out', 'Authentication', '2026-09-12 02:25:27'),
-('540', '1', 'Logged in', 'Authentication', '2026-09-12 02:25:42'),
+('540', '1', 'Logged in', 'Authentication', '2026-09-12 02:25:42');
+INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('541', '1', 'Logged out', 'Authentication', '2026-09-12 02:30:25'),
 ('542', '59', 'Logged in', 'Authentication', '2026-09-12 02:30:39'),
 ('543', '59', 'Logged out', 'Authentication', '2026-09-12 02:32:02'),
@@ -472,7 +480,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('587', '45', 'Logged in', 'Authentication', '2026-09-12 04:57:44'),
 ('588', '45', 'Logged out', 'Authentication', '2026-09-12 05:00:22'),
 ('589', '39', 'Logged in', 'Authentication', '2026-09-12 05:00:37'),
-('590', '45', 'Logged out', 'Authentication', '2026-09-12 05:01:32'),
+('590', '45', 'Logged out', 'Authentication', '2026-09-12 05:01:32');
+INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('591', '1', 'Logged in', 'Authentication', '2026-09-12 05:01:44'),
 ('592', '1', 'Logged out', 'Authentication', '2026-09-12 05:05:44'),
 ('593', '39', 'Logged out', 'Authentication', '2026-09-12 05:06:23'),
@@ -488,7 +497,8 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('603', '45', 'Logged in', 'Authentication', '2026-10-08 09:25:39'),
 ('604', '45', 'Logged in', 'Authentication', '2026-10-08 09:33:49'),
 ('605', '45', 'Logged out', 'Authentication', '2026-10-08 09:36:01'),
-('606', '1', 'Logged in', 'Authentication', '2026-10-08 09:36:06');
+('606', '1', 'Logged in', 'Authentication', '2026-10-08 09:36:06'),
+('607', '45', 'Logged in', 'Authentication', '2026-10-08 09:48:01');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `announcements`
@@ -542,14 +552,14 @@ CREATE TABLE `assessment_questions` (
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `assessment_questions` (`id`, `assessment_id`, `question_text`, `question_type`, `points`, `options`, `correct_answer`, `explanation`, `sort_order`, `created_at`) VALUES
-('1', '45', 'What is the primary objective of an Enterprise Resource Planning (ERP) system?', 'multiple_choice', '5.00', '[\"A. Isolate department data in independent silos\",\"B. Integrate core business processes into a unified platform\",\"C. Replace human decision-making completely\",\"D. Manage local personal spreadsheets\"]', 'B. Integrate core business processes into a unified platform', 'An ERP system integrates core business processes (finance, HR, supply chain) into a single unified platform with a centralized database.', '1', '2026-10-08 08:47:24'),
-('2', '45', 'Which architectural component of an Enterprise System ensures data consistency across all departments?', 'multiple_choice', '5.00', '[\"A. Independent department spreadsheets\",\"B. Centralized shared database repository\",\"C. Local USB flash storage\",\"D. Isolated email threads\"]', 'B. Centralized shared database repository', 'A centralized database acts as the single source of truth across all organizational departments.', '2', '2026-10-08 08:47:25'),
-('3', '45', 'Enterprise Systems integrate business processes and core information flows across an entire organization in real-time.', 'true_false', '5.00', '[\"True\",\"False\"]', 'True', 'Enterprise systems eliminate departmental boundaries and provide seamless, real-time cross-functional integration.', '3', '2026-10-08 08:47:25'),
-('4', '45', 'In a 3-tier enterprise architecture, which layer executes business logic, security policies, and transactional workflows?', 'multiple_choice', '5.00', '[\"A. Presentation Layer\",\"B. Application \\/ Business Logic Layer\",\"C. Hardware Power Supply\",\"D. Physical Cabling Layer\"]', 'B. Application / Business Logic Layer', 'The Application / Business Logic Tier handles rule validation, calculations, workflow transitions, and data integrity checks.', '4', '2026-10-08 08:47:25'),
-('5', '25', 'What is the primary objective of an Enterprise Resource Planning (ERP) system?', 'multiple_choice', '5.00', '[\"A. Isolate department data in independent silos\",\"B. Integrate core business processes into a unified platform\",\"C. Replace human decision-making completely\",\"D. Manage local personal spreadsheets\"]', 'B. Integrate core business processes into a unified platform', 'An ERP system integrates core business processes (finance, HR, supply chain) into a single unified platform with a centralized database.', '1', '2026-10-08 08:47:25'),
-('6', '25', 'Which architectural component of an Enterprise System ensures data consistency across all departments?', 'multiple_choice', '5.00', '[\"A. Independent department spreadsheets\",\"B. Centralized shared database repository\",\"C. Local USB flash storage\",\"D. Isolated email threads\"]', 'B. Centralized shared database repository', 'A centralized database acts as the single source of truth across all organizational departments.', '2', '2026-10-08 08:47:25'),
-('7', '25', 'Enterprise Systems integrate business processes and core information flows across an entire organization in real-time.', 'true_false', '5.00', '[\"True\",\"False\"]', 'True', 'Enterprise systems eliminate departmental boundaries and provide seamless, real-time cross-functional integration.', '3', '2026-10-08 08:47:25'),
-('8', '25', 'In a 3-tier enterprise architecture, which layer executes business logic, security policies, and transactional workflows?', 'multiple_choice', '5.00', '[\"A. Presentation Layer\",\"B. Application \\/ Business Logic Layer\",\"C. Hardware Power Supply\",\"D. Physical Cabling Layer\"]', 'B. Application / Business Logic Layer', 'The Application / Business Logic Tier handles rule validation, calculations, workflow transitions, and data integrity checks.', '4', '2026-10-08 08:47:25');
+('1', '45', 'What is the primary objective of an Enterprise Resource Planning (ERP) system?', 'multiple_choice', '5.00', '[\"Isolate department data in independent silos\",\"Integrate core business processes into a unified platform\",\"Replace human decision-making completely\",\"Manage local personal spreadsheets\"]', 'B. Integrate core business processes into a unified platform', 'An ERP integrates disparate business processes across finance, supply chain, and operations into a single shared database.', '1', '2026-10-08 08:47:24'),
+('2', '45', 'Which architectural component of an Enterprise System ensures data consistency across all departments?', 'multiple_choice', '5.00', '[\"Independent department spreadsheets\",\"Centralized shared database repository\",\"Local USB flash storage\",\"Isolated email threads\"]', 'B. Centralized shared database repository', 'A centralized database repository eliminates data redundancy and guarantees that all functional units access a single source of truth.', '2', '2026-10-08 08:47:25'),
+('3', '45', 'Enterprise Systems integrate business processes and core information flows across an entire organization in real-time.', 'true_false', '5.00', '[\"True\",\"False\"]', 'True', 'Enterprise systems operate on real-time transaction processing, updating organization-wide ledgers immediately.', '3', '2026-10-08 08:47:25'),
+('4', '45', 'In a 3-tier enterprise architecture, which layer executes business logic, security policies, and transactional workflows?', 'multiple_choice', '5.00', '[\"Presentation Layer\",\"Application \\/ Business Logic Layer\",\"Hardware Power Supply\",\"Physical Cabling Layer\"]', 'B. Application / Business Logic Layer', 'The Application / Business Logic tier contains the ERP software engines that enforce validation and workflows between client UI and database.', '4', '2026-10-08 08:47:25'),
+('5', '25', 'What is the primary objective of an Enterprise Resource Planning (ERP) system?', 'multiple_choice', '5.00', '[\"Isolate department data in independent silos\",\"Integrate core business processes into a unified platform\",\"Replace human decision-making completely\",\"Manage local personal spreadsheets\"]', 'B. Integrate core business processes into a unified platform', 'An ERP integrates disparate business processes across finance, supply chain, and operations into a single shared database.', '1', '2026-10-08 08:47:25'),
+('6', '25', 'Which architectural component of an Enterprise System ensures data consistency across all departments?', 'multiple_choice', '5.00', '[\"Independent department spreadsheets\",\"Centralized shared database repository\",\"Local USB flash storage\",\"Isolated email threads\"]', 'B. Centralized shared database repository', 'A centralized database repository eliminates data redundancy and guarantees that all functional units access a single source of truth.', '2', '2026-10-08 08:47:25'),
+('7', '25', 'Enterprise Systems integrate business processes and core information flows across an entire organization in real-time.', 'true_false', '5.00', '[\"True\",\"False\"]', 'True', 'Enterprise systems operate on real-time transaction processing, updating organization-wide ledgers immediately.', '3', '2026-10-08 08:47:25'),
+('8', '25', 'In a 3-tier enterprise architecture, which layer executes business logic, security policies, and transactional workflows?', 'multiple_choice', '5.00', '[\"Presentation Layer\",\"Application \\/ Business Logic Layer\",\"Hardware Power Supply\",\"Physical Cabling Layer\"]', 'B. Application / Business Logic Layer', 'The Application / Business Logic tier contains the ERP software engines that enforce validation and workflows between client UI and database.', '4', '2026-10-08 08:47:25');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `assessments`
@@ -599,7 +609,7 @@ INSERT INTO `assessments` (`id`, `syllabus_id`, `topic_id`, `teacher_id`, `title
 ('22', '31', '59', '2', 'BSIS116 Exam 1', 'IS research and project proposal', 'exam', '100.00', '2026-09-27 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
 ('23', '32', '61', '17', 'BSIS117 Project 1', 'IS project implementation and defense', 'project', '100.00', '2026-09-28 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
 ('24', '33', '63', '35', 'BSIS118 Activity 1', 'On-the-job training in IS field', 'activity', '100.00', '2026-09-29 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('25', '34', '65', '37', 'ENT123 Quiz 1', 'An Enterprise system is a large scale integrated software.', 'quiz', '100.00', '2026-09-30 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
+('25', '34', '65', '37', 'ENT123 Quiz 1', 'An Enterprise system is a large scale integrated software.', 'quiz', '20.00', '2026-09-30 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
 ('45', '70', '100', '45', 'Week 1: Enterprise Systems Fundamentals Quiz', 'Practical assessment evaluating understanding of ERP architecture, centralized data, and multi-tier systems.', 'quiz', '20.00', NULL, '0', 'online', NULL, '2026-10-08 08:47:24', '1', 'quiz_builder', NULL);
 
 -- --------------------------------------------------------
@@ -738,7 +748,8 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('108', '3', '28', '2026-10-08 08:48:57', 'enrolled'),
 ('109', '3', '29', '2026-10-08 08:48:57', 'enrolled'),
 ('111', '3', '31', '2026-10-08 08:48:57', 'enrolled'),
-('112', '3', '32', '2026-10-08 08:48:57', 'enrolled'),
+('112', '3', '32', '2026-10-08 08:48:57', 'enrolled');
+INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
 ('113', '3', '33', '2026-10-08 08:48:57', 'enrolled'),
 ('115', '11', '6', '2026-10-08 08:48:57', 'enrolled'),
 ('116', '11', '13', '2026-10-08 08:48:57', 'enrolled'),
@@ -788,7 +799,8 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('169', '13', '32', '2026-10-08 08:49:02', 'enrolled'),
 ('170', '13', '33', '2026-10-08 08:49:02', 'enrolled'),
 ('171', '13', '70', '2026-10-08 08:49:02', 'enrolled'),
-('172', '15', '6', '2026-10-08 08:49:02', 'enrolled'),
+('172', '15', '6', '2026-10-08 08:49:02', 'enrolled');
+INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
 ('173', '15', '13', '2026-10-08 08:49:02', 'enrolled'),
 ('174', '15', '14', '2026-10-08 08:49:02', 'enrolled'),
 ('175', '15', '19', '2026-10-08 08:49:02', 'enrolled'),
@@ -838,7 +850,8 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('228', '31', '70', '2026-10-08 08:49:06', 'enrolled'),
 ('229', '32', '6', '2026-10-08 08:49:06', 'enrolled'),
 ('230', '32', '13', '2026-10-08 08:49:06', 'enrolled'),
-('231', '32', '14', '2026-10-08 08:49:06', 'enrolled'),
+('231', '32', '14', '2026-10-08 08:49:06', 'enrolled');
+INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
 ('232', '32', '19', '2026-10-08 08:49:06', 'enrolled'),
 ('233', '32', '20', '2026-10-08 08:49:06', 'enrolled'),
 ('234', '32', '21', '2026-10-08 08:49:06', 'enrolled'),
@@ -888,7 +901,8 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('285', '36', '70', '2026-10-08 08:49:10', 'enrolled'),
 ('286', '38', '6', '2026-10-08 08:49:10', 'enrolled'),
 ('287', '38', '13', '2026-10-08 08:49:10', 'enrolled'),
-('289', '38', '19', '2026-10-08 08:49:10', 'enrolled'),
+('289', '38', '19', '2026-10-08 08:49:10', 'enrolled');
+INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
 ('290', '38', '20', '2026-10-08 08:49:10', 'enrolled'),
 ('291', '38', '21', '2026-10-08 08:49:10', 'enrolled'),
 ('292', '38', '22', '2026-10-08 08:49:10', 'enrolled'),
@@ -1011,16 +1025,16 @@ INSERT INTO `submission_answers` (`id`, `submission_id`, `question_id`, `student
 ('9', '39', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:20'),
 ('10', '39', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:21'),
 ('11', '39', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:21'),
-('12', '39', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:21'),
+('12', '39', '4', 'A. Presentation Layer', '0', '0.00', NULL, '2026-10-08 09:32:21'),
 ('13', '40', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:21'),
-('14', '40', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:21'),
+('14', '40', '2', 'A. Independent department spreadsheets', '0', '0.00', NULL, '2026-10-08 09:32:21'),
 ('15', '40', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:21'),
 ('16', '40', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:21'),
 ('17', '41', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:21'),
 ('18', '41', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:22'),
 ('19', '41', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:22'),
 ('20', '41', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:22'),
-('21', '42', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:22'),
+('21', '42', '1', 'A. Isolate department data in independent silos', '0', '0.00', NULL, '2026-10-08 09:32:22'),
 ('22', '42', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:22'),
 ('23', '42', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:22'),
 ('24', '42', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:22');
@@ -1051,12 +1065,12 @@ CREATE TABLE `submissions` (
 
 INSERT INTO `submissions` (`id`, `assessment_id`, `student_id`, `file_path`, `text_answer`, `score`, `feedback`, `submitted_at`, `graded_at`, `status`, `is_auto_graded`) VALUES
 ('9', '3', '3', NULL, '', '50.00', '', '2026-03-27 23:20:29', '2026-07-30 10:57:20', 'graded', '0'),
-('37', '45', '3', NULL, NULL, '20.00', 'Outstanding work! Demonstrated comprehensive understanding of enterprise ERP architecture.', '2026-10-08 07:32:19', '2026-10-08 08:32:19', 'graded', '1'),
-('38', '45', '91', NULL, NULL, '19.00', 'Great responses! Very accurate breakdown of ERP modules and core business processes.', '2026-10-08 07:32:20', '2026-10-08 08:32:20', 'graded', '1'),
-('39', '45', '92', NULL, NULL, '18.00', 'Well done. Solid answers on supply chain and CRM integration.', '2026-10-08 07:32:20', '2026-10-08 08:32:20', 'graded', '1'),
-('40', '45', '93', NULL, NULL, '17.00', 'Good performance. Review the distinction between transactional data and master data.', '2026-10-08 07:32:21', '2026-10-08 08:32:21', 'graded', '1'),
-('41', '45', '94', NULL, NULL, '20.00', 'Perfect score! Flawless grasp of institutional systems.', '2026-10-08 07:32:21', '2026-10-08 08:32:21', 'graded', '1'),
-('42', '45', '95', NULL, NULL, '16.00', 'Satisfactory score. Good effort on foundational concepts.', '2026-10-08 07:32:22', '2026-10-08 08:32:22', 'graded', '1');
+('37', '45', '3', NULL, NULL, '20.00', 'Outstanding mastery! Demonstrated comprehensive understanding of enterprise ERP architecture.', '2026-10-08 07:32:19', '2026-10-08 08:32:19', 'graded', '1'),
+('38', '45', '91', NULL, NULL, '20.00', 'Perfect score! Flawless grasp of institutional systems and 3-tier architecture.', '2026-10-08 07:32:20', '2026-10-08 08:32:20', 'graded', '1'),
+('39', '45', '92', NULL, NULL, '15.00', 'Good performance overall. Review 3-tier architectural components; the application layer executes business logic.', '2026-10-08 07:32:20', '2026-10-08 08:32:20', 'graded', '1'),
+('40', '45', '93', NULL, NULL, '15.00', 'Well done on foundational concepts. Note that ERP systems eliminate independent spreadsheets in favor of a centralized repository.', '2026-10-08 07:32:21', '2026-10-08 08:32:21', 'graded', '1'),
+('41', '45', '94', NULL, NULL, '20.00', 'Excellent work! Very accurate breakdown of ERP modules and core business processes.', '2026-10-08 07:32:21', '2026-10-08 08:32:21', 'graded', '1'),
+('42', '45', '95', NULL, NULL, '15.00', 'Good effort! Remember that ERP systems connect and unify departments rather than keeping them isolated in silos.', '2026-10-08 07:32:22', '2026-10-08 08:32:22', 'graded', '1');
 
 -- --------------------------------------------------------
 -- Structure and Data for table `syllabi`

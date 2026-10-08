@@ -399,6 +399,7 @@ if ($submission) {
                 ?>
                 <div style="display:flex;flex-direction:column;gap:10px">
                     <?php foreach ($opts as $oKey => $optText): 
+                        $cleanedText = trim(preg_replace('/^[A-Z]\.\s*/i', '', (string)$optText));
                         $letter = (is_string($oKey) && preg_match('/^[A-Z]$/i', $oKey)) ? strtoupper($oKey) : ($letters[$optIdx] ?? chr(65 + $optIdx));
                         $choiceId = "q_{$qId}_opt_{$optIdx}";
                         $choiceVal = (string)$oKey;
@@ -407,7 +408,7 @@ if ($submission) {
                     <label for="<?= $choiceId ?>" style="padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:#fff;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s ease">
                         <input type="radio" name="answers[<?= $qId ?>]" id="<?= $choiceId ?>" value="<?= htmlspecialchars($choiceVal) ?>" style="transform:scale(1.2);cursor:pointer">
                         <strong style="color:var(--primary);width:18px"><?= $letter ?>.</strong>
-                        <span style="font-size:13.5px;color:var(--text)"><?= safeHtml($optText) ?></span>
+                        <span style="font-size:13.5px;color:var(--text)"><?= safeHtml($cleanedText) ?></span>
                     </label>
                     <?php endforeach; ?>
                 </div>
