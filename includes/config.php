@@ -32,14 +32,28 @@ if (file_exists($_envFile) && is_readable($_envFile)) {
     }
 }
 
-// Target Database: MySQL-CmV2 (acela.proxy.rlwy.net:53053)
-$_isOldRailway = (getenv('MYSQLHOST') === 'mysql.railway.internal' || getenv('MYSQLHOST') === 'sakura.proxy.rlwy.net' || getenv('MYSQLHOST') === 'localhost');
+// Check for MYSQL_URL or DATABASE_URL (Railway standard format: mysql://user:pass@host:port/dbname)
+$_dbUrl = getenv('MYSQL_URL') ?: getenv('DATABASE_URL');
+$_urlHost = null;
+$_urlPort = null;
+$_urlUser = null;
+$_urlPass = null;
+$_urlDb   = null;
 
-define('DB_HOST', getenv('DB_HOST') ?: (!$_isOldRailway && getenv('MYSQLHOST') ? getenv('MYSQLHOST') : 'acela.proxy.rlwy.net'));
-define('DB_USER', getenv('DB_USER') ?: (!$_isOldRailway && getenv('MYSQLUSER') ? getenv('MYSQLUSER') : 'root'));
-define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : (!$_isOldRailway && getenv('MYSQLPASSWORD') !== false ? getenv('MYSQLPASSWORD') : 'cpXRhWNHvBgAaSIHsuVmwUhWhzNNMWKK'));
-define('DB_NAME', getenv('DB_NAME') ?: (getenv('MYSQLDATABASE') ?: 'railway'));
-define('DB_PORT', (int)(getenv('DB_PORT') ?: (!$_isOldRailway && getenv('MYSQLPORT') ? getenv('MYSQLPORT') : 53053)));
+if ($_dbUrl) {
+    $_parsed = parse_url($_dbUrl);
+    if (!empty($_parsed['host'])) $_urlHost = $_parsed['host'];
+    if (!empty($_parsed['port'])) $_urlPort = (int)$_parsed['port'];
+    if (!empty($_parsed['user'])) $_urlUser = $_parsed['user'];
+    if (isset($_parsed['pass']))  $_urlPass = $_parsed['pass'];
+    if (!empty($_parsed['path'])) $_urlDb   = ltrim($_parsed['path'], '/');
+}
+
+define('DB_HOST', getenv('DB_HOST') ?: (getenv('MYSQLHOST') ?: ($_urlHost ?: 'localhost')));
+define('DB_USER', getenv('DB_USER') ?: (getenv('MYSQLUSER') ?: ($_urlUser ?: 'root')));
+define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : (getenv('MYSQLPASSWORD') !== false ? getenv('MYSQLPASSWORD') : (isset($_urlPass) ? $_urlPass : 'ckhkOQcXPVQrKkXRgEDURJfUtHmHrLOa')));
+define('DB_NAME', getenv('DB_NAME') ?: (getenv('MYSQLDATABASE') ?: ($_urlDb ?: 'railway')));
+define('DB_PORT', (int)(getenv('DB_PORT') ?: (getenv('MYSQLPORT') ?: ($_urlPort ?: 3306))));
 define('SITE_NAME', getenv('SITE_NAME') ?: 'BlendEd LMS');
 
 // Figure out the site's URL root by comparing the filesystem path of the
@@ -93,10 +107,14 @@ define('UPLOAD_PATH', __DIR__ . '/../uploads/');
 
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die("Database connection failed: " . $conn->connect_error . " (Target: " . DB_HOST . ":" . DB_PORT . " / DB: " . DB_NAME . ")");
 }
 $conn->set_charset("utf8mb4");
 $conn->query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
+
+// Automatically ensure tables and schema exist on fresh Railway database
+require_once __DIR__ . '/db_init.php';
+ensureDatabaseSchemaReady($conn);
 
 if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
     session_start();
