@@ -222,23 +222,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         // Verify syllabus belongs to this teacher
         $chkSyl = $conn->query("SELECT id FROM syllabi WHERE id=$sylId AND teacher_id=$tid")->fetch_assoc();
         if ($chkSyl) {
-            // Cannot mark as done if topic has no materials and/or no assessments
+            // Validate that topic has deliverables AND all enrolled students finished
             if ($isCompleted === 1) {
-                $mCnt = (int)$conn->query("SELECT COUNT(*) c FROM learning_materials WHERE syllabus_topic_id = $topicId")->fetch_assoc()['c'];
-                $aCnt = (int)$conn->query("SELECT COUNT(*) c FROM assessments WHERE topic_id = $topicId")->fetch_assoc()['c'];
-                if ($mCnt === 0 || $aCnt === 0) {
-                    $missing = [];
-                    if ($mCnt === 0) $missing[] = 'learning material';
-                    if ($aCnt === 0) $missing[] = 'assessment task';
-                    $tRow = $conn->query("SELECT week_number FROM syllabus_topics WHERE id = $topicId")->fetch_assoc();
-                    $wkNum = $tRow ? $tRow['week_number'] : '';
-                    $errMsg = "Cannot mark Week {$wkNum} as done: Please attach at least one " . implode(' and ', $missing) . " first.";
+                $checkDone = checkTopicCanBeMarkedDone($topicId, $sylId);
+                if (!$checkDone['can_mark_done']) {
                     if (!empty($_POST['ajax'])) {
                         header('Content-Type: application/json');
-                        echo json_encode(['success' => false, 'message' => $errMsg]);
+                        echo json_encode(['success' => false, 'message' => $checkDone['message']]);
                         exit;
                     }
-                    setFlash('error', $errMsg);
+                    setFlash('error', $checkDone['message']);
                     redirect(BASE_URL . 'teacher/topics.php?syl_id=' . $sylId);
                 }
             }
@@ -1035,17 +1028,9 @@ $unassessedCilos = array_diff(array_keys($ciloGroups), array_keys($cilosWithAsse
                                 <td style="text-align:center;white-space:nowrap">
                                     <div style="display:inline-flex;align-items:center;gap:6px">
                                         <?php 
-                                            $matsArr = !empty($row['materials_list']) ? explode('||', $row['materials_list']) : [];
-                                            $assesArr = !empty($row['assessments_data']) ? explode('||', $row['assessments_data']) : [];
-                                            $mCount = count($matsArr);
-                                            $aCount = count($assesArr);
-                                            $canMarkDone = ($mCount > 0 && $aCount > 0);
-
-                                            $missingItems = [];
-                                            if ($mCount === 0) $missingItems[] = 'learning material';
-                                            if ($aCount === 0) $missingItems[] = 'assessment task';
-                                            $missingText = implode(' and ', $missingItems);
-                                            $cannotDoneMsg = "Cannot mark Week {$row['week_number']} as done: This topic has no {$missingText} attached. Please attach at least one {$missingText} first.";
+                                            $checkDoneState = checkTopicCanBeMarkedDone($row['id'], $selectedSylId);
+                                            $canMarkDone = $checkDoneState['can_mark_done'];
+                                            $cannotDoneMsg = $checkDoneState['message'];
                                         ?>
                                         <?php if (!empty($row['is_completed'])): ?>
                                             <button type="button" class="btn btn-sm" onclick="toggleTopicDone(<?= $row['id'] ?>, 0, <?= $row['week_number'] ?>, '<?= htmlspecialchars(addslashes($row['topic_title']), ENT_QUOTES) ?>')" style="padding:4px 9px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;background:#ecfdf5;border:1px solid #10b981;color:#047857;border-radius:6px;cursor:pointer" title="Marked as Completed (Click to Undo / Revert to Pending)">

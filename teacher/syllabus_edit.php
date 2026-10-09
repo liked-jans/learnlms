@@ -98,17 +98,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $isCompleted = $status === 'completed' ? 1 : 0;
 
         if ($isCompleted === 1) {
-            $mCnt = (int)$conn->query("SELECT COUNT(*) c FROM learning_materials WHERE syllabus_topic_id = $topicId")->fetch_assoc()['c'];
-            $aCnt = (int)$conn->query("SELECT COUNT(*) c FROM assessments WHERE topic_id = $topicId")->fetch_assoc()['c'];
-            if ($mCnt === 0 || $aCnt === 0) {
-                $missing = [];
-                if ($mCnt === 0) $missing[] = 'learning material';
-                if ($aCnt === 0) $missing[] = 'assessment task';
-                $tRow = $conn->query("SELECT week_number FROM syllabus_topics WHERE id = $topicId")->fetch_assoc();
-                $wkNum = $tRow ? $tRow['week_number'] : '';
+            $checkDone = checkTopicCanBeMarkedDone($topicId, $sid);
+            if (!$checkDone['can_mark_done']) {
                 echo json_encode([
                     'success' => false,
-                    'message' => "Cannot mark Week {$wkNum} as done: This topic has no " . implode(' and no ', $missing) . " attached. Please attach at least one " . implode(' and ', $missing) . " first."
+                    'message' => $checkDone['message']
                 ]);
                 exit;
             }
@@ -511,11 +505,9 @@ $pastCheck = checkPastWeeklySyllabiDone($sid, $t['id'], (int)$t['week_number']);
             </div>
             <div style="display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
                 <?php 
-                    $canMarkDoneThisTopic = (!empty($topicMaterials) && !empty($topicAssessments));
-                    $missingItemsThisTopic = [];
-                    if (empty($topicMaterials)) $missingItemsThisTopic[] = 'learning material';
-                    if (empty($topicAssessments)) $missingItemsThisTopic[] = 'assessment task';
-                    $cannotDoneMsgThisTopic = "Cannot mark Week {$t['week_number']} as done: This topic has no " . implode(' and no ', $missingItemsThisTopic) . " attached. Please attach at least one " . implode(' and ', $missingItemsThisTopic) . " first.";
+                    $checkThisTopicState = checkTopicCanBeMarkedDone($t['id'], $sid);
+                    $canMarkDoneThisTopic = $checkThisTopicState['can_mark_done'];
+                    $cannotDoneMsgThisTopic = $checkThisTopicState['message'];
                 ?>
                 <?php if($isDone): ?>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); updateStatus(<?= $t['id'] ?>, 'not_started')" title="Undo completed teaching status">

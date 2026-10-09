@@ -1,6 +1,6 @@
 -- ========================================================
 -- LearnLMS Complete Database Backup & Sample Data
--- Generated: 2026-10-08 12:14:01
+-- Generated: 2026-10-09 05:54:21
 -- Database: railway on localhost:3306
 -- Includes: Users, Syllabi, Topics, Materials, Assessments,
 --           Questions, Submissions, Grades, Progress, etc.
@@ -15,7 +15,7 @@ SET time_zone = '+00:00';
 SET NAMES utf8mb4;
 
 -- --------------------------------------------------------
--- Table structure & data for table `activity_logs` (468 rows)
+-- Table structure & data for table `activity_logs` (487 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `activity_logs`;
@@ -29,7 +29,7 @@ CREATE TABLE `activity_logs` (
   KEY `idx_activity_user` (`user_id`),
   KEY `idx_activity_category` (`category`),
   KEY `idx_activity_created` (`created_at`)
-) ENGINE=MyISAM AUTO_INCREMENT=609 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=628 DEFAULT CHARSET=latin1;
 
 INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `created_at`) VALUES
 ('1', '1', 'Logged out', 'Authentication', '2026-07-04 01:38:06'),
@@ -508,7 +508,26 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `description`, `category`, `create
 ('605', '45', 'Logged out', 'Authentication', '2026-10-08 09:36:01'),
 ('606', '1', 'Logged in', 'Authentication', '2026-10-08 09:36:06'),
 ('607', '45', 'Logged in', 'Authentication', '2026-10-08 09:48:01'),
-('608', '45', 'Logged in', 'Authentication', '2026-10-08 10:04:19');
+('608', '45', 'Logged in', 'Authentication', '2026-10-08 10:04:19'),
+('609', '45', 'Logged in', 'Authentication', '2026-10-08 10:16:08'),
+('610', '1', 'Logged in', 'Authentication', '2026-10-08 10:22:45'),
+('611', '1', 'Logged out', 'Authentication', '2026-10-08 10:23:12'),
+('612', '45', 'Logged in', 'Authentication', '2026-10-08 10:23:25'),
+('613', '45', 'Logged in', 'Authentication', '2026-10-09 03:02:46'),
+('614', '45', 'Logged out', 'Authentication', '2026-10-09 03:03:55'),
+('615', '1', 'Logged in', 'Authentication', '2026-10-09 03:04:06'),
+('616', '1', 'Logged out', 'Authentication', '2026-10-09 03:04:53'),
+('617', '45', 'Logged in', 'Authentication', '2026-10-09 03:05:01'),
+('618', '45', 'Logged out', 'Authentication', '2026-10-09 03:07:11'),
+('619', '1', 'Logged in', 'Authentication', '2026-10-09 03:07:20'),
+('620', '45', 'Logged in', 'Authentication', '2026-10-09 03:08:23'),
+('621', '45', 'Logged in', 'Authentication', '2026-10-09 03:21:32'),
+('622', '45', 'Logged out', 'Authentication', '2026-10-09 03:22:21'),
+('623', '3', 'Logged in', 'Authentication', '2026-10-09 03:22:39'),
+('624', '3', 'Logged out', 'Authentication', '2026-10-09 03:23:10'),
+('625', '1', 'Logged in', 'Authentication', '2026-10-09 03:23:20'),
+('626', '1', 'Logged out', 'Authentication', '2026-10-09 03:24:13'),
+('627', '45', 'Logged in', 'Authentication', '2026-10-09 03:24:40');
 
 -- --------------------------------------------------------
 -- Table structure & data for table `announcements` (9 rows)
@@ -542,7 +561,7 @@ INSERT INTO `announcements` (`id`, `author_id`, `syllabus_id`, `title`, `content
 ('15', '45', NULL, 'ADV08: Hands-on Lab Session on Data Cleaning', 'Our next class will be a hands-on laboratory session in Computer Lab 4. Please review the lecture materials on z-score normalization and outlier detection before class.', 'student', '2026-10-08 08:49:12');
 
 -- --------------------------------------------------------
--- Table structure & data for table `assessment_questions` (8 rows)
+-- Table structure & data for table `assessment_questions` (12 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `assessment_questions`;
@@ -559,7 +578,7 @@ CREATE TABLE `assessment_questions` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_aq_ass` (`assessment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `assessment_questions` (`id`, `assessment_id`, `question_text`, `question_type`, `points`, `options`, `correct_answer`, `explanation`, `sort_order`, `created_at`) VALUES
 ('1', '45', 'What is the primary objective of an Enterprise Resource Planning (ERP) system?', 'multiple_choice', '5.00', '[\"Isolate department data in independent silos\",\"Integrate core business processes into a unified platform\",\"Replace human decision-making completely\",\"Manage local personal spreadsheets\"]', 'B. Integrate core business processes into a unified platform', 'An ERP integrates disparate business processes across finance, supply chain, and operations into a single shared database.', '1', '2026-10-08 08:47:24'),
@@ -569,10 +588,14 @@ INSERT INTO `assessment_questions` (`id`, `assessment_id`, `question_text`, `que
 ('5', '25', 'What is the primary objective of an Enterprise Resource Planning (ERP) system?', 'multiple_choice', '5.00', '[\"Isolate department data in independent silos\",\"Integrate core business processes into a unified platform\",\"Replace human decision-making completely\",\"Manage local personal spreadsheets\"]', 'B. Integrate core business processes into a unified platform', 'An ERP integrates disparate business processes across finance, supply chain, and operations into a single shared database.', '1', '2026-10-08 08:47:25'),
 ('6', '25', 'Which architectural component of an Enterprise System ensures data consistency across all departments?', 'multiple_choice', '5.00', '[\"Independent department spreadsheets\",\"Centralized shared database repository\",\"Local USB flash storage\",\"Isolated email threads\"]', 'B. Centralized shared database repository', 'A centralized database repository eliminates data redundancy and guarantees that all functional units access a single source of truth.', '2', '2026-10-08 08:47:25'),
 ('7', '25', 'Enterprise Systems integrate business processes and core information flows across an entire organization in real-time.', 'true_false', '5.00', '[\"True\",\"False\"]', 'True', 'Enterprise systems operate on real-time transaction processing, updating organization-wide ledgers immediately.', '3', '2026-10-08 08:47:25'),
-('8', '25', 'In a 3-tier enterprise architecture, which layer executes business logic, security policies, and transactional workflows?', 'multiple_choice', '5.00', '[\"Presentation Layer\",\"Application \\/ Business Logic Layer\",\"Hardware Power Supply\",\"Physical Cabling Layer\"]', 'B. Application / Business Logic Layer', 'The Application / Business Logic tier contains the ERP software engines that enforce validation and workflows between client UI and database.', '4', '2026-10-08 08:47:25');
+('8', '25', 'In a 3-tier enterprise architecture, which layer executes business logic, security policies, and transactional workflows?', 'multiple_choice', '5.00', '[\"Presentation Layer\",\"Application \\/ Business Logic Layer\",\"Hardware Power Supply\",\"Physical Cabling Layer\"]', 'B. Application / Business Logic Layer', 'The Application / Business Logic tier contains the ERP software engines that enforce validation and workflows between client UI and database.', '4', '2026-10-08 08:47:25'),
+('10', '46', 'In a 3-tier enterprise architecture, which layer is responsible for executing business logic, enforcing institutional rules, and coordinating transaction processing?', 'multiple_choice', '5.00', '[\"A. Presentation Layer\",\"B. Application \\/ Logic Layer\",\"C. Data Storage Layer\",\"D. Network Gateway Layer\"]', 'B. Application / Logic Layer', 'The application or business logic layer acts as the middle tier executing application functions and core logic.', '1', '2026-10-09 03:53:52'),
+('11', '46', 'Which architectural component of an Enterprise System guarantees data consistency and eliminates redundant data entry across departments?', 'multiple_choice', '5.00', '[\"A. Decentralized isolated departmental spreadsheets\",\"B. Centralized shared relational database schema with relational constraints\",\"C. Manual unencrypted email exchanges between department heads\",\"D. Standalone local hard drives without network connections\"]', 'B. Centralized shared relational database schema with relational constraints', 'A centralized shared database repository provides a single source of truth across all modules.', '2', '2026-10-09 03:53:52'),
+('12', '46', 'Middleware in enterprise architectures acts as a software bridge connecting disparate subsystems and enabling reliable inter-application messaging.', 'true_false', '5.00', '[\"True\",\"False\"]', 'True', 'Middleware provides essential abstraction and integration between heterogeneous applications.', '3', '2026-10-09 03:53:52'),
+('13', '46', 'Which enterprise application module specifically manages raw material procurement, vendor coordination, inventory tracking, and distribution logistics?', 'multiple_choice', '5.00', '[\"A. Supply Chain Management (SCM)\",\"B. Human Capital Management (HCM)\",\"C. Facility Maintenance Portal\",\"D. Public Media Relations Desk\"]', 'A. Supply Chain Management (SCM)', 'SCM coordinates the movement of goods, materials, and logistical information across the supply chain.', '4', '2026-10-09 03:53:52');
 
 -- --------------------------------------------------------
--- Table structure & data for table `assessments` (18 rows)
+-- Table structure & data for table `assessments` (19 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `assessments`;
@@ -600,7 +623,7 @@ CREATE TABLE `assessments` (
   CONSTRAINT `assessments_ibfk_1` FOREIGN KEY (`syllabus_id`) REFERENCES `syllabi` (`id`) ON DELETE CASCADE,
   CONSTRAINT `assessments_ibfk_2` FOREIGN KEY (`topic_id`) REFERENCES `syllabus_topics` (`id`) ON DELETE SET NULL,
   CONSTRAINT `assessments_ibfk_3` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `assessments` (`id`, `syllabus_id`, `topic_id`, `teacher_id`, `title`, `description`, `type`, `max_score`, `due_date`, `is_closed`, `delivery_mode`, `attachment_path`, `created_at`, `shuffle_questions`, `submission_type`, `time_limit`) VALUES
 ('3', '6', NULL, '17', 'Manage', 'Network Management', 'activity', '100.00', '2026-03-28 07:19:00', '0', 'both', NULL, '2026-03-27 23:19:56', '1', 'quiz_builder', NULL),
@@ -620,7 +643,8 @@ INSERT INTO `assessments` (`id`, `syllabus_id`, `topic_id`, `teacher_id`, `title
 ('23', '32', '61', '17', 'BSIS117 Project 1', 'IS project implementation and defense', 'project', '100.00', '2026-09-28 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
 ('24', '33', '63', '35', 'BSIS118 Activity 1', 'On-the-job training in IS field', 'activity', '100.00', '2026-09-29 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
 ('25', '34', '65', '37', 'ENT123 Quiz 1', 'An Enterprise system is a large scale integrated software.', 'quiz', '20.00', '2026-09-30 23:59:00', '0', 'both', NULL, '2026-08-09 00:00:00', '1', 'quiz_builder', NULL),
-('45', '70', '100', '45', 'Week 1: Enterprise Systems Fundamentals Quiz', 'Practical assessment evaluating understanding of ERP architecture, centralized data, and multi-tier systems.', 'quiz', '20.00', NULL, '0', 'online', NULL, '2026-10-08 08:47:24', '1', 'quiz_builder', NULL);
+('45', '70', '100', '45', 'Week 1: Enterprise Systems Fundamentals Quiz', 'Practical assessment evaluating understanding of ERP architecture, centralized data, and multi-tier systems.', 'quiz', '20.00', NULL, '0', 'online', NULL, '2026-10-08 08:47:24', '1', 'quiz_builder', NULL),
+('46', '70', '101', '45', 'Week 2: Enterprise Architecture & Data Integration Quiz', 'Evaluates comprehension of 3-tier architecture, centralized shared databases, and enterprise middleware integration.', 'quiz', '20.00', NULL, '0', 'online', NULL, '2026-10-09 03:06:31', '1', 'quiz_builder', '30');
 
 -- --------------------------------------------------------
 -- Table structure & data for table `courses` (25 rows)
@@ -691,7 +715,7 @@ INSERT INTO `departments` (`id`, `name`, `code`, `description`, `created_at`) VA
 ('5', 'Bachelor of Science and Information System', 'BSIS', '', '2026-03-12 01:57:14');
 
 -- --------------------------------------------------------
--- Table structure & data for table `enrollments` (233 rows)
+-- Table structure & data for table `enrollments` (223 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `enrollments`;
@@ -706,7 +730,7 @@ CREATE TABLE `enrollments` (
   KEY `syllabus_id` (`syllabus_id`),
   CONSTRAINT `enrollments_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `enrollments_ibfk_2` FOREIGN KEY (`syllabus_id`) REFERENCES `syllabi` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=325 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=343 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
 ('15', '3', '6', '2026-03-27 23:18:33', 'enrolled'),
@@ -776,7 +800,6 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('130', '11', '31', '2026-10-08 08:48:59', 'enrolled'),
 ('131', '11', '32', '2026-10-08 08:48:59', 'enrolled'),
 ('132', '11', '33', '2026-10-08 08:48:59', 'enrolled'),
-('133', '11', '70', '2026-10-08 08:48:59', 'enrolled'),
 ('134', '12', '6', '2026-10-08 08:48:59', 'enrolled'),
 ('135', '12', '13', '2026-10-08 08:48:59', 'enrolled'),
 ('136', '12', '14', '2026-10-08 08:48:59', 'enrolled'),
@@ -792,7 +815,6 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('148', '12', '30', '2026-10-08 08:49:00', 'enrolled'),
 ('150', '12', '32', '2026-10-08 08:49:00', 'enrolled'),
 ('151', '12', '33', '2026-10-08 08:49:00', 'enrolled'),
-('152', '12', '70', '2026-10-08 08:49:00', 'enrolled'),
 ('153', '13', '6', '2026-10-08 08:49:00', 'enrolled'),
 ('154', '13', '13', '2026-10-08 08:49:00', 'enrolled'),
 ('155', '13', '14', '2026-10-08 08:49:01', 'enrolled'),
@@ -808,12 +830,11 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('167', '13', '30', '2026-10-08 08:49:01', 'enrolled'),
 ('169', '13', '32', '2026-10-08 08:49:02', 'enrolled'),
 ('170', '13', '33', '2026-10-08 08:49:02', 'enrolled'),
-('171', '13', '70', '2026-10-08 08:49:02', 'enrolled'),
-('172', '15', '6', '2026-10-08 08:49:02', 'enrolled');
-INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
+('172', '15', '6', '2026-10-08 08:49:02', 'enrolled'),
 ('173', '15', '13', '2026-10-08 08:49:02', 'enrolled'),
 ('174', '15', '14', '2026-10-08 08:49:02', 'enrolled'),
-('175', '15', '19', '2026-10-08 08:49:02', 'enrolled'),
+('175', '15', '19', '2026-10-08 08:49:02', 'enrolled');
+INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
 ('176', '15', '20', '2026-10-08 08:49:02', 'enrolled'),
 ('178', '15', '22', '2026-10-08 08:49:02', 'enrolled'),
 ('179', '15', '23', '2026-10-08 08:49:02', 'enrolled'),
@@ -825,7 +846,6 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('186', '15', '30', '2026-10-08 08:49:03', 'enrolled'),
 ('187', '15', '31', '2026-10-08 08:49:03', 'enrolled'),
 ('189', '15', '33', '2026-10-08 08:49:03', 'enrolled'),
-('190', '15', '70', '2026-10-08 08:49:03', 'enrolled'),
 ('191', '16', '6', '2026-10-08 08:49:03', 'enrolled'),
 ('192', '16', '13', '2026-10-08 08:49:03', 'enrolled'),
 ('193', '16', '14', '2026-10-08 08:49:03', 'enrolled'),
@@ -841,7 +861,6 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('205', '16', '30', '2026-10-08 08:49:04', 'enrolled'),
 ('206', '16', '31', '2026-10-08 08:49:04', 'enrolled'),
 ('208', '16', '33', '2026-10-08 08:49:04', 'enrolled'),
-('209', '16', '70', '2026-10-08 08:49:04', 'enrolled'),
 ('210', '31', '6', '2026-10-08 08:49:04', 'enrolled'),
 ('211', '31', '13', '2026-10-08 08:49:05', 'enrolled'),
 ('212', '31', '14', '2026-10-08 08:49:05', 'enrolled'),
@@ -857,24 +876,22 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('224', '31', '30', '2026-10-08 08:49:05', 'enrolled'),
 ('225', '31', '31', '2026-10-08 08:49:06', 'enrolled'),
 ('226', '31', '32', '2026-10-08 08:49:06', 'enrolled'),
-('228', '31', '70', '2026-10-08 08:49:06', 'enrolled'),
 ('229', '32', '6', '2026-10-08 08:49:06', 'enrolled'),
 ('230', '32', '13', '2026-10-08 08:49:06', 'enrolled'),
-('231', '32', '14', '2026-10-08 08:49:06', 'enrolled');
-INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
+('231', '32', '14', '2026-10-08 08:49:06', 'enrolled'),
 ('232', '32', '19', '2026-10-08 08:49:06', 'enrolled'),
 ('233', '32', '20', '2026-10-08 08:49:06', 'enrolled'),
 ('234', '32', '21', '2026-10-08 08:49:06', 'enrolled'),
 ('236', '32', '23', '2026-10-08 08:49:06', 'enrolled'),
 ('237', '32', '24', '2026-10-08 08:49:06', 'enrolled'),
-('238', '32', '25', '2026-10-08 08:49:06', 'enrolled'),
+('238', '32', '25', '2026-10-08 08:49:06', 'enrolled');
+INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
 ('239', '32', '26', '2026-10-08 08:49:07', 'enrolled'),
 ('240', '32', '27', '2026-10-08 08:49:07', 'enrolled'),
 ('242', '32', '29', '2026-10-08 08:49:07', 'enrolled'),
 ('243', '32', '30', '2026-10-08 08:49:07', 'enrolled'),
 ('244', '32', '31', '2026-10-08 08:49:07', 'enrolled'),
 ('245', '32', '32', '2026-10-08 08:49:07', 'enrolled'),
-('247', '32', '70', '2026-10-08 08:49:07', 'enrolled'),
 ('248', '33', '6', '2026-10-08 08:49:07', 'enrolled'),
 ('249', '33', '13', '2026-10-08 08:49:07', 'enrolled'),
 ('250', '33', '14', '2026-10-08 08:49:07', 'enrolled'),
@@ -891,7 +908,6 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('263', '33', '31', '2026-10-08 08:49:08', 'enrolled'),
 ('264', '33', '32', '2026-10-08 08:49:08', 'enrolled'),
 ('265', '33', '33', '2026-10-08 08:49:08', 'enrolled'),
-('266', '33', '70', '2026-10-08 08:49:08', 'enrolled'),
 ('267', '36', '6', '2026-10-08 08:49:08', 'enrolled'),
 ('268', '36', '13', '2026-10-08 08:49:08', 'enrolled'),
 ('269', '36', '14', '2026-10-08 08:49:09', 'enrolled'),
@@ -908,11 +924,9 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('282', '36', '31', '2026-10-08 08:49:09', 'enrolled'),
 ('283', '36', '32', '2026-10-08 08:49:10', 'enrolled'),
 ('284', '36', '33', '2026-10-08 08:49:10', 'enrolled'),
-('285', '36', '70', '2026-10-08 08:49:10', 'enrolled'),
 ('286', '38', '6', '2026-10-08 08:49:10', 'enrolled'),
 ('287', '38', '13', '2026-10-08 08:49:10', 'enrolled'),
-('289', '38', '19', '2026-10-08 08:49:10', 'enrolled');
-INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
+('289', '38', '19', '2026-10-08 08:49:10', 'enrolled'),
 ('290', '38', '20', '2026-10-08 08:49:10', 'enrolled'),
 ('291', '38', '21', '2026-10-08 08:49:10', 'enrolled'),
 ('292', '38', '22', '2026-10-08 08:49:10', 'enrolled'),
@@ -921,11 +935,11 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('296', '38', '26', '2026-10-08 08:49:10', 'enrolled'),
 ('297', '38', '27', '2026-10-08 08:49:10', 'enrolled'),
 ('298', '38', '28', '2026-10-08 08:49:11', 'enrolled'),
-('300', '38', '30', '2026-10-08 08:49:11', 'enrolled'),
+('300', '38', '30', '2026-10-08 08:49:11', 'enrolled');
+INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `status`) VALUES
 ('301', '38', '31', '2026-10-08 08:49:11', 'enrolled'),
 ('302', '38', '32', '2026-10-08 08:49:11', 'enrolled'),
 ('303', '38', '33', '2026-10-08 08:49:11', 'enrolled'),
-('304', '38', '70', '2026-10-08 08:49:11', 'enrolled'),
 ('305', '91', '70', '2026-10-08 09:32:17', 'enrolled'),
 ('306', '92', '70', '2026-10-08 09:32:17', 'enrolled'),
 ('307', '93', '70', '2026-10-08 09:32:17', 'enrolled'),
@@ -948,7 +962,7 @@ INSERT INTO `enrollments` (`id`, `student_id`, `syllabus_id`, `enrolled_at`, `st
 ('324', '95', '14', '2026-10-08 09:32:19', 'enrolled');
 
 -- --------------------------------------------------------
--- Table structure & data for table `learning_materials` (3 rows)
+-- Table structure & data for table `learning_materials` (4 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `learning_materials`;
@@ -974,12 +988,13 @@ CREATE TABLE `learning_materials` (
   CONSTRAINT `learning_materials_ibfk_1` FOREIGN KEY (`syllabus_topic_id`) REFERENCES `syllabus_topics` (`id`) ON DELETE SET NULL,
   CONSTRAINT `learning_materials_ibfk_2` FOREIGN KEY (`syllabus_id`) REFERENCES `syllabi` (`id`) ON DELETE CASCADE,
   CONSTRAINT `learning_materials_ibfk_3` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `learning_materials` (`id`, `syllabus_topic_id`, `syllabus_id`, `teacher_id`, `title`, `description`, `type`, `file_path`, `external_url`, `delivery_mode`, `created_at`, `content`, `estimated_read_time`, `view_count`) VALUES
 ('5', '8', '6', '17', 'test', 'dwewfgetgrht', 'document', 'mat_6a4792806c992.pdf', '', 'both', '2026-07-03 10:44:16', NULL, '5', '0'),
 ('32', '100', '70', '45', 'Introduction to Enterprise Systems & ERP Foundations', 'Foundational reading module covering enterprise architecture, 3-tier models, and business process integration.', 'module', NULL, NULL, 'both', '2026-10-08 08:47:24', '<h3>1. Overview of Enterprise Systems</h3>\n<p>An Enterprise System (ES), commonly realized as an Enterprise Resource Planning (ERP) system, is a comprehensive software platform designed to integrate all facets of an organization’s business processes—including finance, human resources, manufacturing, supply chain management, and customer relations—into a single unified computing environment.</p>\n\n<div style=\"background:#f8fafc;border-left:4px solid #2563eb;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0\">\n    <h4 style=\"margin-top:0;color:#1e40af\"><i class=\"fas fa-lightbulb\"></i> Core Principle: The Single Source of Truth</h4>\n    <p style=\"margin-bottom:0\">By utilizing a unified, centralized database repository, an Enterprise System eliminates redundant data silos and ensures that transaction updates in one department immediately reflect across the entire organization in real-time.</p>\n</div>\n\n<h3>2. Foundational Architecture (3-Tier Framework)</h3>\n<p>Modern enterprise platforms typically follow a multi-tier modular architecture:</p>\n<ul>\n    <li><strong>Presentation Layer (Client Tier):</strong> The web or desktop interface accessed by end-users across departments to input transactions, view dashboards, and monitor KPIs.</li>\n    <li><strong>Application Layer (Business Logic Tier):</strong> The functional logic and processing engine enforcing organizational rules, workflow approvals, authorization matrices, and transactional validation.</li>\n    <li><strong>Database Layer (Data Tier):</strong> High-performance relational database management system guaranteeing ACID compliance and referential integrity across all corporate records.</li>\n</ul>\n\n<h3>3. Comparison: Traditional Silos vs. Enterprise Systems</h3>\n<table style=\"width:100%;border-collapse:collapse;margin:16px 0;font-size:14px\">\n    <thead>\n        <tr style=\"background:#f1f5f9;text-align:left\">\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Attribute</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Traditional Functional Silos</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Enterprise System (ERP)</th>\n        </tr>\n    </thead>\n    <tbody>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Data Storage</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Disconnected, local spreadsheets & isolated department databases.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Centralized repository with relational consistency across all units.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Process Flow</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Manual data re-entry, delayed paper handoffs, high human error rates.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Automated event triggers, seamless inter-departmental handoffs.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Reporting Speed</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Weekly or monthly reconciliation required to balance metrics.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Instantaneous real-time institutional dashboards and analytics.</td>\n        </tr>\n    </tbody>\n</table>\n\n<h3>4. Key Takeaways for Assessment</h3>\n<p>As you prepare for the practical assessment, remember that successful enterprise adoption depends on strategic business process reengineering (BPR), clean data governance, and comprehensive user change management.</p>', '5', '0'),
-('33', '65', '34', '37', 'Introduction to Enterprise Systems & ERP Foundations', 'Foundational reading module covering enterprise architecture, 3-tier models, and business process integration.', 'module', NULL, NULL, 'both', '2026-10-08 08:47:25', '<h3>1. Overview of Enterprise Systems</h3>\n<p>An Enterprise System (ES), commonly realized as an Enterprise Resource Planning (ERP) system, is a comprehensive software platform designed to integrate all facets of an organization’s business processes—including finance, human resources, manufacturing, supply chain management, and customer relations—into a single unified computing environment.</p>\n\n<div style=\"background:#f8fafc;border-left:4px solid #2563eb;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0\">\n    <h4 style=\"margin-top:0;color:#1e40af\"><i class=\"fas fa-lightbulb\"></i> Core Principle: The Single Source of Truth</h4>\n    <p style=\"margin-bottom:0\">By utilizing a unified, centralized database repository, an Enterprise System eliminates redundant data silos and ensures that transaction updates in one department immediately reflect across the entire organization in real-time.</p>\n</div>\n\n<h3>2. Foundational Architecture (3-Tier Framework)</h3>\n<p>Modern enterprise platforms typically follow a multi-tier modular architecture:</p>\n<ul>\n    <li><strong>Presentation Layer (Client Tier):</strong> The web or desktop interface accessed by end-users across departments to input transactions, view dashboards, and monitor KPIs.</li>\n    <li><strong>Application Layer (Business Logic Tier):</strong> The functional logic and processing engine enforcing organizational rules, workflow approvals, authorization matrices, and transactional validation.</li>\n    <li><strong>Database Layer (Data Tier):</strong> High-performance relational database management system guaranteeing ACID compliance and referential integrity across all corporate records.</li>\n</ul>\n\n<h3>3. Comparison: Traditional Silos vs. Enterprise Systems</h3>\n<table style=\"width:100%;border-collapse:collapse;margin:16px 0;font-size:14px\">\n    <thead>\n        <tr style=\"background:#f1f5f9;text-align:left\">\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Attribute</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Traditional Functional Silos</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Enterprise System (ERP)</th>\n        </tr>\n    </thead>\n    <tbody>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Data Storage</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Disconnected, local spreadsheets & isolated department databases.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Centralized repository with relational consistency across all units.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Process Flow</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Manual data re-entry, delayed paper handoffs, high human error rates.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Automated event triggers, seamless inter-departmental handoffs.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Reporting Speed</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Weekly or monthly reconciliation required to balance metrics.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Instantaneous real-time institutional dashboards and analytics.</td>\n        </tr>\n    </tbody>\n</table>\n\n<h3>4. Key Takeaways for Assessment</h3>\n<p>As you prepare for the practical assessment, remember that successful enterprise adoption depends on strategic business process reengineering (BPR), clean data governance, and comprehensive user change management.</p>', '5', '0');
+('33', '65', '34', '37', 'Introduction to Enterprise Systems & ERP Foundations', 'Foundational reading module covering enterprise architecture, 3-tier models, and business process integration.', 'module', NULL, NULL, 'both', '2026-10-08 08:47:25', '<h3>1. Overview of Enterprise Systems</h3>\n<p>An Enterprise System (ES), commonly realized as an Enterprise Resource Planning (ERP) system, is a comprehensive software platform designed to integrate all facets of an organization’s business processes—including finance, human resources, manufacturing, supply chain management, and customer relations—into a single unified computing environment.</p>\n\n<div style=\"background:#f8fafc;border-left:4px solid #2563eb;padding:16px 20px;margin:20px 0;border-radius:0 8px 8px 0\">\n    <h4 style=\"margin-top:0;color:#1e40af\"><i class=\"fas fa-lightbulb\"></i> Core Principle: The Single Source of Truth</h4>\n    <p style=\"margin-bottom:0\">By utilizing a unified, centralized database repository, an Enterprise System eliminates redundant data silos and ensures that transaction updates in one department immediately reflect across the entire organization in real-time.</p>\n</div>\n\n<h3>2. Foundational Architecture (3-Tier Framework)</h3>\n<p>Modern enterprise platforms typically follow a multi-tier modular architecture:</p>\n<ul>\n    <li><strong>Presentation Layer (Client Tier):</strong> The web or desktop interface accessed by end-users across departments to input transactions, view dashboards, and monitor KPIs.</li>\n    <li><strong>Application Layer (Business Logic Tier):</strong> The functional logic and processing engine enforcing organizational rules, workflow approvals, authorization matrices, and transactional validation.</li>\n    <li><strong>Database Layer (Data Tier):</strong> High-performance relational database management system guaranteeing ACID compliance and referential integrity across all corporate records.</li>\n</ul>\n\n<h3>3. Comparison: Traditional Silos vs. Enterprise Systems</h3>\n<table style=\"width:100%;border-collapse:collapse;margin:16px 0;font-size:14px\">\n    <thead>\n        <tr style=\"background:#f1f5f9;text-align:left\">\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Attribute</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Traditional Functional Silos</th>\n            <th style=\"padding:10px;border:1px solid #cbd5e1\">Enterprise System (ERP)</th>\n        </tr>\n    </thead>\n    <tbody>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Data Storage</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Disconnected, local spreadsheets & isolated department databases.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Centralized repository with relational consistency across all units.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Process Flow</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Manual data re-entry, delayed paper handoffs, high human error rates.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Automated event triggers, seamless inter-departmental handoffs.</td>\n        </tr>\n        <tr>\n            <td style=\"padding:10px;border:1px solid #cbd5e1;font-weight:bold\">Reporting Speed</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Weekly or monthly reconciliation required to balance metrics.</td>\n            <td style=\"padding:10px;border:1px solid #cbd5e1\">Instantaneous real-time institutional dashboards and analytics.</td>\n        </tr>\n    </tbody>\n</table>\n\n<h3>4. Key Takeaways for Assessment</h3>\n<p>As you prepare for the practical assessment, remember that successful enterprise adoption depends on strategic business process reengineering (BPR), clean data governance, and comprehensive user change management.</p>', '5', '0'),
+('34', '101', '70', '45', 'Core Concepts of Enterprise Systems: Architecture & Data Integration', 'Comprehensive lecture material covering 3-tier architecture, centralized databases, and integration middleware.', 'document', NULL, '', 'both', '2026-10-09 03:05:51', '<h3>Enterprise Architecture Layers & Centralized Data Integration</h3><p>An Enterprise Resource Planning (ERP) system relies on a modular 3-tier architecture:</p><ul><li><strong>Presentation Layer:</strong> User interfaces delivering responsive dashboards and operational portals.</li><li><strong>Application (Business Logic) Layer:</strong> The central engine executing business rules, validation workflows, access control, and transaction boundaries.</li><li><strong>Database Layer:</strong> Centralized relational data repository ensuring ACID compliance, relational integrity, and single source of truth across all modules.</li></ul><p>Integration middleware facilitates messaging and automated API synchronization across supply chain management (SCM), financial ledgers, and human resources modules.</p>', '5', '0');
 
 -- --------------------------------------------------------
 -- Table structure & data for table `query_logs` (3 rows)
@@ -1005,7 +1020,7 @@ INSERT INTO `query_logs` (`id`, `admin_id`, `admin_name`, `query_text`, `query_t
 ('3', '1', 'System Administrator', 'DESCRIBE users;', 'DESCRIBE', '1', '10', NULL, '2026-07-04 00:54:18');
 
 -- --------------------------------------------------------
--- Table structure & data for table `submission_answers` (24 rows)
+-- Table structure & data for table `submission_answers` (32 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `submission_answers`;
@@ -1021,7 +1036,7 @@ CREATE TABLE `submission_answers` (
   PRIMARY KEY (`id`),
   KEY `idx_sa_sub` (`submission_id`),
   KEY `idx_sa_q` (`question_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `submission_answers` (`id`, `submission_id`, `question_id`, `student_answer`, `is_correct`, `points_awarded`, `feedback`, `created_at`) VALUES
 ('1', '37', '1', 'B. Integrate core business processes into a unified platform', '1', '5.00', NULL, '2026-10-08 09:32:19'),
@@ -1047,10 +1062,18 @@ INSERT INTO `submission_answers` (`id`, `submission_id`, `question_id`, `student
 ('21', '42', '1', 'A. Isolate department data in independent silos', '0', '0.00', NULL, '2026-10-08 09:32:22'),
 ('22', '42', '2', 'B. Centralized shared database repository', '1', '5.00', NULL, '2026-10-08 09:32:22'),
 ('23', '42', '3', 'True', '1', '5.00', NULL, '2026-10-08 09:32:22'),
-('24', '42', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:22');
+('24', '42', '4', 'B. Application / Business Logic Layer', '1', '5.00', NULL, '2026-10-08 09:32:22'),
+('25', '43', '10', 'B. Application / Logic Layer', '1', '5.00', NULL, '2026-10-09 03:53:53'),
+('26', '43', '11', 'B. Centralized shared relational database schema with relational constraints', '1', '5.00', NULL, '2026-10-09 03:53:53'),
+('27', '43', '12', 'True', '1', '5.00', NULL, '2026-10-09 03:53:53'),
+('28', '43', '13', 'A. Supply Chain Management (SCM)', '1', '5.00', NULL, '2026-10-09 03:53:53'),
+('29', '44', '10', 'B. Application / Logic Layer', '1', '5.00', NULL, '2026-10-09 03:53:53'),
+('30', '44', '11', 'B. Centralized shared relational database schema with relational constraints', '1', '5.00', NULL, '2026-10-09 03:53:53'),
+('31', '44', '12', 'True', '1', '5.00', NULL, '2026-10-09 03:53:53'),
+('32', '44', '13', 'A. Supply Chain Management (SCM)', '1', '5.00', NULL, '2026-10-09 03:53:53');
 
 -- --------------------------------------------------------
--- Table structure & data for table `submissions` (7 rows)
+-- Table structure & data for table `submissions` (9 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `submissions`;
@@ -1071,7 +1094,7 @@ CREATE TABLE `submissions` (
   KEY `student_id` (`student_id`),
   CONSTRAINT `submissions_ibfk_1` FOREIGN KEY (`assessment_id`) REFERENCES `assessments` (`id`) ON DELETE CASCADE,
   CONSTRAINT `submissions_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `submissions` (`id`, `assessment_id`, `student_id`, `file_path`, `text_answer`, `score`, `feedback`, `submitted_at`, `graded_at`, `status`, `is_auto_graded`) VALUES
 ('9', '3', '3', NULL, '', '50.00', '', '2026-03-27 23:20:29', '2026-07-30 10:57:20', 'graded', '0'),
@@ -1080,7 +1103,9 @@ INSERT INTO `submissions` (`id`, `assessment_id`, `student_id`, `file_path`, `te
 ('39', '45', '92', NULL, NULL, '15.00', 'Good performance overall. Review 3-tier architectural components; the application layer executes business logic.', '2026-10-08 07:32:20', '2026-10-08 08:32:20', 'graded', '1'),
 ('40', '45', '93', NULL, NULL, '15.00', 'Well done on foundational concepts. Note that ERP systems eliminate independent spreadsheets in favor of a centralized repository.', '2026-10-08 07:32:21', '2026-10-08 08:32:21', 'graded', '1'),
 ('41', '45', '94', NULL, NULL, '20.00', 'Excellent work! Very accurate breakdown of ERP modules and core business processes.', '2026-10-08 07:32:21', '2026-10-08 08:32:21', 'graded', '1'),
-('42', '45', '95', NULL, NULL, '15.00', 'Good effort! Remember that ERP systems connect and unify departments rather than keeping them isolated in silos.', '2026-10-08 07:32:22', '2026-10-08 08:32:22', 'graded', '1');
+('42', '45', '95', NULL, NULL, '15.00', 'Good effort! Remember that ERP systems connect and unify departments rather than keeping them isolated in silos.', '2026-10-08 07:32:22', '2026-10-08 08:32:22', 'graded', '1'),
+('43', '46', '3', NULL, NULL, '20.00', 'Exceptional mastery of enterprise architecture and centralized database concepts.', '2026-10-09 03:53:52', '2026-10-09 03:53:52', 'graded', '1'),
+('44', '46', '91', NULL, NULL, '20.00', 'Outstanding performance! Thorough understanding of middleware and 3-tier layers.', '2026-10-09 03:53:52', '2026-10-09 03:53:52', 'graded', '1');
 
 -- --------------------------------------------------------
 -- Table structure & data for table `syllabi` (22 rows)
@@ -1202,7 +1227,7 @@ CREATE TABLE `syllabus_templates` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
--- Table structure & data for table `syllabus_topics` (35 rows)
+-- Table structure & data for table `syllabus_topics` (36 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `syllabus_topics`;
@@ -1229,7 +1254,7 @@ CREATE TABLE `syllabus_topics` (
   PRIMARY KEY (`id`),
   KEY `syllabus_id` (`syllabus_id`),
   CONSTRAINT `syllabus_topics_ibfk_1` FOREIGN KEY (`syllabus_id`) REFERENCES `syllabi` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=102 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=103 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `syllabus_topics` (`id`, `syllabus_id`, `week_number`, `topic_title`, `topic_description`, `learning_outcomes`, `delivery_mode`, `online_platform`, `resources`, `assessment_type`, `sort_order`, `created_at`, `is_completed`, `completion_notes`, `deletion_requested`, `deletion_reason`, `ilo_code`, `blooms_level`, `activity_title`) VALUES
 ('8', '6', '1', 'test', 'test', 'test', 'blended', 'test', 'test', 'test', '0', '2026-04-09 15:46:03', '0', NULL, '0', NULL, NULL, NULL, NULL),
@@ -1265,8 +1290,9 @@ INSERT INTO `syllabus_topics` (`id`, `syllabus_id`, `week_number`, `topic_title`
 ('64', '33', '2', 'Core Concepts of Practicum / OJT', 'Deeper look into the main topics of the course.', 'Explain and apply the core concepts learned.', 'blended', 'Google Classroom', 'Reading materials, activity sheets', 'Activity', '1', '2026-08-09 00:00:00', '0', NULL, '0', NULL, NULL, NULL, NULL),
 ('65', '34', '1', 'Introduction to Enterprise System', 'Overview of key concepts and scope of the course.', 'Identify the core concepts of the subject.', 'blended', 'Google Classroom', 'Course syllabus, lecture slides', 'Quiz', '0', '2026-08-09 00:00:00', '0', NULL, '0', NULL, NULL, NULL, NULL),
 ('66', '34', '2', 'Core Concepts of Enterprise System', 'Deeper look into the main topics of the course.', 'Explain and apply the core concepts learned.', 'blended', 'Google Classroom', 'Reading materials, activity sheets', 'Activity', '1', '2026-08-09 00:00:00', '0', NULL, '0', NULL, NULL, NULL, NULL),
-('100', '70', '1', 'Introduction to Enterprise System', 'Overview of key concepts and scope of the course.', 'Identify the core concepts of the subject.', 'blended', 'Google Classroom', 'Course syllabus, lecture slides', 'Quiz', '0', '2026-10-08 08:44:52', '0', NULL, '0', NULL, NULL, NULL, NULL),
-('101', '70', '2', 'Core Concepts of Enterprise System', 'Deeper look into the main topics of the course.', 'Explain and apply the core concepts learned.', 'blended', 'Google Classroom', 'Reading materials, activity sheets', 'Activity', '1', '2026-10-08 08:44:52', '0', NULL, '0', NULL, NULL, NULL, NULL);
+('100', '70', '1', 'Introduction to Enterprise System', 'Overview of key concepts and scope of the course.', 'Identify the core concepts of the subject.', 'blended', 'Google Classroom', 'Course syllabus, lecture slides', 'Quiz', '0', '2026-10-08 08:44:52', '1', 'Week 1 syllabus requirements, lecture materials, and assessment evaluations fully completed.', '0', NULL, NULL, NULL, NULL),
+('101', '70', '2', 'Core Concepts of Enterprise System: Architecture & Data Integration', 'Deeper look into the main topics of the course.', 'Explain and apply the core concepts learned.', 'blended', 'Google Classroom', 'Reading materials, activity sheets', 'Activity', '1', '2026-10-08 08:44:52', '0', NULL, '0', NULL, NULL, NULL, NULL),
+('102', '70', '3', 'Enterprise Resource Planning (ERP) Implementation Lifecycle & Change Management', 'test', 'test', 'blended', '', '', '', '0', '2026-10-09 03:05:21', '0', NULL, '0', NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 -- Table structure & data for table `system_settings` (1 rows)
@@ -1306,7 +1332,7 @@ INSERT INTO `topic_done_status` (`id`, `teacher_id`, `syllabus_id`, `status`, `d
 ('21', '2', '4', '0', '2026-04-10 18:09:11');
 
 -- --------------------------------------------------------
--- Table structure & data for table `topic_progress` (7 rows)
+-- Table structure & data for table `topic_progress` (13 rows)
 -- --------------------------------------------------------
 
 DROP TABLE IF EXISTS `topic_progress`;
@@ -1325,16 +1351,22 @@ CREATE TABLE `topic_progress` (
   KEY `syllabus_topic_id` (`syllabus_topic_id`),
   CONSTRAINT `topic_progress_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `topic_progress_ibfk_2` FOREIGN KEY (`syllabus_topic_id`) REFERENCES `syllabus_topics` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=78 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=102 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `topic_progress` (`id`, `student_id`, `syllabus_topic_id`, `status`, `completed_at`, `notes`, `read_percentage`, `last_read_at`) VALUES
 ('21', '3', '8', 'completed', '2026-07-02 16:38:16', NULL, '0.00', NULL),
 ('72', '3', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19'),
 ('73', '91', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19'),
-('74', '92', '100', 'completed', '2026-10-08 09:32:19', NULL, '95.00', '2026-10-08 09:32:19'),
-('75', '93', '100', 'in_progress', NULL, NULL, '85.00', '2026-10-08 09:32:19'),
-('76', '94', '100', 'completed', '2026-10-08 09:32:19', NULL, '90.00', '2026-10-08 09:32:19'),
-('77', '95', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19');
+('74', '92', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19'),
+('75', '93', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19'),
+('76', '94', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19'),
+('77', '95', '100', 'completed', '2026-10-08 09:32:19', NULL, '100.00', '2026-10-08 09:32:19'),
+('96', '3', '101', 'completed', '2026-10-09 03:53:52', NULL, '100.00', '2026-10-09 03:53:52'),
+('97', '91', '101', 'completed', '2026-10-09 03:53:52', NULL, '100.00', '2026-10-09 03:53:52'),
+('98', '92', '101', 'in_progress', NULL, NULL, '45.00', '2026-10-09 03:53:53'),
+('99', '93', '101', 'in_progress', NULL, NULL, '30.00', '2026-10-09 03:53:53'),
+('100', '94', '101', 'in_progress', NULL, NULL, '60.00', '2026-10-09 03:53:53'),
+('101', '95', '101', 'in_progress', NULL, NULL, '20.00', '2026-10-09 03:53:53');
 
 -- --------------------------------------------------------
 -- Table structure & data for table `topic_week_done` (0 rows)

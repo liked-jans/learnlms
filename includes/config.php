@@ -670,3 +670,135 @@ function checkPastWeeklySyllabiDone($syllabusId, $topicId = null, $targetWeek = 
 
     return ['can_proceed' => true, 'target_week' => $targetWeek, 'missing_weeks' => [], 'message' => ''];
 }
+
+/**
+ * Validates whether a topic/week can be marked as done (is_completed = 1) by a teacher.
+ * Conditions required:
+ * 1. Must have at least one learning material attached.
+ * 2. Must have at least one assessment task attached.
+ * 3. All enrolled students in the syllabus must have finished both the learning materials
+ *    (read_percentage >= 90% or status='completed') and submitted all assessments for the topic.
+ *
+ * @param int $topicId
+ * @param int $syllabusId
+ * @return array ['can_mark_done' => bool, 'reason' => string, 'message' => string]
+ */
+function checkTopicCanBeMarkedDone($topicId, $syllabusId) {
+    global $conn;
+    $topicId = (int)$topicId;
+    $syllabusId = (int)$syllabusId;
+
+    if ($topicId <= 0 || $syllabusId <= 0) {
+        return ['can_mark_done' => false, 'reason' => 'invalid_input', 'message' => 'Invalid topic or syllabus.'];
+    }
+
+    $tStmt = $conn->prepare("SELECT id, week_number, topic_title FROM syllabus_topics WHERE id = ? AND syllabus_id = ?");
+    $tStmt->bind_param('ii', $topicId, $syllabusId);
+    $tStmt->execute();
+    $topic = $tStmt->get_result()->fetch_assoc();
+    if (!$topic) {
+        return ['can_mark_done' => false, 'reason' => 'not_found', 'message' => 'Topic not found.'];
+    }
+    $wkNum = $topic['week_number'];
+
+    // 1. Check Learning Materials
+    $mRes = $conn->query("SELECT id FROM learning_materials WHERE syllabus_topic_id = $topicId");
+    $mCount = $mRes ? $mRes->num_rows : 0;
+
+    // 2. Check Assessments
+    $aRes = $conn->query("SELECT id FROM assessments WHERE topic_id = $topicId");
+    $assessments = [];
+    if ($aRes) {
+        while ($ar = $aRes->fetch_assoc()) {
+            $assessments[] = (int)$ar['id'];
+        }
+    }
+    $aCount = count($assessments);
+
+    if ($mCount === 0 || $aCount === 0) {
+        $missing = [];
+        if ($mCount === 0) $missing[] = 'learning material';
+        if ($aCount === 0) $missing[] = 'assessment task';
+        return [
+            'can_mark_done' => false,
+            'reason' => 'missing_deliverables',
+            'missing' => $missing,
+            'message' => "Cannot mark Week {$wkNum} as done: This topic has no " . implode(' and no ', $missing) . " attached. Please attach at least one " . implode(' and ', $missing) . " first."
+        ];
+    }
+
+    // 3. Check Enrolled Students Completion
+    $eRes = $conn->query("
+        SELECT e.student_id, u.full_name 
+        FROM enrollments e 
+        JOIN users u ON e.student_id = u.id 
+        WHERE e.syllabus_id = $syllabusId AND e.status = 'enrolled'
+    ");
+    $enrolledStudents = $eRes ? $eRes->fetch_all(MYSQLI_ASSOC) : [];
+
+    if (!empty($enrolledStudents)) {
+        $pendingStudents = [];
+
+        foreach ($enrolledStudents as $stu) {
+            $stuId = (int)$stu['student_id'];
+            $stuName = $stu['full_name'];
+            $isComplete = true;
+            $pendingParts = [];
+
+            // a) Materials check: student has completed reading
+            $tpRes = $conn->query("
+                SELECT status, read_percentage 
+                FROM topic_progress 
+                WHERE syllabus_topic_id = $topicId AND student_id = $stuId 
+                LIMIT 1
+            ");
+            $tp = $tpRes ? $tpRes->fetch_assoc() : null;
+            $hasFinishedMat = ($tp && ($tp['status'] === 'completed' || (float)$tp['read_percentage'] >= 90.0));
+            if (!$hasFinishedMat) {
+                $isComplete = false;
+                $pendingParts[] = 'materials';
+            }
+
+            // b) Assessments check: student has submitted all topic assessments
+            foreach ($assessments as $assId) {
+                $subRes = $conn->query("
+                    SELECT id 
+                    FROM submissions 
+                    WHERE assessment_id = $assId AND student_id = $stuId AND status IN ('submitted', 'graded') 
+                    LIMIT 1
+                ");
+                if (!$subRes || $subRes->num_rows === 0) {
+                    $isComplete = false;
+                    $pendingParts[] = 'assessment';
+                    break;
+                }
+            }
+
+            if (!$isComplete) {
+                $pendingStudents[] = [
+                    'student_id' => $stuId,
+                    'name' => $stuName,
+                    'pending' => $pendingParts
+                ];
+            }
+        }
+
+        if (!empty($pendingStudents)) {
+            $pendingCount = count($pendingStudents);
+            $totalCount = count($enrolledStudents);
+            return [
+                'can_mark_done' => false,
+                'reason' => 'students_incomplete',
+                'pending_count' => $pendingCount,
+                'total_count' => $totalCount,
+                'pending_students' => $pendingStudents,
+                'message' => "Cannot mark Week {$wkNum} as done: Not all enrolled students have finished the learning materials and assessments yet ({$pendingCount} of {$totalCount} students still pending)."
+            ];
+        }
+    }
+
+    return [
+        'can_mark_done' => true,
+        'message' => ''
+    ];
+}
