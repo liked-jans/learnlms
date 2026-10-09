@@ -107,16 +107,25 @@ $myAssessments = $stmtMy->get_result();
 
 <div class="card" style="margin-bottom:20px">
     <div class="card-body" style="padding:14px 20px">
-        <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-            <select name="assessment" class="form-control" style="width:380px" onchange="this.form.submit()">
-                <option value="">-- Select an Assessment --</option>
-                <option value="all" <?= $isAll ? 'selected' : '' ?>>-- All Assessments --</option>
-                <?php while($a = $myAssessments->fetch_assoc()): ?>
-                    <option value="<?= $a['id'] ?>" <?= (!$isAll && $assFilterInt == $a['id']) ? 'selected' : '' ?>>
-                        <?= safeHtml($a['course_code'].' - '.$a['title']) ?>
-                    </option>
-                <?php endwhile; ?>
-            </select>
+        <form method="GET" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                <select name="assessment" class="form-control" style="width:380px" onchange="this.form.submit()">
+                    <option value="">-- Select an Assessment --</option>
+                    <option value="all" <?= $isAll ? 'selected' : '' ?>>-- All Assessments --</option>
+                    <?php while($a = $myAssessments->fetch_assoc()): ?>
+                        <option value="<?= $a['id'] ?>" <?= (!$isAll && $assFilterInt == $a['id']) ? 'selected' : '' ?>>
+                            <?= safeHtml($a['course_code'].' - '.$a['title']) ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+            </div>
+            <?php if (!empty($assFilter)): ?>
+                <div>
+                    <a href="grades_print.php?assessment=<?= htmlspecialchars($assFilter) ?>" target="_blank" class="btn btn-primary btn-sm" style="background:#059669;border-color:#059669;display:inline-flex;align-items:center;gap:6px">
+                        <i class="fas fa-print"></i> Print Formal Grade Sheet
+                    </a>
+                </div>
+            <?php endif; ?>
         </form>
     </div>
 </div>
@@ -157,6 +166,9 @@ $myAssessments = $stmtMy->get_result();
                 <?php endif; ?>
             </div>
             <div style="display:flex;gap:10px">
+                <a href="grades_print.php?assessment=<?= $assessment['id'] ?>" target="_blank" class="btn btn-primary btn-sm" style="background:#059669;border-color:#059669;display:inline-flex;align-items:center;gap:6px">
+                    <i class="fas fa-print"></i> Print Grade Sheet
+                </a>
                 <a href="assessment_questions.php?id=<?= $assessment['id'] ?>" class="btn btn-secondary btn-sm">
                     <i class="fas fa-list-ol"></i> View Question Pool
                 </a>
@@ -279,7 +291,12 @@ $myAssessments = $stmtMy->get_result();
                 </div>
             <?php endif; ?>
         </div>
-        <a href="grades.php?assessment=<?= $a['id'] ?>" class="btn btn-secondary btn-sm">Filter This</a>
+        <div style="display:flex;gap:8px">
+            <a href="grades_print.php?assessment=<?= $a['id'] ?>" target="_blank" class="btn btn-primary btn-sm" style="background:#059669;border-color:#059669;display:inline-flex;align-items:center;gap:6px">
+                <i class="fas fa-print"></i> Print
+            </a>
+            <a href="grades.php?assessment=<?= $a['id'] ?>" class="btn btn-secondary btn-sm">Filter This</a>
+        </div>
     </div>
 </div></div>
 
